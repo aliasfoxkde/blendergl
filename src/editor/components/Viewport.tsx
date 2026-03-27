@@ -43,6 +43,7 @@ import { useRenderSettingsStore } from "@/editor/stores/renderSettingsStore";
 import { ImportCommand } from "@/editor/utils/commands/importCommand";
 import { useHistoryStore } from "@/editor/stores/historyStore";
 import { exportSelectedToSTL } from "@/editor/utils/exportStl";
+import { exportSelectedTo3MF } from "@/editor/utils/export3mf";
 import { sliceMesh } from "@/editor/utils/gcode/slicer";
 import { generateGcode, downloadGcode } from "@/editor/utils/gcode/gcodeGenerator";
 import { analyzeMesh } from "@/editor/utils/meshAnalysis";
@@ -183,6 +184,17 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       }
     };
     window.addEventListener("export-stl", handleExportStl);
+
+    // 3MF export event listener
+    const handleExport3mf = (e: Event) => {
+      const { selectedIds: ids } = (e as CustomEvent).detail as { selectedIds: Set<string> };
+      if (ids && ids.size > 0) {
+        exportSelectedTo3MF(scene, ids);
+      } else {
+        exportSelectedTo3MF(scene, new Set());
+      }
+    };
+    window.addEventListener("export-3mf", handleExport3mf);
 
     // G-code export event listener
     const handleExportGcode = (e: Event) => {
@@ -545,6 +557,30 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       }
     }
   }, [materials]);
+
+  // Apply advanced PBR extensions from render settings
+  useEffect(() => {
+    const meshMap = meshMapRef.current;
+    for (const [id, mesh] of meshMap) {
+      const material = mesh.material as StandardMaterial;
+      if (!material) continue;
+
+      const mat = materials[id];
+      if (!mat) continue;
+
+      // Clearcoat — approximated via specular power boost
+      if (renderSettings.clearcoatEnabled && mat.clearcoatEnabled) {
+        material.specularPower = Math.max(material.specularPower ?? 32, 128);
+        material.specularColor = new Color3(0.8, 0.8, 0.8);
+      }
+
+      // IOR — affects specular reflection intensity
+      if (mat.ior && mat.ior !== 1.5) {
+        const iorFactor = (mat.ior - 1) / (1.5 - 1);
+        material.specularColor = material.specularColor.scale(Math.min(iorFactor, 2.0));
+      }
+    }
+  }, [materials, renderSettings.clearcoatEnabled, renderSettings.ior]);
 
   // Sync shading mode to all meshes
   useEffect(() => {

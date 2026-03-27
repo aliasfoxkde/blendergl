@@ -54,6 +54,21 @@ export interface MaterialData {
   opacity: number;
   alphaMode: "opaque" | "blend" | "mask";
   diffuseTexture?: string; // base64 data URL
+
+  // Advanced PBR
+  clearcoatEnabled?: boolean;
+  clearcoatIntensity?: number;
+  clearcoatRoughness?: number;
+  sheenEnabled?: boolean;
+  sheenIntensity?: number;
+  sheenColor?: string;
+  sssEnabled?: boolean;
+  sssColor?: string;
+  sssRadius?: number;
+  sssIntensity?: number;
+  anisotropicEnabled?: boolean;
+  anisotropy?: number;
+  ior?: number;
 }
 
 export interface SceneData {

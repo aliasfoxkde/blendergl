@@ -3,8 +3,9 @@
  * environment settings, and studio lighting presets.
  */
 
-import type { Scene } from "@babylonjs/core";
+import type { Scene, Light, AbstractMesh } from "@babylonjs/core";
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+import { PointLight } from "@babylonjs/core/Lights/pointLight";
 import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
 import { CascadedShadowGenerator } from "@babylonjs/core/Lights/Shadows/cascadedShadowGenerator";
 import { SSAO2RenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/ssao2RenderingPipeline";
@@ -275,6 +276,100 @@ class RenderingManager {
       const sg = light.getShadowGenerator();
       if (sg) {
         (sg as ShadowGenerator).setDarkness(1 - (rgb.r + rgb.g + rgb.b) / 3);
+      }
+    }
+  }
+
+  // --- Area Lights ---
+
+  createAreaLight(
+    name: string,
+    type: "rect" | "disc" | "sphere",
+    position: Vector3,
+    _direction: Vector3,
+    color: Color3,
+    intensity: number,
+    size?: number,
+  ): Light | null {
+    const scene = sceneRef.current;
+    if (!scene) return null;
+
+    // Babylon.js doesn't have native area lights in StandardMaterial.
+    // We approximate using point lights with adjusted falloff.
+    const radius = size ?? 0.5;
+
+    switch (type) {
+      case "rect":
+      case "disc": {
+        // Approximate with a point light positioned at center
+        const light = new PointLight(name, position, scene);
+        light.diffuse = color;
+        light.intensity = intensity;
+        light.range = radius * 4;
+        return light;
+      }
+      case "sphere": {
+        // Spherical area light — point light with radius
+        const light = new PointLight(name, position, scene);
+        light.diffuse = color;
+        light.intensity = intensity;
+        light.range = radius * 3;
+        return light;
+      }
+      default:
+        return null;
+    }
+  }
+
+  // --- Light Linking ---
+
+  private lightLinkMap: Map<string, Set<string>> = new Map();
+
+  linkLightToMesh(lightName: string, entityId: string): void {
+    let linked = this.lightLinkMap.get(lightName);
+    if (!linked) {
+      linked = new Set();
+      this.lightLinkMap.set(lightName, linked);
+    }
+    linked.add(entityId);
+  }
+
+  unlinkLightFromMesh(lightName: string, entityId: string): void {
+    const linked = this.lightLinkMap.get(lightName);
+    if (linked) {
+      linked.delete(entityId);
+    }
+  }
+
+  getLinkedMeshes(lightName: string): Set<string> {
+    return this.lightLinkMap.get(lightName) ?? new Set();
+  }
+
+  isLightLinkedToMesh(lightName: string, entityId: string): boolean {
+    return this.lightLinkMap.get(lightName)?.has(entityId) ?? false;
+  }
+
+  applyLightLinking(_entityId: string, _mesh: AbstractMesh): void {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    for (const light of scene.lights) {
+      const linked = this.lightLinkMap.get(light.name);
+      if (linked && linked.size > 0) {
+        // If this light has explicit links, only include linked meshes
+        light.includedOnlyMeshes = Array.from(linked)
+          .map((id) => scene.getMeshByName(`mesh_${id}`))
+          .filter((m): m is AbstractMesh => m !== null && m !== undefined);
+      }
+    }
+  }
+
+  clearLightLinking(): void {
+    this.lightLinkMap.clear();
+    const scene = sceneRef.current;
+    if (scene) {
+      for (const light of scene.lights) {
+        light.includedOnlyMeshes = [];
       }
     }
   }

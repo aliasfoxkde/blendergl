@@ -70,6 +70,35 @@ export interface RenderSettingsData {
   renderHeight: number;
   screenshotFormat: ScreenshotFormat;
   screenshotQuality: number;
+
+  // Advanced PBR
+  clearcoatEnabled: boolean;
+  clearcoatIntensity: number;
+  clearcoatRoughness: number;
+  sheenEnabled: boolean;
+  sheenIntensity: number;
+  sheenColor: string;
+  sssEnabled: boolean;
+  sssColor: string;
+  sssRadius: number;
+  sssIntensity: number;
+  anisotropicEnabled: boolean;
+  anisotropy: number;
+  ior: number;
+
+  // Screen-space reflections
+  ssrEnabled: boolean;
+  ssrMaxSteps: number;
+  ssrStepSize: number;
+  ssrRoughnessThreshold: number;
+
+  // Motion blur
+  motionBlurEnabled: boolean;
+  motionBlurShutterSpeed: number;
+  motionBlurIntensity: number;
+
+  // Light linking
+  lightLinkingEnabled: boolean;
 }
 
 function createDefaultRenderSettings(): RenderSettingsData {
@@ -129,6 +158,35 @@ function createDefaultRenderSettings(): RenderSettingsData {
     renderHeight: 1080,
     screenshotFormat: "png",
     screenshotQuality: 0.92,
+
+    // Advanced PBR
+    clearcoatEnabled: false,
+    clearcoatIntensity: 1.0,
+    clearcoatRoughness: 0.1,
+    sheenEnabled: false,
+    sheenIntensity: 1.0,
+    sheenColor: "#ffffff",
+    sssEnabled: false,
+    sssColor: "#ff8866",
+    sssRadius: 0.5,
+    sssIntensity: 1.0,
+    anisotropicEnabled: false,
+    anisotropy: 0.5,
+    ior: 1.5,
+
+    // Screen-space reflections
+    ssrEnabled: false,
+    ssrMaxSteps: 64,
+    ssrStepSize: 0.02,
+    ssrRoughnessThreshold: 0.6,
+
+    // Motion blur
+    motionBlurEnabled: false,
+    motionBlurShutterSpeed: 1.0,
+    motionBlurIntensity: 0.5,
+
+    // Light linking
+    lightLinkingEnabled: false,
   };
 }
 

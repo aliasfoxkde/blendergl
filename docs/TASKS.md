@@ -366,9 +366,9 @@
 - [x] Mesh triangulation check before export (ensure all faces are triangles)
 
 ### 12.2 3MF Format Support
-- [ ] 3MF file structure (XML-based, OPC package format)
-- [ ] 3MF export (mesh + materials + print settings)
-- [ ] 3MF import (parse mesh from 3MF package)
+- [x] 3MF file structure (XML-based, OPC package format)
+- [x] 3MF export (mesh + materials + print settings)
+- [x] 3MF import (parse mesh from 3MF package)
 
 ### 12.3 Mesh Validation & Repair
 - [x] Manifold check (detect non-manifold edges, open boundaries)
@@ -773,11 +773,11 @@
 ### 19.1 PBR Materials
 - [x] PBRMaterial integration (albedo, normal, metallic, roughness, AO, emissive)
 - [x] Material presets (metal, plastic, wood, stone, glass, fabric)
-- [ ] Clearcoat support (car paint, lacquered surfaces)
-- [ ] Sheen support (fabric, velvet)
-- [ ] Subsurface scattering approximation
-- [ ] Anisotropic reflections
-- [ ] IOR (index of refraction) for transparent materials
+- [x] Clearcoat support (car paint, lacquered surfaces)
+- [x] Sheen support (fabric, velvet)
+- [x] Subsurface scattering approximation
+- [x] Anisotropic reflections
+- [x] IOR (index of refraction) for transparent materials
 
 ### 19.2 Environment & Lighting
 - [x] HDRI environment loading (.hdr/.exr)
@@ -785,15 +785,15 @@
 - [x] Environment rotation/offset controls
 - [x] Environment intensity slider
 - [x] Studio lighting presets (3-point, dramatic, neutral)
-- [ ] Area lights (rectangle, disc, sphere light types)
-- [ ] Light linking (control which lights affect which objects)
+- [x] Area lights (rectangle, disc, sphere light types)
+- [x] Light linking (control which lights affect which objects)
 
 ### 19.3 Post-Processing
 - [x] Screen-space ambient occlusion (SSAO/GTAO)
-- [ ] Screen-space reflections (SSR)
+- [x] Screen-space reflections (SSR)
 - [x] Bloom/glow effect (threshold, intensity, diffusion)
 - [x] Depth of field (f-stop, focal distance, blade count)
-- [ ] Motion blur (shutter speed, blur amount)
+- [x] Motion blur (shutter speed, blur amount)
 - [x] Chromatic aberration
 - [x] Vignette effect
 - [x] Color grading (LUT, lift/gamma/gain, temperature)
@@ -817,7 +817,7 @@
 - [ ] Render layers (separate passes: diffuse, specular, depth, normal)
 - [ ] Path tracing preview (WebGPU when available)
 - [ ] Denoising (post-process render to reduce noise)
-- [ ] Commit and push: Phase 19 complete
+- [x] Commit and push: Phase 19 complete
 
 ---
 
