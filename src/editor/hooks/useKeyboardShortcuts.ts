@@ -21,7 +21,7 @@ export function useKeyboardShortcuts() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
 
       const selectionStore = useSelectionStore.getState();
       const sceneStore = useSceneStore.getState();

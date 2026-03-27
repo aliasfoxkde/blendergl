@@ -7,6 +7,7 @@ import { Toolbar } from "./Toolbar";
 import { AiPanel } from "./AiPanel";
 import { ContextMenu } from "./ContextMenu";
 import { AssetBrowser } from "./AssetBrowser";
+import { ScriptEditorPanel } from "./ScriptEditorPanel";
 import { useKeyboardShortcuts } from "@/editor/hooks/useKeyboardShortcuts";
 import { useAutoSave } from "@/editor/hooks/useAutoSave";
 import { useSceneStore } from "@/editor/stores/sceneStore";
@@ -85,6 +86,7 @@ export function EditorShell() {
         {/* Viewport */}
         <main className="flex-1 relative bg-[#1a1a2e]">
           <Viewport />
+          <ScriptEditorPanel />
           {/* Viewport overlay info */}
           <div className="absolute bottom-2 left-2 text-xs text-gray-500 pointer-events-none">
             {objectCount === 0
