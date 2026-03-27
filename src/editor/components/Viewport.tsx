@@ -4,9 +4,11 @@ import {
   Scene,
   ArcRotateCamera,
   Color3,
+  Vector3,
   StandardMaterial,
   MeshBuilder,
   AbstractMesh,
+  Mesh,
   PointerEventTypes,
 } from "@babylonjs/core";
 import {
@@ -17,8 +19,12 @@ import {
   createGrid,
 } from "@/editor/utils/engine";
 import { TransformGizmoController } from "@/editor/utils/gizmos";
+import { EditModeController } from "@/editor/utils/editModeController";
+import { editControllerRef } from "@/editor/utils/editModeRef";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
+import { useMaterialStore } from "@/editor/stores/materialStore";
+import { useEditModeStore } from "@/editor/stores/editModeStore";
 import type { TransformMode } from "@/editor/types";
 
 interface ViewportProps {
@@ -32,11 +38,24 @@ export function Viewport({ onSceneReady }: ViewportProps) {
   const cameraRef = useRef<ArcRotateCamera | null>(null);
   const meshMapRef = useRef<Map<string, AbstractMesh>>(new Map());
   const gizmoRef = useRef<TransformGizmoController | null>(null);
+  const editControllerRef_local = useRef<EditModeController | null>(null);
 
   const entities = useSceneStore((s) => s.entities);
   const { select, deselectAll, selectedIds, setHoveredEntity } =
     useSelectionStore();
+  const editorMode = useSelectionStore((s) => s.editorMode);
   const transformMode = useSelectionStore((s) => s.transformMode);
+  const materials = useMaterialStore((s) => s.materials);
+  const {
+    activeMeshEntityId,
+    elementMode,
+    selectedVertices,
+    selectedEdges,
+    selectedFaces,
+    selectVertex,
+    selectEdge,
+    selectFace,
+  } = useEditModeStore();
 
   // Initialize engine + scene
   useEffect(() => {
@@ -70,8 +89,56 @@ export function Viewport({ onSceneReady }: ViewportProps) {
 
     // Pick handling
     scene.onPointerObservable.add((pointerInfo) => {
+      const editController = editControllerRef_local.current;
+
       if (pointerInfo.type === PointerEventTypes.POINTERPICK) {
         const pickResult = pointerInfo.pickInfo;
+
+        // Edit mode: pick vertices/edges/faces
+        if (editorMode === "edit" && editController && pickResult?.hit && pickResult.pickedMesh) {
+          const meshId = pickResult.pickedMesh.metadata?.entityId as
+            | string
+            | undefined;
+
+          // Only pick on the mesh we're editing
+          if (meshId === activeMeshEntityId) {
+            const shiftKey = pointerInfo.event.shiftKey;
+
+            if (elementMode === "face") {
+              selectFace(pickResult.faceId, shiftKey);
+            } else if (elementMode === "vertex") {
+              // Get the 3 vertices of the hit face and pick the closest
+              const [v0, v1, v2] = editController.getFaceVertexIndices(
+                pickResult.faceId
+              );
+              const pickedPoint = pickResult.pickedPoint;
+              if (pickedPoint) {
+                // Find closest vertex among the face's vertices
+                let closestVertex = v0;
+                let closestDist = Infinity;
+                for (const v of [v0, v1, v2]) {
+                  const pos = editController.getVertexPosition(v);
+                  const dist = Vector3.Distance(pickedPoint, pos);
+                  if (dist < closestDist) {
+                    closestDist = dist;
+                    closestVertex = v;
+                  }
+                }
+                selectVertex(closestVertex, shiftKey);
+              }
+            } else if (elementMode === "edge") {
+              const edge = editController.getEdgeFromBarycentric(
+                pickResult.faceId,
+                pickResult.bu,
+                pickResult.bv
+              );
+              selectEdge(edge[0], edge[1], shiftKey);
+            }
+          }
+          return;
+        }
+
+        // Object mode: pick entities
         if (pickResult?.hit && pickResult.pickedMesh) {
           const meshId = pickResult.pickedMesh.metadata?.entityId as
             | string
@@ -106,11 +173,13 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       resizeObserver.disconnect();
       scene.onPointerObservable.clear();
       gizmoController.dispose();
+      editControllerRef_local.current?.dispose();
       engine.dispose();
       engineRef.current = null;
       sceneRef.current = null;
       cameraRef.current = null;
       gizmoRef.current = null;
+      editControllerRef_local.current = null;
       meshMapRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -190,10 +259,35 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     }
   }, [selectedIds]);
 
+  // Sync materials to Babylon meshes
+  useEffect(() => {
+    const meshMap = meshMapRef.current;
+    for (const [id, mesh] of meshMap) {
+      const mat = materials[id];
+      const material = mesh.material as StandardMaterial;
+      if (!material) continue;
+
+      if (mat) {
+        material.diffuseColor = Color3.FromHexString(mat.albedo);
+        material.specularColor = new Color3(mat.metallic * 0.5, mat.metallic * 0.5, mat.metallic * 0.5);
+        material.specularPower = 64 - mat.roughness * 32;
+        material.emissiveColor = Color3.FromHexString(mat.emissive);
+        material.alpha = mat.opacity;
+        material.needDepthPrePass = mat.opacity < 1;
+      }
+    }
+  }, [materials]);
+
   // Sync gizmo mode and attach to selected mesh
   useEffect(() => {
     const gizmo = gizmoRef.current;
     if (!gizmo) return;
+
+    // Hide gizmo in edit mode
+    if (editorMode === "edit") {
+      gizmo.attachToMesh(null);
+      return;
+    }
 
     gizmo.mode = transformMode as TransformMode;
 
@@ -204,7 +298,39 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     } else {
       gizmo.attachToMesh(null);
     }
-  }, [transformMode, selectedIds]);
+  }, [transformMode, selectedIds, editorMode]);
+
+  // Edit mode: attach/detach controller
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const meshMap = meshMapRef.current;
+
+    if (editorMode === "edit" && activeMeshEntityId && scene) {
+      const mesh = meshMap.get(activeMeshEntityId) as Mesh | undefined;
+      if (mesh) {
+        const controller = new EditModeController();
+        controller.attachToMesh(mesh, scene);
+        editControllerRef_local.current = controller;
+        editControllerRef.current = controller;
+      }
+    } else {
+      editControllerRef_local.current?.dispose();
+      editControllerRef_local.current = null;
+      editControllerRef.current = null;
+    }
+  }, [editorMode, activeMeshEntityId]);
+
+  // Edit mode: update selection overlay
+  useEffect(() => {
+    const controller = editControllerRef_local.current;
+    if (!controller) return;
+
+    controller.updateSelectionOverlay(
+      Array.from(selectedVertices),
+      Array.from(selectedFaces),
+      Array.from(selectedEdges)
+    );
+  }, [selectedVertices, selectedFaces, selectedEdges]);
 
   return (
     <canvas

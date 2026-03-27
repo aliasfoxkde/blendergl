@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import type { PrimitiveType, TransformMode } from "@/editor/types";
 import { PRIMITIVE_TYPES } from "@/editor/utils/primitives";
 import { useHistoryStore } from "@/editor/stores/historyStore";
+import { useSelectionStore } from "@/editor/stores/selectionStore";
+import { useEditModeStore } from "@/editor/stores/editModeStore";
 
 interface ToolbarProps {
   onAddPrimitive: (type: PrimitiveType) => void;
@@ -27,6 +29,14 @@ export function Toolbar({
   const canRedo = useHistoryStore((s) => s.canRedo);
   const undo = useHistoryStore((s) => s.undo);
   const redo = useHistoryStore((s) => s.redo);
+
+  const editorMode = useSelectionStore((s) => s.editorMode);
+  const setEditorMode = useSelectionStore((s) => s.setEditorMode);
+  const activeEntityId = useSelectionStore((s) => s.activeEntityId);
+  const elementMode = useEditModeStore((s) => s.elementMode);
+  const setElementMode = useEditModeStore((s) => s.setElementMode);
+  const enterEditMode = useEditModeStore((s) => s.enterEditMode);
+  const exitEditMode = useEditModeStore((s) => s.exitEditMode);
 
   useEffect(() => {
     if (!addMenuOpen) return;
@@ -54,31 +64,97 @@ export function Toolbar({
       {/* Divider */}
       <div className="w-px h-5 bg-[#444]" />
 
-      {/* Transform mode buttons */}
-      <ToolButton
-        label="Move (W)"
-        active={transformMode === "translate"}
-        onClick={() => onTransformModeChange("translate")}
-        shortcut="W"
+      {/* Mode indicator */}
+      <button
+        title={`Switch Mode (Tab) — Current: ${editorMode === "edit" ? "Edit" : "Object"} Mode`}
+        className={`px-2 h-7 flex items-center gap-1 rounded text-[10px] font-medium transition ${
+          editorMode === "edit"
+            ? "bg-blue-600/30 text-blue-300 border border-blue-500/50"
+            : "text-gray-400 hover:text-white"
+        }`}
+        onClick={() => {
+          if (editorMode === "object" && activeEntityId) {
+            setEditorMode("edit");
+            enterEditMode(activeEntityId);
+          } else {
+            setEditorMode("object");
+            exitEditMode();
+          }
+        }}
+        disabled={editorMode === "object" && !activeEntityId}
       >
-        <MoveIcon />
-      </ToolButton>
-      <ToolButton
-        label="Rotate (E)"
-        active={transformMode === "rotate"}
-        onClick={() => onTransformModeChange("rotate")}
-        shortcut="E"
-      >
-        <RotateIcon />
-      </ToolButton>
-      <ToolButton
-        label="Scale (R)"
-        active={transformMode === "scale"}
-        onClick={() => onTransformModeChange("scale")}
-        shortcut="R"
-      >
-        <ScaleIcon />
-      </ToolButton>
+        {editorMode === "edit" ? "Edit" : "Object"}
+      </button>
+
+      {/* Element mode buttons (edit mode only) */}
+      {editorMode === "edit" && (
+        <>
+          <button
+            title="Vertex Mode (1)"
+            className={`px-1.5 h-7 text-[10px] font-medium rounded transition ${
+              elementMode === "vertex"
+                ? "bg-[#4a4a5a] text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setElementMode("vertex")}
+          >
+            Vert
+          </button>
+          <button
+            title="Edge Mode (2)"
+            className={`px-1.5 h-7 text-[10px] font-medium rounded transition ${
+              elementMode === "edge"
+                ? "bg-[#4a4a5a] text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setElementMode("edge")}
+          >
+            Edge
+          </button>
+          <button
+            title="Face Mode (3)"
+            className={`px-1.5 h-7 text-[10px] font-medium rounded transition ${
+              elementMode === "face"
+                ? "bg-[#4a4a5a] text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setElementMode("face")}
+          >
+            Face
+          </button>
+          <div className="w-px h-5 bg-[#444]" />
+        </>
+      )}
+
+      {/* Transform mode buttons (object mode only) */}
+      {editorMode === "object" && (
+        <>
+          <ToolButton
+            label="Move (W)"
+            active={transformMode === "translate"}
+            onClick={() => onTransformModeChange("translate")}
+            shortcut="W"
+          >
+            <MoveIcon />
+          </ToolButton>
+          <ToolButton
+            label="Rotate (E)"
+            active={transformMode === "rotate"}
+            onClick={() => onTransformModeChange("rotate")}
+            shortcut="E"
+          >
+            <RotateIcon />
+          </ToolButton>
+          <ToolButton
+            label="Scale (R)"
+            active={transformMode === "scale"}
+            onClick={() => onTransformModeChange("scale")}
+            shortcut="R"
+          >
+            <ScaleIcon />
+          </ToolButton>
+        </>
+      )}
 
       <div className="w-px h-5 bg-[#444]" />
 
