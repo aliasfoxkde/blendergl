@@ -11,8 +11,10 @@ import { useMaterialStore } from "@/editor/stores/materialStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { useAnimationStore } from "@/editor/stores/animationStore";
 import { useArmatureStore } from "@/editor/stores/armatureStore";
+import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
+import { sculptControllerRef } from "@/editor/utils/sculptControllerRef";
 import { createPrimitiveEntity } from "@/editor/utils/primitives";
-import type { AnimProperty } from "@/editor/types";
+import type { AnimProperty, SculptBrushType } from "@/editor/types";
 import type {
   BlenderGLApi,
   ScriptEntity,
@@ -23,6 +25,7 @@ import type {
   ScriptMaterial,
   ScriptAnimation,
   ScriptArmature,
+  ScriptSculpt,
   MathUtils,
   Vec3Op,
 } from "./api";
@@ -404,6 +407,47 @@ function createArmatureApi(): ScriptArmature {
   };
 }
 
+// ---- Sculpt implementation ----
+
+function createSculptApi(): ScriptSculpt {
+  return {
+    setBrush(type: string, radius?: number, strength?: number): void {
+      const store = useSculptModeStore.getState();
+      store.setBrushType(type as SculptBrushType);
+      if (radius !== undefined) store.setBrushRadius(radius);
+      if (strength !== undefined) store.setBrushStrength(strength);
+    },
+    getBrush(): { type: string; radius: number; strength: number; falloff: string } {
+      const brush = useSculptModeStore.getState().brush;
+      return {
+        type: brush.type,
+        radius: brush.radius,
+        strength: brush.strength,
+        falloff: brush.falloff,
+      };
+    },
+    setSymmetry(x: boolean, y: boolean, z: boolean): void {
+      const store = useSculptModeStore.getState();
+      if (store.symmetry.x !== x) store.toggleSymmetryX();
+      if (store.symmetry.y !== y) store.toggleSymmetryY();
+      if (store.symmetry.z !== z) store.toggleSymmetryZ();
+    },
+    sculptAt(x: number, y: number, z: number, brushType?: string, radius?: number, strength?: number): void {
+      const controller = sculptControllerRef.current;
+      if (!controller) return;
+      const store = useSculptModeStore.getState();
+      const type = (brushType ?? store.brush.type) as SculptBrushType;
+      const r = radius ?? store.brush.radius;
+      const s = strength ?? store.brush.strength;
+      // Minimal pick result — SculptController only reads .pickedPoint
+      const pickInfo = { pickedPoint: { x, y, z } } as unknown as import("@babylonjs/core").PickingInfo;
+      controller.beginStroke(pickInfo, null as unknown as import("@babylonjs/core").Camera, type);
+      controller.continueStroke(pickInfo, type, r, s, store.brush.falloff, store.brush.spacing, store.symmetry, 1.0);
+      controller.endStroke();
+    },
+  };
+}
+
 // ---- Build the full API ----
 
 export function createBlenderGLApi(): BlenderGLApi {
@@ -414,6 +458,7 @@ export function createBlenderGLApi(): BlenderGLApi {
     utils: mathUtils,
     animation: createAnimationApi(),
     armature: createArmatureApi(),
+    sculpt: createSculptApi(),
     console: createConsole(),
     version: "0.1.0",
   };

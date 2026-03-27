@@ -6,6 +6,7 @@ import { useEditModeStore } from "@/editor/stores/editModeStore";
 import { usePoseModeStore } from "@/editor/stores/poseModeStore";
 import { useArmatureStore } from "@/editor/stores/armatureStore";
 import { useAnimationStore } from "@/editor/stores/animationStore";
+import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { formatAnalysis, estimatePrint, analyzeMesh, repairMesh } from "@/editor/utils/meshAnalysis";
 import { sliceMesh } from "@/editor/utils/gcode/slicer";
@@ -31,6 +32,88 @@ export function PropertiesPanel() {
   } = useEditModeStore();
 
   const entity = activeEntityId ? entities[activeEntityId] : null;
+
+  // Sculpt mode: show brush settings
+  if (editorMode === "sculpt") {
+    const brush = useSculptModeStore((s) => s.brush);
+    const symmetry = useSculptModeStore((s) => s.symmetry);
+    const setBrushRadius = useSculptModeStore((s) => s.setBrushRadius);
+    const setBrushStrength = useSculptModeStore((s) => s.setBrushStrength);
+    const setFalloff = useSculptModeStore((s) => s.setFalloff);
+    const toggleSymmetryX = useSculptModeStore((s) => s.toggleSymmetryX);
+    const toggleSymmetryY = useSculptModeStore((s) => s.toggleSymmetryY);
+    const toggleSymmetryZ = useSculptModeStore((s) => s.toggleSymmetryZ);
+
+    return (
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        <Section title="Sculpt Mode">
+          <PropertyRow label="Brush">
+            <span className="text-xs text-purple-400 capitalize">{brush.type}</span>
+          </PropertyRow>
+          <PropertyRow label="Radius">
+            <input
+              type="range" min="0.01" max="3.0" step="0.01"
+              value={brush.radius}
+              onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
+              className="w-full h-1 accent-purple-500"
+            />
+            <span className="text-[10px] text-gray-400 w-8 text-right">{brush.radius.toFixed(2)}</span>
+          </PropertyRow>
+          <PropertyRow label="Strength">
+            <input
+              type="range" min="0.01" max="1.0" step="0.01"
+              value={brush.strength}
+              onChange={(e) => setBrushStrength(parseFloat(e.target.value))}
+              className="w-full h-1 accent-purple-500"
+            />
+            <span className="text-[10px] text-gray-400 w-8 text-right">{brush.strength.toFixed(2)}</span>
+          </PropertyRow>
+          <PropertyRow label="Falloff">
+            <select
+              value={brush.falloff}
+              onChange={(e) => setFalloff(e.target.value as "smooth" | "sharp" | "spike")}
+              className="bg-[#333] text-xs text-gray-300 rounded px-1 py-0.5 border border-[#444] flex-1"
+            >
+              <option value="smooth">Smooth</option>
+              <option value="sharp">Sharp</option>
+              <option value="spike">Spike</option>
+            </select>
+          </PropertyRow>
+        </Section>
+        <Section title="Symmetry">
+          <div className="flex gap-2">
+            <button
+              className={`px-2 py-1 text-[10px] rounded border transition ${symmetry.x ? "bg-purple-600/40 text-purple-300 border-purple-500/50" : "text-gray-400 border-[#444] hover:text-white"}`}
+              onClick={toggleSymmetryX}
+            >
+              X
+            </button>
+            <button
+              className={`px-2 py-1 text-[10px] rounded border transition ${symmetry.y ? "bg-purple-600/40 text-purple-300 border-purple-500/50" : "text-gray-400 border-[#444] hover:text-white"}`}
+              onClick={toggleSymmetryY}
+            >
+              Y
+            </button>
+            <button
+              className={`px-2 py-1 text-[10px] rounded border transition ${symmetry.z ? "bg-purple-600/40 text-purple-300 border-purple-500/50" : "text-gray-400 border-[#444] hover:text-white"}`}
+              onClick={toggleSymmetryZ}
+            >
+              Z
+            </button>
+          </div>
+        </Section>
+        <Section title="Shortcuts">
+          <div className="text-[10px] text-gray-500 space-y-0.5">
+            <p><kbd className="text-gray-400">S</kbd> Sculpt  <kbd className="text-gray-400">Shift+S</kbd> Smooth</p>
+            <p><kbd className="text-gray-400">G</kbd> Grab  <kbd className="text-gray-400">I</kbd> Inflate</p>
+            <p><kbd className="text-gray-400">C</kbd> Crease  <kbd className="text-gray-400">F</kbd> Flatten</p>
+            <p><kbd className="text-gray-400">P</kbd> Pinch</p>
+            <p><kbd className="text-gray-400">[</kbd> / <kbd className="text-gray-400">]</kbd> Radius</p>
+          </div>
+        </Section>
+      </div>
+    );
+  }
 
   // Edit mode: show selection stats
   if (editorMode === "edit") {

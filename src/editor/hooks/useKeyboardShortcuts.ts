@@ -8,11 +8,12 @@ import { useAiStore } from "@/editor/stores/aiStore";
 import { usePoseModeStore } from "@/editor/stores/poseModeStore";
 import { useAnimationStore } from "@/editor/stores/animationStore";
 import { useArmatureStore } from "@/editor/stores/armatureStore";
+import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
 import { editControllerRef } from "@/editor/utils/editModeRef";
 import { saveScene } from "@/editor/utils/storage";
 import { duplicateEntities } from "@/editor/utils/duplicate";
 import { armatureControllerRef } from "@/editor/utils/armatureController";
-import type { TransformMode, ShadingMode, CameraPreset, EditorMode, AnimProperty } from "@/editor/types";
+import type { TransformMode, ShadingMode, CameraPreset, EditorMode, AnimProperty, SculptBrushType } from "@/editor/types";
 
 // Camera preset key mapping
 const CAMERA_PRESETS: Record<string, CameraPreset> = {
@@ -89,10 +90,10 @@ export function useKeyboardShortcuts() {
       const editModeStore = useEditModeStore.getState();
       const settingsStore = useSettingsStore.getState();
 
-      // Ctrl+Tab: cycle object → edit → pose → object
+      // Ctrl+Tab: cycle object → edit → pose → sculpt → object
       if (e.key === "Tab" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
-        const modes: EditorMode[] = ["object", "edit", "pose"];
+        const modes: EditorMode[] = ["object", "edit", "pose", "sculpt"];
         const currentIdx = modes.indexOf(selectionStore.editorMode);
         const nextIdx = (currentIdx + 1) % modes.length;
         const nextMode = modes[nextIdx];
@@ -102,7 +103,6 @@ export function useKeyboardShortcuts() {
             editModeStore.enterEditMode(selectionStore.activeEntityId);
           }
         } else if (nextMode === "pose") {
-          // Enter pose mode — need armature on selected entity
           const entityId = selectionStore.activeEntityId;
           const arm = entityId ? useArmatureStore.getState().armatures[entityId] : null;
           if (arm) {
@@ -110,10 +110,19 @@ export function useKeyboardShortcuts() {
             usePoseModeStore.getState().enterPoseMode(entityId!);
             editModeStore.exitEditMode();
           }
+        } else if (nextMode === "sculpt") {
+          const entityId = selectionStore.activeEntityId;
+          if (entityId) {
+            selectionStore.setEditorMode("sculpt");
+            editModeStore.exitEditMode();
+            usePoseModeStore.getState().exitPoseMode();
+            useSculptModeStore.getState().enterSculptMode(entityId);
+          }
         } else {
           selectionStore.setEditorMode("object");
           editModeStore.exitEditMode();
           usePoseModeStore.getState().exitPoseMode();
+          useSculptModeStore.getState().exitSculptMode();
         }
         return;
       }
@@ -126,6 +135,9 @@ export function useKeyboardShortcuts() {
             selectionStore.setEditorMode("edit");
             editModeStore.enterEditMode(selectionStore.activeEntityId);
           }
+        } else if (selectionStore.editorMode === "sculpt") {
+          selectionStore.setEditorMode("object");
+          useSculptModeStore.getState().exitSculptMode();
         } else {
           selectionStore.setEditorMode("object");
           editModeStore.exitEditMode();
@@ -291,13 +303,53 @@ export function useKeyboardShortcuts() {
             }
           }
           break;
+        case "y":
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            historyStore.redo();
+          }
+          break;
+        case "s":
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            saveScene(sceneStore.scene);
+          } else if (selectionStore.editorMode === "sculpt") {
+            if (e.shiftKey) {
+              useSculptModeStore.getState().setBrushType("smooth" as SculptBrushType);
+            } else {
+              useSculptModeStore.getState().setBrushType("sculpt" as SculptBrushType);
+            }
+            return;
+          }
+          break;
+        case "g":
+          if (selectionStore.editorMode === "sculpt") {
+            useSculptModeStore.getState().setBrushType("grab" as SculptBrushType);
+            return;
+          }
+          break;
+        case "c":
+          if (selectionStore.editorMode === "sculpt") {
+            useSculptModeStore.getState().setBrushType("crease" as SculptBrushType);
+            return;
+          }
+          break;
+        case "f":
+          if (selectionStore.editorMode === "sculpt") {
+            useSculptModeStore.getState().setBrushType("flatten" as SculptBrushType);
+            return;
+          }
+          break;
         case "p":
+          if (selectionStore.editorMode === "sculpt") {
+            useSculptModeStore.getState().setBrushType("pinch" as SculptBrushType);
+            return;
+          }
           // Ctrl+P: parent selected to last selected (Blender convention)
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
             const ids = selectionStore.selectedIds;
             if (ids.length >= 2) {
-              // Parent all except last to last
               const parentId = ids[ids.length - 1];
               for (let i = 0; i < ids.length - 1; i++) {
                 sceneStore.setParent(ids[i], parentId);
@@ -312,18 +364,6 @@ export function useKeyboardShortcuts() {
             }
           }
           break;
-        case "y":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            historyStore.redo();
-          }
-          break;
-        case "s":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            saveScene(sceneStore.scene);
-          }
-          break;
         case "escape":
           if (selectionStore.editorMode === "edit") {
             selectionStore.setEditorMode("object");
@@ -333,8 +373,32 @@ export function useKeyboardShortcuts() {
             selectionStore.setEditorMode("object");
             usePoseModeStore.getState().exitPoseMode();
           }
+          if (selectionStore.editorMode === "sculpt") {
+            selectionStore.setEditorMode("object");
+            useSculptModeStore.getState().exitSculptMode();
+          }
           selectionStore.deselectAll();
           break;
+
+        // Sculpt mode shortcuts
+        case "[": {
+          const sculptStore = useSculptModeStore.getState();
+          if (selectionStore.editorMode === "sculpt") {
+            e.preventDefault();
+            sculptStore.setBrushRadius(sculptStore.brush.radius - 0.05);
+            return;
+          }
+          break;
+        }
+        case "]": {
+          const sculptStore = useSculptModeStore.getState();
+          if (selectionStore.editorMode === "sculpt") {
+            e.preventDefault();
+            sculptStore.setBrushRadius(sculptStore.brush.radius + 0.05);
+            return;
+          }
+          break;
+        }
 
         // Left/Right arrows: step frame (pose mode)
         case "arrowleft":

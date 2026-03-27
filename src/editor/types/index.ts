@@ -74,7 +74,7 @@ export interface SceneSettings {
   backgroundColor: string;
 }
 
-export type EditorMode = "object" | "edit" | "pose";
+export type EditorMode = "object" | "edit" | "pose" | "sculpt";
 export type TransformMode = "translate" | "rotate" | "scale";
 export type TransformSpace = "world" | "local";
 export type SelectionMode = "object" | "vertex" | "edge" | "face";
@@ -216,3 +216,31 @@ export interface AnimationClip {
 }
 
 export type PlaybackState = "stopped" | "playing" | "paused";
+
+// ---- Sculpting ----
+
+export type SculptBrushType =
+  | "sculpt"
+  | "smooth"
+  | "grab"
+  | "inflate"
+  | "pinch"
+  | "flatten"
+  | "crease";
+
+export type FalloffType = "smooth" | "sharp" | "spike";
+
+export interface SculptBrushSettings {
+  type: SculptBrushType;
+  radius: number;
+  strength: number;
+  falloff: FalloffType;
+  spacing: number;
+  usePressure: boolean;
+}
+
+export interface SculptSymmetry {
+  x: boolean;
+  y: boolean;
+  z: boolean;
+}

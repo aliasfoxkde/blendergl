@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import type { PrimitiveType, TransformMode } from "@/editor/types";
+import type { PrimitiveType, TransformMode, SculptBrushType } from "@/editor/types";
 import { PRIMITIVE_TYPES } from "@/editor/utils/primitives";
 import { useHistoryStore } from "@/editor/stores/historyStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
 import { usePoseModeStore } from "@/editor/stores/poseModeStore";
 import { useArmatureStore } from "@/editor/stores/armatureStore";
+import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useAiStore } from "@/editor/stores/aiStore";
@@ -81,13 +82,15 @@ export function Toolbar({
 
       {/* Mode indicator */}
       <button
-        title={`Switch Mode (Tab) — Current: ${editorMode === "edit" ? "Edit" : editorMode === "pose" ? "Pose" : "Object"} Mode`}
+        title={`Switch Mode (Tab) — Current: ${editorMode === "edit" ? "Edit" : editorMode === "pose" ? "Pose" : editorMode === "sculpt" ? "Sculpt" : "Object"} Mode`}
         className={`px-2 h-7 flex items-center gap-1 rounded text-[10px] font-medium transition ${
           editorMode === "edit"
             ? "bg-blue-600/30 text-blue-300 border border-blue-500/50"
             : editorMode === "pose"
               ? "bg-green-600/30 text-green-300 border border-green-500/50"
-              : "text-gray-400 hover:text-white"
+              : editorMode === "sculpt"
+                ? "bg-purple-600/30 text-purple-300 border border-purple-500/50"
+                : "text-gray-400 hover:text-white"
         }`}
         onClick={() => {
           if (editorMode === "object") {
@@ -96,7 +99,6 @@ export function Toolbar({
               enterEditMode(activeEntityId);
             }
           } else if (editorMode === "edit") {
-            // Try to enter pose mode
             const arm = activeEntityId ? useArmatureStore.getState().armatures[activeEntityId] : null;
             if (arm) {
               setEditorMode("pose");
@@ -106,13 +108,22 @@ export function Toolbar({
               setEditorMode("object");
               exitEditMode();
             }
+          } else if (editorMode === "pose") {
+            if (activeEntityId) {
+              setEditorMode("sculpt");
+              usePoseModeStore.getState().exitPoseMode();
+              useSculptModeStore.getState().enterSculptMode(activeEntityId);
+            } else {
+              setEditorMode("object");
+              usePoseModeStore.getState().exitPoseMode();
+            }
           } else {
             setEditorMode("object");
-            usePoseModeStore.getState().exitPoseMode();
+            useSculptModeStore.getState().exitSculptMode();
           }
         }}
       >
-        {editorMode === "edit" ? "Edit" : editorMode === "pose" ? "Pose" : "Object"}
+        {editorMode === "edit" ? "Edit" : editorMode === "pose" ? "Pose" : editorMode === "sculpt" ? "Sculpt" : "Object"}
       </button>
 
       {/* Element mode buttons (edit mode only) */}
@@ -153,6 +164,11 @@ export function Toolbar({
           </button>
           <div className="w-px h-5 bg-[#444]" />
         </>
+      )}
+
+      {/* Brush selector (sculpt mode only) */}
+      {editorMode === "sculpt" && (
+        <SculptBrushButtons />
       )}
 
       {/* Transform mode buttons (object mode only) */}
@@ -572,5 +588,45 @@ function BooleanIcon() {
       <circle cx="9" cy="12" r="6" />
       <circle cx="15" cy="12" r="6" />
     </svg>
+  );
+}
+
+const BRUSH_TYPES: { type: SculptBrushType; label: string; shortcut: string }[] = [
+  { type: "sculpt", label: "Sculpt", shortcut: "S" },
+  { type: "smooth", label: "Smooth", shortcut: "Shift+S" },
+  { type: "grab", label: "Grab", shortcut: "G" },
+  { type: "inflate", label: "Inflate", shortcut: "I" },
+  { type: "pinch", label: "Pinch", shortcut: "P" },
+  { type: "flatten", label: "Flatten", shortcut: "F" },
+  { type: "crease", label: "Crease", shortcut: "C" },
+];
+
+function SculptBrushButtons() {
+  const brushType = useSculptModeStore((s) => s.brush.type);
+  const setBrushType = useSculptModeStore((s) => s.setBrushType);
+  const radius = useSculptModeStore((s) => s.brush.radius);
+  const strength = useSculptModeStore((s) => s.brush.strength);
+
+  return (
+    <>
+      {BRUSH_TYPES.map(({ type, label, shortcut }) => (
+        <button
+          key={type}
+          title={`${label} (${shortcut})`}
+          className={`px-1.5 h-7 text-[10px] font-medium rounded transition ${
+            brushType === type
+              ? "bg-purple-500/40 text-purple-200"
+              : "text-gray-400 hover:text-white"
+          }`}
+          onClick={() => setBrushType(type)}
+        >
+          {label.charAt(0)}
+        </button>
+      ))}
+      <div className="w-px h-5 bg-[#444]" />
+      <span className="text-[9px] text-gray-500 tabular-nums">
+        R:{radius.toFixed(2)} S:{strength.toFixed(2)}
+      </span>
+    </>
   );
 }

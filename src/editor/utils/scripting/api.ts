@@ -179,6 +179,17 @@ export interface ScriptArmature {
   setBoneTransform(boneId: string, position?: Vec3, rotation?: Vec3): void;
 }
 
+export interface ScriptSculpt {
+  /** Set the active brush type and settings. */
+  setBrush(type: string, radius?: number, strength?: number): void;
+  /** Get current brush settings. */
+  getBrush(): { type: string; radius: number; strength: number; falloff: string };
+  /** Set symmetry axes. */
+  setSymmetry(x: boolean, y: boolean, z: boolean): void;
+  /** Perform a single brush dab at a world position. */
+  sculptAt(x: number, y: number, z: number, brushType?: string, radius?: number, strength?: number): void;
+}
+
 // ---- Top-level API ----
 
 export interface BlenderGLApi {
@@ -188,6 +199,7 @@ export interface BlenderGLApi {
   utils: MathUtils;
   animation: ScriptAnimation;
   armature: ScriptArmature;
+  sculpt: ScriptSculpt;
   console: ScriptConsole;
   version: string;
 }

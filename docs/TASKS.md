@@ -527,25 +527,25 @@
 ## Phase 15: Sculpting
 
 ### 15.1 Sculpt Mode Infrastructure
-- [ ] Sculpt mode (new editor mode, toggle from Object/Edit)
-- [ ] Sculpt mode store (Zustand): active brush, brush settings, symmetry
-- [ ] Sculpt mode UI (toolbar brush selector, settings panel)
-- [ ] Raycast-to-mesh for brush (screen-space brush circle)
-- [ ] Brush cursor visualization (circle on mesh surface)
-- [ ] Keyboard shortcut: Tab to enter/exit sculpt mode
+- [x] Sculpt mode (new editor mode, toggle from Object/Edit)
+- [x] Sculpt mode store (Zustand): active brush, brush settings, symmetry
+- [x] Sculpt mode UI (toolbar brush selector, settings panel)
+- [x] Raycast-to-mesh for brush (screen-space brush circle)
+- [x] Brush cursor visualization (circle on mesh surface)
+- [x] Keyboard shortcut: Tab to enter/exit sculpt mode
 
 ### 15.2 Brush Engine
-- [ ] Sculpt brush (push/pull vertices along normal)
-- [ ] Smooth brush (Laplacian smoothing of vertex positions)
-- [ ] Grab brush (translate vertices freely)
-- [ ] Inflate brush (push vertices outward from center)
-- [ ] Pinch brush (pull vertices toward brush center)
-- [ ] Flatten brush (project vertices to average plane)
-- [ ] Crease brush (sharpen edges along stroke)
+- [x] Sculpt brush (push/pull vertices along normal)
+- [x] Smooth brush (Laplacian smoothing of vertex positions)
+- [x] Grab brush (translate vertices freely)
+- [x] Inflate brush (push vertices outward from center)
+- [x] Pinch brush (pull vertices toward brush center)
+- [x] Flatten brush (project vertices to average plane)
+- [x] Crease brush (sharpen edges along stroke)
 - [ ] Clay strips brush (clay-like buildup)
-- [ ] Brush settings: radius (1-500px), strength (0.01-1.0), falloff (smooth/sharp/spike)
-- [ ] Brush spacing control (distance between dab applications)
-- [ ] Pressure sensitivity (PointerEvent pressure for stylus support)
+- [x] Brush settings: radius (1-500px), strength (0.01-1.0), falloff (smooth/sharp/spike)
+- [x] Brush spacing control (distance between dab applications)
+- [x] Pressure sensitivity (PointerEvent pressure for stylus support)
 
 ### 15.3 Dynamic Topology
 - [ ] Dyntopo toggle (adaptive tessellation during sculpting)

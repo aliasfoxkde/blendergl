@@ -22,12 +22,15 @@ import { TransformGizmoController } from "@/editor/utils/gizmos";
 import { EditModeController } from "@/editor/utils/editModeController";
 import { editControllerRef } from "@/editor/utils/editModeRef";
 import { ArmatureController, armatureControllerRef } from "@/editor/utils/armatureController";
+import { SculptController } from "@/editor/utils/sculptController";
+import { sculptControllerRef } from "@/editor/utils/sculptControllerRef";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useMaterialStore } from "@/editor/stores/materialStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
 import { usePoseModeStore } from "@/editor/stores/poseModeStore";
 import { useArmatureStore } from "@/editor/stores/armatureStore";
+import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { setCameraPreset, toggleOrtho } from "@/editor/utils/cameraUtils";
 import { cameraRef as sharedCameraRef } from "@/editor/utils/cameraRef";
@@ -79,6 +82,15 @@ export function Viewport({ onSceneReady }: ViewportProps) {
   const poseModeEntityId = usePoseModeStore((s) => s.activeArmatureEntityId);
   const selectedBoneIds = usePoseModeStore((s) => s.selectedBoneIds);
   const activeBoneId = usePoseModeStore((s) => s.activeBoneId);
+
+  // Sculpt mode state
+  const sculptModeEntityId = useSculptModeStore((s) => s.activeMeshEntityId);
+  const sculptBrush = useSculptModeStore((s) => s.brush);
+  const sculptSymmetry = useSculptModeStore((s) => s.symmetry);
+  const showBrushCursor = useSculptModeStore((s) => s.showBrushCursor);
+  const setIsSculpting = useSculptModeStore((s) => s.setIsSculpting);
+
+  const sculptControllerLocalRef = useRef<SculptController | null>(null);
 
   // Initialize engine + scene
   useEffect(() => {
@@ -262,6 +274,24 @@ export function Viewport({ onSceneReady }: ViewportProps) {
           return;
         }
 
+        // Sculpt mode: begin stroke on pointer down
+        if (editorMode === "sculpt" && pickResult?.hit && pickResult.pickedPoint) {
+          const sculptController = sculptControllerLocalRef.current;
+          if (sculptController) {
+            const camera = sceneRef.current?.activeCamera;
+            if (camera) {
+              sculptController.beginStroke(pickResult, camera, sculptBrush.type);
+              setIsSculpting(true);
+              sculptController.continueStroke(
+                pickResult, sculptBrush.type, sculptBrush.radius,
+                sculptBrush.strength, sculptBrush.falloff, sculptBrush.spacing,
+                sculptSymmetry, (pointerInfo.event as PointerEvent).pressure || 1.0
+              );
+            }
+          }
+          return;
+        }
+
         // Object mode: pick entities
         if (pickResult?.hit && pickResult.pickedMesh) {
           const meshId = pickResult.pickedMesh.metadata?.entityId as
@@ -278,6 +308,33 @@ export function Viewport({ onSceneReady }: ViewportProps) {
 
       if (pointerInfo.type === PointerEventTypes.POINTERMOVE) {
         const pickResult = pointerInfo.pickInfo;
+
+        // Sculpt mode: continue stroke + update brush cursor
+        if (editorMode === "sculpt") {
+          const sculptController = sculptControllerLocalRef.current;
+          if (sculptController && useSculptModeStore.getState().isSculpting) {
+            if (pickResult?.hit && pickResult.pickedPoint) {
+              const camera = sceneRef.current?.activeCamera;
+              if (camera) {
+                sculptController.continueStroke(
+                  pickResult, sculptBrush.type, sculptBrush.radius,
+                  sculptBrush.strength, sculptBrush.falloff, sculptBrush.spacing,
+                  sculptSymmetry, (pointerInfo.event as PointerEvent).pressure || 1.0
+                );
+              }
+            }
+          }
+          // Update brush cursor
+          if (sculptController) {
+            sculptController.updateBrushCursor(
+              pickResult?.hit ? pickResult : null,
+              sculptBrush.radius,
+              showBrushCursor
+            );
+          }
+          return;
+        }
+
         if (pickResult?.hit && pickResult.pickedMesh) {
           const meshId = pickResult.pickedMesh.metadata?.entityId as
             | string
@@ -287,6 +344,22 @@ export function Viewport({ onSceneReady }: ViewportProps) {
         } else {
           setHoveredEntity(null);
           if (canvas) canvas.style.cursor = "default";
+        }
+      }
+
+      if (pointerInfo.type === PointerEventTypes.POINTERUP) {
+        // Sculpt mode: end stroke
+        if (editorMode === "sculpt") {
+          const sculptController = sculptControllerLocalRef.current;
+          if (sculptController) {
+            const undoData = sculptController.endStroke();
+            if (undoData) {
+              // TODO: push to history store via SculptCommand
+              // For now, just log
+              console.log(`Sculpt stroke complete: ${undoData.oldPositions.length} vertices`);
+            }
+            setIsSculpting(false);
+          }
         }
       }
     });
@@ -306,6 +379,8 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       editControllerRef_local.current?.dispose();
       armatureControllerRef.current?.dispose();
       armatureControllerRef.current = null;
+      sculptControllerLocalRef.current?.dispose();
+      sculptControllerRef.current = null;
       engine.dispose();
       engineRef.current = null;
       sceneRef.current = null;
@@ -455,8 +530,8 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     const gizmo = gizmoRef.current;
     if (!gizmo) return;
 
-    // Hide gizmo in edit/pose mode
-    if (editorMode === "edit" || editorMode === "pose") {
+    // Hide gizmo in edit/pose/sculpt mode
+    if (editorMode === "edit" || editorMode === "pose" || editorMode === "sculpt") {
       gizmo.attachToMesh(null);
       return;
     }
@@ -543,6 +618,36 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     if (!armData) return;
     controller.updateVisualization(armData, selectedBoneIds, activeBoneId);
   }, [selectedBoneIds, activeBoneId, poseModeEntityId]);
+
+  // Sculpt mode: attach/detach controller
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const meshMap = meshMapRef.current;
+
+    if (editorMode === "sculpt" && sculptModeEntityId && scene) {
+      const mesh = meshMap.get(sculptModeEntityId) as Mesh | undefined;
+      if (mesh) {
+        const controller = new SculptController();
+        controller.attach(mesh, scene);
+        sculptControllerLocalRef.current = controller;
+        sculptControllerRef.current = controller;
+      }
+    } else {
+      if (sculptControllerLocalRef.current) {
+        sculptControllerLocalRef.current.dispose();
+        sculptControllerLocalRef.current = null;
+        sculptControllerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (sculptControllerLocalRef.current) {
+        sculptControllerLocalRef.current.dispose();
+        sculptControllerLocalRef.current = null;
+        sculptControllerRef.current = null;
+      }
+    };
+  }, [editorMode, sculptModeEntityId]);
 
   // Box select state
   const [boxSelect, setBoxSelect] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
