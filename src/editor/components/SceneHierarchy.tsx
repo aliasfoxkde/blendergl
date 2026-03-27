@@ -138,6 +138,7 @@ function CollectionsSection() {
             onClick={() => createCollection("Collection 1")}
             className="text-gray-500 hover:text-white transition"
             title="New Collection"
+            aria-label="New Collection"
           >
             +
           </button>
@@ -180,6 +181,7 @@ function CollectionsSection() {
                 toggleCollectionVisibility(colId);
               }}
               className="w-3 text-center text-gray-500 hover:text-white"
+              aria-label={col.visible ? "Hide collection" : "Show collection"}
             >
               {col.visible ? "👁" : "⊘"}
             </button>
@@ -192,6 +194,7 @@ function CollectionsSection() {
               }}
               className="w-4 h-4 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400 transition"
               title="Remove Collection"
+              aria-label="Remove Collection"
             >
               ×
             </button>

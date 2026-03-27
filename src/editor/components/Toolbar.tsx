@@ -562,6 +562,8 @@ function ToolButton({
   return (
     <button
       title={shortcut ? `${label} [${shortcut}]` : label}
+      aria-label={label}
+      aria-pressed={active ? true : undefined}
       className={`w-7 h-7 flex items-center justify-center rounded transition ${
         active
           ? "bg-[#4a4a5a] text-white"
