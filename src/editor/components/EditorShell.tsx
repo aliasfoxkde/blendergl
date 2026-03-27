@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Viewport } from "./Viewport";
 import { SceneHierarchy } from "./SceneHierarchy";
@@ -18,7 +18,7 @@ import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
 import { createPrimitiveEntity } from "@/editor/utils/primitives";
 import type { PrimitiveType } from "@/editor/types";
-import { saveScene } from "@/editor/utils/storage";
+import { saveScene, loadLatestScene } from "@/editor/utils/storage";
 
 export function EditorShell() {
   const addEntity = useSceneStore((s) => s.addEntity);
@@ -34,6 +34,8 @@ export function EditorShell() {
   const snapEnabled = useSettingsStore((s) => s.snapEnabled);
   const cameraMode = useSettingsStore((s) => s.cameraMode);
   const [timelineOpen, setTimelineOpen] = useState(false);
+  const [cursorPos, setCursorPos] = useState<string | null>(null);
+  const [lastSaveTime, setLastSaveTime] = useState<string | null>(null);
 
   const handleAddPrimitive = useCallback(
     (type: PrimitiveType) => {
@@ -56,9 +58,44 @@ export function EditorShell() {
 
   const objectCount = Object.keys(entities).length;
 
+  // Restore last saved scene on mount when scene is empty
+  const setScene = useSceneStore((s) => s.setScene);
+  useEffect(() => {
+    if (objectCount === 0) {
+      loadLatestScene().then((saved) => {
+        if (saved && Object.keys(saved.entities).length > 0) {
+          setScene(saved);
+        }
+      });
+    }
+  // Only run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Register keyboard shortcuts and auto-save
   useKeyboardShortcuts();
   useAutoSave();
+
+  // Track cursor 3D position from viewport events
+  useEffect(() => {
+    const handleCursor = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && detail.x !== undefined) {
+        setCursorPos(`${detail.x.toFixed(1)}, ${detail.y.toFixed(1)}, ${detail.z.toFixed(1)}`);
+      } else {
+        setCursorPos(null);
+      }
+    };
+    window.addEventListener("viewport-cursor-position", handleCursor);
+    return () => window.removeEventListener("viewport-cursor-position", handleCursor);
+  }, []);
+
+  // Track auto-save time
+  useEffect(() => {
+    const handleSave = () => setLastSaveTime(new Date().toLocaleTimeString());
+    window.addEventListener("scene-saved", handleSave);
+    return () => window.removeEventListener("scene-saved", handleSave);
+  }, []);
 
   return (
     <div className="w-full h-full flex flex-col bg-[#1a1a1a] text-white overflow-hidden">
@@ -125,6 +162,10 @@ export function EditorShell() {
         <span className="capitalize">{shadingMode}</span>
         <span>{cameraMode}</span>
         {snapEnabled && <span className="text-blue-400">Snap</span>}
+        {cursorPos && <span className="text-gray-600">|</span>}
+        {cursorPos && <span title="3D cursor position">Cursor: {cursorPos}</span>}
+        {lastSaveTime && <span className="text-gray-600">|</span>}
+        {lastSaveTime && <span title="Last auto-save" className="text-gray-600">Saved {lastSaveTime}</span>}
         <Link
           to="/"
           className="ml-auto text-gray-500 hover:text-gray-300 transition"

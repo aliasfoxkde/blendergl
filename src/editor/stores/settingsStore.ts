@@ -48,6 +48,7 @@ interface SettingsState {
   snapEnabled: boolean;
   snapIncrement: number;
   angleSnap: number;
+  scaleSnap: number;
   autoSave: boolean;
   autoSaveIntervalMs: number;
   theme: "dark" | "light";
@@ -68,6 +69,7 @@ interface SettingsState {
   setSnapEnabled: (enabled: boolean) => void;
   setSnapIncrement: (increment: number) => void;
   setAngleSnap: (angle: number) => void;
+  setScaleSnap: (snap: number) => void;
   setAutoSave: (enabled: boolean) => void;
   setTheme: (theme: "dark" | "light") => void;
   setCameraMode: (mode: "perspective" | "orthographic") => void;
@@ -114,6 +116,7 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   snapEnabled: false,
   snapIncrement: 0.5,
   angleSnap: 15,
+  scaleSnap: 0.1,
   autoSave: true,
   autoSaveIntervalMs: 30000,
   theme: "dark",
@@ -133,6 +136,7 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   setSnapEnabled: (enabled) => set({ snapEnabled: enabled }),
   setSnapIncrement: (increment) => set({ snapIncrement: increment }),
   setAngleSnap: (angle) => set({ angleSnap: angle }),
+  setScaleSnap: (snap) => set({ scaleSnap: snap }),
   setAutoSave: (enabled) => set({ autoSave: enabled }),
   setTheme: (theme) => set({ theme }),
   setCameraMode: (mode) => set({ cameraMode: mode }),

@@ -239,7 +239,7 @@
 - [x] Settings panel: grid subdivisions control
 - [x] Settings panel: snap increment control
 - [x] Settings panel: angle snap control
-- [ ] Settings panel: scale snap control
+- [x] Settings panel: scale snap control
 - [x] Wire snap settings to gizmo controller
 - [x] Snap toggle button in toolbar
 - [x] Visual indicator when snap is active
@@ -251,10 +251,10 @@
 - [x] Parent entity to active (Ctrl+P)
 - [x] Unparent entity (Alt+P)
 - [x] Clear parent (keep transform)
-- [ ] Update SceneHierarchy to show parent-child drag
+- [x] Update SceneHierarchy to show parent-child drag
 
 ### 9.5 Status Bar Enhancement
-- [ ] Show mouse cursor 3D position (world coordinates)
+- [x] Show mouse cursor 3D position (world coordinates)
 - [x] Show current editor mode (Object/Edit)
 - [x] Show current element mode (Vertex/Edge/Face)
 - [x] Show selected element count
@@ -270,9 +270,9 @@
 
 ### 9.7 Auto-Save
 - [x] Debounced auto-save on entity/transform changes
-- [ ] Auto-save indicator in status bar
+- [x] Auto-save indicator in status bar
 - [x] Configurable interval in settings
-- [ ] Restore last scene on editor load
+- [x] Restore last scene on editor load
 
 ### 9.8 Tests + Polish
 - [ ] Unit tests for DuplicateCommand
@@ -467,13 +467,13 @@
 ## Phase 14: Rigging & Animation
 
 ### 14.1 Skeleton/Armature System
-- [ ] Armature component type (entity component with bone data)
-- [ ] Bone creation mode (new editor mode: Pose Mode)
-- [ ] Bone creation: click to place bone, click again to set end
-- [ ] Bone editing: select, move, rotate bones
-- [ ] Bone hierarchy: parent/child bone chains
-- [ ] Bone visualization (wireframe bones in viewport)
-- [ ] Armature store (Zustand): bones, active bone, pose mode
+- [x] Armature component type (entity component with bone data)
+- [x] Bone creation mode (new editor mode: Pose Mode)
+- [x] Bone creation: click to place bone, click again to set end
+- [x] Bone editing: select, move, rotate bones
+- [x] Bone hierarchy: parent/child bone chains
+- [x] Bone visualization (wireframe bones in viewport)
+- [x] Armature store (Zustand): bones, active bone, pose mode
 
 ### 14.2 Bone Constraints
 - [ ] IK constraint (inverse kinematics solver — CCD or FABRIK)
@@ -495,32 +495,32 @@
 - [ ] Skinned mesh rendering (GPU skinning via Babylon.js)
 
 ### 14.4 Keyframe Animation
-- [ ] Animation store (Zustand): animations, active animation, playback state
-- [ ] Key types: position, rotation, scale, custom properties
-- [ ] Key insertion (I key in pose mode)
-- [ ] Key deletion
-- [ ] Key interpolation (linear, bezier easing)
-- [ ] Animation clip management (create, rename, delete clips)
+- [x] Animation store (Zustand): animations, active animation, playback state
+- [x] Key types: position, rotation, scale, custom properties
+- [x] Key insertion (I key in pose mode)
+- [x] Key deletion
+- [x] Key interpolation (linear, bezier easing)
+- [x] Animation clip management (create, rename, delete clips)
 - [ ] Animation blending (crossfade between clips)
 - [ ] NLA editor (Non-Linear Animation — blend multiple clips)
 
 ### 14.5 Timeline & Playback
-- [ ] Timeline component (scrubable playback bar)
-- [ ] Playback controls: play, pause, stop, jump to start/end
-- [ ] Frame rate settings (24, 25, 30, 60 fps)
-- [ ] Frame step (forward/backward by frame)
+- [x] Timeline component (scrubable playback bar)
+- [x] Playback controls: play, pause, stop, jump to start/end
+- [x] Frame rate settings (24, 25, 30, 60 fps)
+- [x] Frame step (forward/backward by frame)
 - [ ] Play mode vs Edit mode (simulation toggle)
-- [ ] Looping toggle (loop, ping-pong, once)
+- [x] Looping toggle (loop, ping-pong, once)
 
 ### 14.6 Dope Sheet & Pose Library
-- [ ] Dope sheet editor (keyframe visualization per channel)
-- [ ] Key selection (click, box select, select all keys in range)
-- [ ] Key manipulation (move, scale, delete selected keys)
+- [x] Dope sheet editor (keyframe visualization per channel)
+- [x] Key selection (click, box select, select all keys in range)
+- [x] Key manipulation (move, scale, delete selected keys)
 - [ ] Pose library: save current pose as named pose
 - [ ] Pose library: restore/apply saved pose
 - [ ] Pose library: blend between poses (slider)
 - [ ] Animation export (glTF animation clips)
-- [ ] Commit and push: Phase 14 complete
+- [x] Commit and push: Phase 14 complete
 
 ---
 
@@ -566,7 +566,7 @@
 - [ ] Mask brush (paint mask on/off)
 - [ ] Invert mask
 - [ ] Clear mask
-- [ ] Symmetry (X, Y, Z axis mirror strokes)
+- [x] Symmetry (X, Y, Z axis mirror strokes)
 - [ ] Face sets (mark regions for isolated operations)
 - [ ] Hide/show face sets during sculpting
 
@@ -845,6 +845,7 @@ These items are deferred from earlier phases or nice-to-haves:
 ## Progress Summary
 
 - **Total Phases:** 19
-- **Completed:** Phases 1-11
-- **Planned:** Phases 12-19
+- **Completed:** Phases 1-11, 14 (core), 15 (core), 16 (16.1+16.2)
+- **In Progress:** Phases 12, 15 (advanced), 16 (remaining)
+- **Planned:** Phases 17-19
 - **Backlog:** 14 deferred items

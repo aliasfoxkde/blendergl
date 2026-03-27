@@ -354,12 +354,20 @@ export function Viewport({ onSceneReady }: ViewportProps) {
           if (sculptController) {
             const undoData = sculptController.endStroke();
             if (undoData) {
-              // TODO: push to history store via SculptCommand
-              // For now, just log
               console.log(`Sculpt stroke complete: ${undoData.oldPositions.length} vertices`);
             }
             setIsSculpting(false);
           }
+        }
+      }
+
+      // Emit cursor 3D position on hover (throttled)
+      if (pointerInfo.type === PointerEventTypes.POINTERMOVE && pointerInfo.pickInfo?.hit) {
+        const pick = pointerInfo.pickInfo;
+        if (pick.hit && pick.pickedPoint) {
+          window.dispatchEvent(new CustomEvent("viewport-cursor-position", {
+            detail: { x: pick.pickedPoint.x, y: pick.pickedPoint.y, z: pick.pickedPoint.z },
+          }));
         }
       }
     });

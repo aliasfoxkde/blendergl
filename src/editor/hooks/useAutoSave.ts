@@ -24,6 +24,7 @@ export function useAutoSave() {
         // Don't save more than once per interval
         if (now - lastSaveTimeRef.current >= autoSaveIntervalMs) {
           saveScene(scene);
+          window.dispatchEvent(new CustomEvent("scene-saved"));
           lastSavedRef.current = scene.updatedAt;
           lastSaveTimeRef.current = now;
         }

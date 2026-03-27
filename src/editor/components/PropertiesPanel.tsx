@@ -423,6 +423,8 @@ function SettingsPanel() {
   const setSnapIncrement = useSettingsStore((s) => s.setSnapIncrement);
   const angleSnap = useSettingsStore((s) => s.angleSnap);
   const setAngleSnap = useSettingsStore((s) => s.setAngleSnap);
+  const scaleSnap = useSettingsStore((s) => s.scaleSnap);
+  const setScaleSnap = useSettingsStore((s) => s.setScaleSnap);
   const gridSize = useSceneStore((s) => s.scene.settings.gridSize);
   const gridSubdivisions = useSceneStore((s) => s.scene.settings.gridSubdivisions);
   const updateSettings = useSceneStore((s) => s.updateSettings);
@@ -470,6 +472,18 @@ function SettingsPanel() {
               className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
             />
             <span className="text-[10px] text-gray-500">deg</span>
+          </div>
+        </PropertyRow>
+        <PropertyRow label="Scale Snap">
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={scaleSnap}
+              step={0.1}
+              min={0.01}
+              onChange={(e) => setScaleSnap(parseFloat(e.target.value) || 0.1)}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+            />
           </div>
         </PropertyRow>
       </Section>

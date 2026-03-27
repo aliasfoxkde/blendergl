@@ -43,3 +43,13 @@ export async function deleteScene(id: string): Promise<void> {
   const db = await getDB();
   await db.delete(SCENES_STORE, id);
 }
+
+export async function loadLatestScene(): Promise<SceneData | undefined> {
+  const db = await getDB();
+  const all = await db.getAll(SCENES_STORE);
+  if (all.length === 0) return undefined;
+  return all.sort(
+    (a, b) =>
+      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  )[0];
+}
