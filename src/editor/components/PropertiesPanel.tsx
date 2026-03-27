@@ -7,8 +7,8 @@ import { usePoseModeStore } from "@/editor/stores/poseModeStore";
 import { useArmatureStore } from "@/editor/stores/armatureStore";
 import { useAnimationStore } from "@/editor/stores/animationStore";
 import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
-import { useSettingsStore } from "@/editor/stores/settingsStore";
-import { formatAnalysis, estimatePrint, analyzeMesh, repairMesh } from "@/editor/utils/meshAnalysis";
+import { useSettingsStore, PRINTER_PROFILES } from "@/editor/stores/settingsStore";
+import { formatAnalysis, estimatePrint, analyzeMesh, repairMesh, fillHoles } from "@/editor/utils/meshAnalysis";
 import { sliceMesh } from "@/editor/utils/gcode/slicer";
 import { generateGcode, downloadGcode } from "@/editor/utils/gcode/gcodeGenerator";
 import { sceneRef } from "@/editor/utils/sceneRef";
@@ -581,6 +581,16 @@ function MeshInfoSection({ entityId }: { entityId: string }) {
     ) as Mesh | undefined;
 
     if (mesh) {
+      // Fill holes first
+      const positions = mesh.getVerticesData("position") as Float32Array | null;
+      const indices = mesh.getIndices();
+      if (positions && indices) {
+        const fillResult = fillHoles(positions, Array.from(indices));
+        if (fillResult.holesFilled > 0) {
+          mesh.setIndices(fillResult.newIndices);
+          setRepairLog(`Filled ${fillResult.holesFilled} hole(s)`);
+        }
+      }
       const result = repairMesh(mesh);
       setRepairLog(result.details.join("\n"));
       analyze();
@@ -690,6 +700,29 @@ function PrintSettingsSection() {
       </button>
       {expanded && (
         <div className="px-3 py-2 space-y-1.5">
+          <PropertyRow label="Printer">
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                const profile = PRINTER_PROFILES.find((p) => p.name === e.target.value);
+                if (profile) {
+                  setPrint({
+                    nozzleDiameter: profile.nozzleDiameter,
+                    extruderTemp: Math.min(print.extruderTemp, profile.maxExtruderTemp),
+                    bedTemp: Math.min(print.bedTemp, profile.maxBedTemp),
+                  });
+                }
+              }}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+            >
+              <option value="" disabled>Select profile...</option>
+              {PRINTER_PROFILES.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {p.name} ({p.bedSize.x}x{p.bedSize.y})
+                </option>
+              ))}
+            </select>
+          </PropertyRow>
           <SliderRow
             label="Layer Ht"
             value={print.layerHeight}

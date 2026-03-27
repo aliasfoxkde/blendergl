@@ -373,7 +373,7 @@
 ### 12.3 Mesh Validation & Repair
 - [x] Manifold check (detect non-manifold edges, open boundaries)
 - [x] Watertight validation (volume calculation, inside/outside test)
-- [ ] Hole filling (detect boundary loops, triangulate to close)
+- [x] Hole filling (detect boundary loops, triangulate to close)
 - [x] Normal repair (consistent winding order, face flip)
 - [x] Degenerate face removal (zero-area faces, duplicate vertices)
 - [x] Mesh analysis stats (volume, surface area, dimensions, vertex/face count)
@@ -409,7 +409,7 @@
 - [x] G-code output (standard Marlin/RepRap format)
 - [ ] G-code preview (layer-by-layer path visualization)
 - [x] G-code download
-- [ ] Printer profile presets (Ender 3, Prusa MK4, Bambu Lab, etc.)
+- [x] Printer profile presets (Ender 3, Prusa MK4, Bambu Lab, etc.)
 
 ### 12.7 Print Preview
 - [ ] Layer visualization slider (scroll through sliced layers)

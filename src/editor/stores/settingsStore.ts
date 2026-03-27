@@ -41,6 +41,59 @@ const defaultPrintSettings: PrintSettings = {
   filamentDiameter: 1.75,
 };
 
+export interface PrinterProfile {
+  name: string;
+  bedSize: { x: number; y: number; z: number };
+  nozzleDiameter: number;
+  maxExtruderTemp: number;
+  maxBedTemp: number;
+}
+
+export const PRINTER_PROFILES: PrinterProfile[] = [
+  {
+    name: "Creality Ender 3",
+    bedSize: { x: 220, y: 220, z: 250 },
+    nozzleDiameter: 0.4,
+    maxExtruderTemp: 260,
+    maxBedTemp: 100,
+  },
+  {
+    name: "Prusa MK4",
+    bedSize: { x: 250, y: 210, z: 220 },
+    nozzleDiameter: 0.4,
+    maxExtruderTemp: 300,
+    maxBedTemp: 120,
+  },
+  {
+    name: "Bambu Lab P1S",
+    bedSize: { x: 256, y: 256, z: 256 },
+    nozzleDiameter: 0.4,
+    maxExtruderTemp: 300,
+    maxBedTemp: 120,
+  },
+  {
+    name: "Bambu Lab X1C",
+    bedSize: { x: 256, y: 256, z: 256 },
+    nozzleDiameter: 0.4,
+    maxExtruderTemp: 300,
+    maxBedTemp: 120,
+  },
+  {
+    name: "Voron 2.4",
+    bedSize: { x: 350, y: 350, z: 340 },
+    nozzleDiameter: 0.4,
+    maxExtruderTemp: 300,
+    maxBedTemp: 120,
+  },
+  {
+    name: "Anycubic Kobra 2",
+    bedSize: { x: 220, y: 220, z: 250 },
+    nozzleDiameter: 0.4,
+    maxExtruderTemp: 260,
+    maxBedTemp: 100,
+  },
+];
+
 interface SettingsState {
   showGrid: boolean;
   showAxes: boolean;

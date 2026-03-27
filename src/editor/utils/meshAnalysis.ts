@@ -430,3 +430,117 @@ export function repairMesh(mesh: Mesh): { repairs: number; details: string[] } {
 
   return { repairs: repairs.length, details: repairs };
 }
+
+/**
+ * Detect boundary loops (open edges) and fill them with fan triangulation.
+ * Returns the new indices with holes filled.
+ */
+export function fillHoles(
+  positions: Float32Array,
+  indices: number[]
+): { newIndices: number[]; holesFilled: number } {
+  // Build edge-to-face map
+  const edgeFaces = new Map<string, number[]>();
+  for (let f = 0; f < indices.length / 3; f++) {
+    const v0 = indices[f * 3];
+    const v1 = indices[f * 3 + 1];
+    const v2 = indices[f * 3 + 2];
+    const edges = [
+      [Math.min(v0, v1), Math.max(v0, v1)],
+      [Math.min(v1, v2), Math.max(v1, v2)],
+      [Math.min(v2, v0), Math.max(v2, v0)],
+    ];
+    for (const [a, b] of edges) {
+      const key = `${a}_${b}`;
+      if (!edgeFaces.has(key)) edgeFaces.set(key, []);
+      edgeFaces.get(key)!.push(f);
+    }
+  }
+
+  // Find boundary edges (edges with only one face)
+  const boundaryEdges: [number, number][] = [];
+  for (const [key, faces] of edgeFaces) {
+    if (faces.length === 1) {
+      const parts = key.split("_");
+      boundaryEdges.push([parseInt(parts[0]), parseInt(parts[1])]);
+    }
+  }
+
+  if (boundaryEdges.length === 0) {
+    return { newIndices: indices.slice(), holesFilled: 0 };
+  }
+
+  // Build vertex adjacency for boundary edges
+  const vertexAdj = new Map<number, number[]>();
+  for (const [a, b] of boundaryEdges) {
+    if (!vertexAdj.has(a)) vertexAdj.set(a, []);
+    if (!vertexAdj.has(b)) vertexAdj.set(b, []);
+    vertexAdj.get(a)!.push(b);
+    vertexAdj.get(b)!.push(a);
+  }
+
+  // Extract boundary loops
+  const visited = new Set<string>();
+  const loops: number[][] = [];
+
+  for (const startV of vertexAdj.keys()) {
+    if (visited.has(`${startV}`)) continue;
+
+    const loop: number[] = [];
+    let current = startV;
+    let prev = -1;
+
+    while (true) {
+      loop.push(current);
+      visited.add(`${current}`);
+
+      const neighbors = vertexAdj.get(current) ?? [];
+      const next = neighbors.find((n) => n !== prev) ?? -1;
+      if (next === -1 || next === startV || visited.has(`${next}`)) break;
+
+      prev = current;
+      current = next;
+    }
+
+    if (loop.length >= 3) {
+      loops.push(loop);
+    }
+  }
+
+  // Fill each loop with fan triangulation from centroid
+  const newIndices = indices.slice();
+  let holesFilled = 0;
+
+  for (const loop of loops) {
+    // Compute centroid of the boundary loop
+    let cx = 0, cy = 0, cz = 0;
+    for (const vi of loop) {
+      cx += positions[vi * 3];
+      cy += positions[vi * 3 + 1];
+      cz += positions[vi * 3 + 2];
+    }
+    cx /= loop.length;
+    cy /= loop.length;
+    cz /= loop.length;
+
+    // Create fan triangles from centroid to each edge of the loop
+    for (let i = 0; i < loop.length; i++) {
+      const v0 = loop[i];
+      const v1 = loop[(i + 1) % loop.length];
+      newIndices.push(v0, v1, v0); // placeholder — we need a centroid vertex
+    }
+
+    // Actually, use fan from first vertex for simpler triangulation
+    // Remove the placeholder triangles above
+    newIndices.splice(newIndices.length - loop.length * 3);
+
+    // Fan triangulation from vertex 0
+    for (let i = 1; i < loop.length - 1; i++) {
+      newIndices.push(loop[0], loop[i], loop[i + 1]);
+    }
+
+    holesFilled++;
+  }
+
+  return { newIndices, holesFilled };
+}
