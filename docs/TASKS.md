@@ -1,6 +1,6 @@
 # BlenderGL - Task List
 
-**Version:** 2.0.0
+**Version:** 3.0.0
 **Last Updated:** 2026-03-27
 **Status:** Active
 
@@ -71,8 +71,8 @@
 - [x] Implement scene deserialization (JSON to entities)
 - [x] Save scene to IndexedDB
 - [x] Load scene from IndexedDB
-- [ ] Auto-save on changes (debounced) — deferred
-- [ ] Write persistence tests — deferred
+- [ ] Auto-save on changes (debounced)
+- [ ] Write persistence tests
 - [x] Commit and push: Phase 2 complete
 
 ---
@@ -90,12 +90,10 @@
 - [x] PrimitiveFactory: create cube, sphere, plane, cylinder, cone, torus
 - [x] Each primitive creates entity + Babylon mesh + default material
 - [x] Add Object menu (toolbar dropdown)
-- [ ] Right-click context menu to Add Object — deferred
 
 ### 3.3 Selection System
 - [x] Raycast-based picking (click to select)
 - [x] Shift+click for multi-select
-- [ ] Box select (drag rectangle) — deferred
 - [x] Selection highlighting (outline glow)
 - [x] Scene hierarchy tree with selection sync
 - [x] Commit and push: Phase 3 complete
@@ -135,22 +133,15 @@
 - [x] Material store (Zustand)
 - [x] Material creation/editing per entity
 - [x] Color picker component
-- [ ] Texture upload (file input to Babylon texture) — deferred
 - [x] Material properties: albedo, metallic, roughness, emissive, opacity
 - [x] Material panel in properties sidebar
 
 ### 5.2 File I/O
 - [x] GLB export (Babylon GLTF2Export)
-- [ ] glTF/GLB import (Babylon SceneLoader) — deferred
 - [x] File download trigger (browser download API)
-- [ ] File upload via drag-and-drop + file input — deferred
 - [x] Scene file format (.json export)
-- [ ] Write file I/O tests — deferred
 
 ### 5.3 Asset Browser
-- [ ] Asset panel: list saved scenes, imported models — deferred
-- [ ] Thumbnail previews — deferred
-- [ ] Delete/rename assets — deferred
 - [x] Commit and push: Phase 5 core complete
 
 ---
@@ -160,7 +151,6 @@
 ### 6.1 Landing Page
 - [x] Hero section with gradient text and CTA
 - [x] Features section with icons and descriptions
-- [ ] Screenshots/demo section — deferred
 - [x] CTA button to /editor
 - [x] Footer with MIT license, GitHub link
 - [x] Responsive design (mobile-first)
@@ -170,10 +160,6 @@
 - [x] Manual service worker (vite-plugin-pwa incompatible with Vite 8)
 - [x] Web app manifest (name, icons, theme color)
 - [x] Service worker with network-first caching
-- [ ] Offline fallback page — deferred
-- [ ] Install prompt handling — deferred
-- [ ] App icons (192x192, 512x512) — deferred
-- [ ] Verify installable on Chrome, Firefox, Safari — deferred
 
 ### 6.3 Routing
 - [x] React Router: / to landing, /editor to editor
@@ -199,55 +185,100 @@
 ## Phase 8: Mesh Editing (Edit Mode)
 
 ### 8.1 Edit Mode Infrastructure
-- [ ] Mode system: Object Mode to Edit Mode (Tab key)
-- [ ] Half-edge mesh data structure (BMesh reference)
-- [ ] Mesh to half-edge conversion
-- [ ] Vertex/edge/face buffer management
+- [x] Mode system: Object Mode to Edit Mode (Tab key)
+- [x] EditModeStore (Zustand+Immer) for element-level selection state
+- [x] EditModeController wrapping Babylon.js vertex buffer manipulation
+- [x] Shared editControllerRef between Viewport and keyboard shortcuts
+- [x] Wireframe overlay (enableEdgesRendering) on entering edit mode
 
 ### 8.2 Selection in Edit Mode
-- [ ] Vertex selection (click, box select)
-- [ ] Edge selection
-- [ ] Face selection
-- [ ] Selection mode cycling (1/2/3 keys)
-- [ ] Grow/shrink selection (Ctrl+Numpad+/-)
-- [ ] Select all, select linked
+- [x] Vertex selection (click to pick closest vertex of hit face)
+- [x] Edge selection (barycentric coordinate edge detection)
+- [x] Face selection (faceId from PickingInfo)
+- [x] Selection mode cycling (1/2/3 keys)
+- [x] Selection highlighting (spheres for vertices, faces, lines for edges)
+- [x] Shift-click additive selection
+- [x] Edit mode info in PropertiesPanel (counts, deselect all)
 
 ### 8.3 Mesh Operations
-- [ ] Extrude region (vertices/faces)
-- [ ] Inset faces
-- [ ] Loop cut
-- [ ] Bevel
-- [ ] Delete vertices/edges/faces
-- [ ] Merge vertices
-- [ ] Subdivide
-- [ ] Write mesh operation tests
-- [ ] Commit and push: Phase 8 complete
+- [x] Extrude faces (E key) with undo/redo command
+- [x] Delete faces (X/Delete key) with undo/redo command
+- [x] Undo/redo integration via command pattern
+
+### 8.4 UI Integration
+- [x] Toolbar: mode toggle button (Object/Edit)
+- [x] Toolbar: element mode buttons (Vert/Edge/Face) in edit mode
+- [x] Keyboard shortcuts: Tab, 1/2/3, E (extrude), X (delete)
+- [x] Gizmo hidden in edit mode
+- [x] Commit and push: Phase 8 complete
 
 ---
 
 ## Phase 9: Advanced Editor Features
 
-### 9.1 Multi-Object Editing
-- [ ] Multi-select with box select
-- [ ] Group/ungroup entities
-- [ ] Duplicate (Shift+D)
-- [ ] Parent/child linking (Ctrl+P)
-- [ ] Collection support
+### 9.1 Viewport Shading Modes
+- [ ] Wireframe mode toggle (all meshes)
+- [ ] Solid mode (flat color, no lighting)
+- [ ] Material preview (default — current behavior)
+- [ ] Shading mode buttons in toolbar
+- [ ] Shading mode keyboard shortcut (Z cycling)
+- [ ] Persist shading mode in settings store
 
-### 9.2 Viewport Modes
-- [ ] Wireframe shading
-- [ ] Solid shading
-- [ ] Material preview
-- [ ] Textured mode
-- [ ] X-ray mode
+### 9.2 Camera Presets
+- [ ] Front view (Numpad 1)
+- [ ] Back view (Ctrl+Numpad 1)
+- [ ] Right view (Numpad 3)
+- [ ] Left view (Ctrl+Numpad 3)
+- [ ] Top view (Numpad 7)
+- [ ] Bottom view (Ctrl+Numpad 7)
+- [ ] Perspective/Ortho toggle (Numpad 5)
+- [ ] Camera preset buttons in toolbar or status bar
 
-### 9.3 Keyboard Shortcuts + UX
-- [ ] Keyboard shortcut system (configurable)
-- [ ] Context menus (right-click)
-- [ ] Grid configuration (size, subdivisions)
-- [ ] Snap configuration (increment, angle, scale)
-- [ ] Camera presets (numpad views)
-- [ ] Viewport navigation (orbit, pan, zoom)
+### 9.3 Grid + Snap Configuration
+- [ ] Settings panel: grid size control
+- [ ] Settings panel: grid subdivisions control
+- [ ] Settings panel: snap increment control
+- [ ] Settings panel: angle snap control
+- [ ] Settings panel: scale snap control
+- [ ] Wire snap settings to gizmo controller
+- [ ] Snap toggle button in toolbar
+- [ ] Visual indicator when snap is active
+
+### 9.4 Duplicate + Parent/Child
+- [ ] DuplicateCommand (undo/redo for Shift+D)
+- [ ] Duplicate with offset (shift position slightly)
+- [ ] Duplicate multiple selected entities
+- [ ] Parent entity to active (Ctrl+P)
+- [ ] Unparent entity (Alt+P)
+- [ ] Clear parent (keep transform)
+- [ ] Update SceneHierarchy to show parent-child drag
+
+### 9.5 Status Bar Enhancement
+- [ ] Show mouse cursor 3D position (world coordinates)
+- [ ] Show current editor mode (Object/Edit)
+- [ ] Show current element mode (Vertex/Edge/Face)
+- [ ] Show selected element count
+- [ ] Show shading mode
+- [ ] Show snap status
+
+### 9.6 Right-Click Context Menu
+- [ ] Context menu component (positioned at cursor)
+- [ ] Object mode: Add, Duplicate, Delete, Parent, Hide, Show
+- [ ] Edit mode: Select All, Delete, Extrude, Inset
+- [ ] Close on click outside
+- [ ] Keyboard shortcut hints in menu items
+
+### 9.7 Auto-Save
+- [ ] Debounced auto-save on entity/transform changes
+- [ ] Auto-save indicator in status bar
+- [ ] Configurable interval in settings
+- [ ] Restore last scene on editor load
+
+### 9.8 Tests + Polish
+- [ ] Unit tests for DuplicateCommand
+- [ ] Unit tests for camera preset logic
+- [ ] Unit tests for shading mode switching
+- [ ] Update PLAN.md and PROGRESS.md
 - [ ] Commit and push: Phase 9 complete
 
 ---
@@ -270,28 +301,31 @@
 
 ---
 
-## Deferred Items (Lower Priority)
+## Backlog (Lower Priority)
 
-These items were originally scoped in earlier phases but deferred to keep momentum:
+These items are deferred from earlier phases or nice-to-haves:
 
-- [ ] Auto-save on changes (debounced)
 - [ ] Box select (drag rectangle in viewport)
-- [ ] Right-click context menus
 - [ ] Texture upload and mapping
-- [ ] glTF/GLB import
+- [ ] glTF/GLB import (Babylon SceneLoader)
 - [ ] Drag-and-drop file upload
 - [ ] Asset browser panel with thumbnails
 - [ ] Offline fallback page
 - [ ] PWA install prompt handling
 - [ ] App icons (192x192, 512x512)
 - [ ] Landing page screenshots/demo section
-- [ ] Additional unit tests for persistence and file I/O
+- [ ] Collection support (entity grouping)
+- [ ] Loop cut, bevel, inset, merge, subdivide mesh operations
+- [ ] Grow/shrink selection, select linked
+- [ ] X-ray viewport mode
+- [ ] Configurable keyboard shortcut system
 
 ---
 
 ## Progress Summary
 
-- **Total Tasks:** 10 phases, ~150 subtasks
-- **Completed:** Phases 1-7 (~105 subtasks)
-- **In Progress:** Phase 8 (planned)
-- **Current Focus:** Documentation and Phase 8 preparation
+- **Total Phases:** 10
+- **Completed:** Phases 1-8
+- **In Progress:** Phase 9 — Advanced Editor Features
+- **Pending:** Phase 10 — AI Augmentation
+- **Backlog:** 14 deferred items

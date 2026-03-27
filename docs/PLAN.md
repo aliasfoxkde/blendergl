@@ -148,23 +148,25 @@ The Viewport component maintains a `Map<string, AbstractMesh>` that mirrors the 
 - Build: tsc + vite build → dist/
 - Auto-deploy on push to main
 
-### Phase 8: Mesh Editing (Edit Mode) — PLANNED
+### Phase 8: Mesh Editing (Edit Mode) — COMPLETE
 - Object mode vs Edit mode (Tab key toggle)
-- Half-edge mesh data structure (BMesh reference)
+- Direct vertex buffer manipulation (no half-edge structure)
 - Vertex/edge/face selection with highlighting
-- Extrude, inset, loop cut, bevel, merge, subdivide operations
-- Wireframe + solid overlay rendering
-- This is the hardest phase — requires custom mesh topology management
+- Extrude and delete face operations with undo/redo
+- Wireframe overlay rendering
+- Edit mode UI in toolbar and properties panel
 
-### Phase 9: Advanced Editor Features — PLANNED
-- Multi-object editing with box select
-- Group/ungroup entities
-- Duplicate (Shift+D), parent/child linking (Ctrl+P)
-- Viewport shading modes: wireframe, solid, material, textured, x-ray
-- Configurable keyboard shortcuts
-- Context menus (right-click)
-- Grid/snap configuration
-- Camera presets (numpad views: front, back, left, right, top, perspective)
+### Phase 9: Advanced Editor Features — IN PROGRESS
+- Viewport shading modes: wireframe, solid, material (Z key cycle)
+- Camera presets (Numpad 1/3/7 for front/right/top, Ctrl for opposite)
+- Perspective/Ortho toggle (Numpad 5)
+- Grid + snap configuration panel (size, subdivisions, increment, angle)
+- Snap toggle with visual indicator
+- Duplicate entities (Shift+D) with undo/redo
+- Parent/child linking (Ctrl+P, Alt+P)
+- Enhanced status bar (coordinates, mode, selection count)
+- Right-click context menus
+- Auto-save with debounced persistence
 
 ### Phase 10: AI Augmentation — PLANNED
 - Collapsible AI assistant panel in editor
