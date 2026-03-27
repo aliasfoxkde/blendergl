@@ -770,8 +770,8 @@
 ## Phase 19: Advanced Rendering
 
 ### 19.1 PBR Materials
-- [ ] PBRMaterial integration (albedo, normal, metallic, roughness, AO, emissive)
-- [ ] Material presets (metal, plastic, wood, stone, glass, fabric)
+- [x] PBRMaterial integration (albedo, normal, metallic, roughness, AO, emissive)
+- [x] Material presets (metal, plastic, wood, stone, glass, fabric)
 - [ ] Clearcoat support (car paint, lacquered surfaces)
 - [ ] Sheen support (fabric, velvet)
 - [ ] Subsurface scattering approximation
@@ -779,39 +779,39 @@
 - [ ] IOR (index of refraction) for transparent materials
 
 ### 19.2 Environment & Lighting
-- [ ] HDRI environment loading (.hdr/.exr)
-- [ ] Image-based lighting (IBL)
-- [ ] Environment rotation/offset controls
-- [ ] Environment intensity slider
-- [ ] Studio lighting presets (3-point, dramatic, neutral)
+- [x] HDRI environment loading (.hdr/.exr)
+- [x] Image-based lighting (IBL)
+- [x] Environment rotation/offset controls
+- [x] Environment intensity slider
+- [x] Studio lighting presets (3-point, dramatic, neutral)
 - [ ] Area lights (rectangle, disc, sphere light types)
 - [ ] Light linking (control which lights affect which objects)
 
 ### 19.3 Post-Processing
-- [ ] Screen-space ambient occlusion (SSAO/GTAO)
+- [x] Screen-space ambient occlusion (SSAO/GTAO)
 - [ ] Screen-space reflections (SSR)
-- [ ] Bloom/glow effect (threshold, intensity, diffusion)
-- [ ] Depth of field (f-stop, focal distance, blade count)
+- [x] Bloom/glow effect (threshold, intensity, diffusion)
+- [x] Depth of field (f-stop, focal distance, blade count)
 - [ ] Motion blur (shutter speed, blur amount)
-- [ ] Chromatic aberration
-- [ ] Vignette effect
-- [ ] Color grading (LUT, lift/gamma/gain, temperature)
-- [ ] Anti-aliasing (FXAA, MSAA, TAA)
-- [ ] Tone mapping (ACES, Reinhard, Filmic, Linear)
+- [x] Chromatic aberration
+- [x] Vignette effect
+- [x] Color grading (LUT, lift/gamma/gain, temperature)
+- [x] Anti-aliasing (FXAA, MSAA, TAA)
+- [x] Tone mapping (ACES, Reinhard, Filmic, Linear)
 
 ### 19.4 Shadows
-- [ ] Shadow mapping (directional, point, spot light shadows)
-- [ ] PCF soft shadows
+- [x] Shadow mapping (directional, point, spot light shadows)
+- [x] PCF soft shadows
 - [ ] Cascaded shadow maps (CSM for large scenes)
-- [ ] Shadow resolution control
-- [ ] Shadow bias control (prevent shadow acne/peter-panning)
-- [ ] Contact shadows (fake shadows for small objects)
-- [ ] Shadow color tinting
+- [x] Shadow resolution control
+- [x] Shadow bias control (prevent shadow acne/peter-panning)
+- [x] Contact shadows (fake shadows for small objects)
+- [x] Shadow color tinting
 
 ### 19.5 Render Settings & Output
-- [ ] Render settings panel (resolution, quality, samples)
-- [ ] Screenshot capture (PNG/JPEG)
-- [ ] Render to file (high-resolution export)
+- [x] Render settings panel (resolution, quality, samples)
+- [x] Screenshot capture (PNG/JPEG)
+- [x] Render to file (high-resolution export)
 - [ ] Render region (render only selected area)
 - [ ] Render layers (separate passes: diffuse, specular, depth, normal)
 - [ ] Path tracing preview (WebGPU when available)
@@ -844,7 +844,7 @@ These items are deferred from earlier phases or nice-to-haves:
 ## Progress Summary
 
 - **Total Phases:** 19
-- **Completed:** Phases 1-11, 14 (core), 15 (core), 16 (16.1+16.2)
-- **In Progress:** Phases 12, 15 (advanced), 16 (remaining)
-- **Planned:** Phases 17-19
+- **Completed:** Phases 1-11, 14 (core), 15 (core), 16 (16.1+16.2), 17 (core), 18 (core), 19 (core)
+- **In Progress:** Phase 19 (remaining)
+- **Planned:** —
 - **Backlog:** 14 deferred items

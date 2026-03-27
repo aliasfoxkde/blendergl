@@ -37,6 +37,9 @@ import { setCameraPreset, toggleOrtho } from "@/editor/utils/cameraUtils";
 import { cameraRef as sharedCameraRef } from "@/editor/utils/cameraRef";
 import { sceneRef as sharedSceneRef } from "@/editor/utils/sceneRef";
 import { importGltf } from "@/editor/utils/importGltf";
+import { postProcessPipeline } from "@/editor/utils/postProcessPipeline";
+import { renderingManager } from "@/editor/utils/renderingManager";
+import { useRenderSettingsStore } from "@/editor/stores/renderSettingsStore";
 import { ImportCommand } from "@/editor/utils/commands/importCommand";
 import { useHistoryStore } from "@/editor/stores/historyStore";
 import { exportSelectedToSTL } from "@/editor/utils/exportStl";
@@ -95,6 +98,17 @@ export function Viewport({ onSceneReady }: ViewportProps) {
 
   const sculptControllerLocalRef = useRef<SculptController | null>(null);
 
+  // Render settings
+  const renderSettings = useRenderSettingsStore((s) => s.settings);
+
+  // Sync post-processing pipeline with settings
+  useEffect(() => {
+    postProcessPipeline.updateFromSettings(renderSettings);
+    renderingManager.updateSSAO(renderSettings);
+    renderingManager.updateShadows(renderSettings);
+    renderingManager.updateEnvironment(renderSettings);
+  }, [renderSettings]);
+
   // Initialize engine + scene
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -105,6 +119,10 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     const camera = createCamera(scene, canvas);
     createDefaultLights(scene);
     createGrid(scene);
+
+    // Initialize post-processing pipeline
+    postProcessPipeline.init(scene);
+    renderingManager.init(scene);
 
     // Initialize gizmo controller
     const gizmoController = new TransformGizmoController(scene);

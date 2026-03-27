@@ -13,6 +13,7 @@ import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useAiStore } from "@/editor/stores/aiStore";
 import { usePhysicsStore } from "@/editor/stores/physicsStore";
 import { useUvStore } from "@/editor/stores/uvStore";
+import { useRenderSettingsStore } from "@/editor/stores/renderSettingsStore";
 import { gameModeController } from "@/editor/utils/gameModeController";
 import { duplicateEntities } from "@/editor/utils/duplicate";
 
@@ -472,6 +473,19 @@ export function Toolbar({
           <circle cx="15" cy="9" r="1.5" fill="currentColor" />
           <circle cx="9" cy="15" r="1.5" fill="currentColor" />
           <circle cx="15" cy="15" r="1.5" fill="currentColor" />
+        </svg>
+      </ToolButton>
+
+      {/* Render Settings */}
+      <ToolButton
+        label="Render Settings"
+        active={useRenderSettingsStore((s) => s.panelOpen)}
+        onClick={() => useRenderSettingsStore.getState().togglePanel()}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="12" r="3" />
+          <circle cx="12" cy="12" r="6" strokeDasharray="2 2" />
         </svg>
       </ToolButton>
 

@@ -11,6 +11,7 @@ import { ScriptEditorPanel } from "./ScriptEditorPanel";
 import { Timeline } from "./Timeline";
 import { NodeEditorPanel } from "./nodeEditor/NodeEditorPanel";
 import { UvEditorPanel } from "./UvEditorPanel";
+import { RenderSettingsPanel } from "./RenderSettingsPanel";
 import { useKeyboardShortcuts } from "@/editor/hooks/useKeyboardShortcuts";
 import { useAutoSave } from "@/editor/hooks/useAutoSave";
 import { useSceneStore } from "@/editor/stores/sceneStore";
@@ -134,6 +135,7 @@ export function EditorShell() {
           <Timeline isOpen={timelineOpen} onToggle={() => setTimelineOpen(!timelineOpen)} />
           <NodeEditorPanel />
           <UvEditorPanel />
+          <RenderSettingsPanel />
           {/* Viewport overlay info */}
           <div className="absolute bottom-2 left-2 text-xs text-gray-500 pointer-events-none">
             {objectCount === 0
