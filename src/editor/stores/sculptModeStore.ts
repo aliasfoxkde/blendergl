@@ -47,6 +47,9 @@ interface SculptModeState {
   /** Face sets per entity (Int32Array, -1=none, 0+=set index) */
   faceSets: Record<string, Int32Array>;
 
+  /** Hidden face set IDs per entity */
+  hiddenFaceSets: Record<string, number[]>;
+
   // Actions
   enterSculptMode: (entityId: string) => void;
   exitSculptMode: () => void;
@@ -80,6 +83,8 @@ interface SculptModeState {
   // Face sets
   createFaceSet: (entityId: string, faceIndices: number[]) => void;
   clearFaceSets: (entityId: string) => void;
+  toggleFaceSetVisibility: (entityId: string, setId: number) => void;
+  showAllFaceSets: (entityId: string) => void;
 }
 
 const defaultBrush: SculptBrushSettings = {
@@ -102,6 +107,7 @@ export const useSculptModeStore = create<SculptModeState>()(
     multires: { levels: 0, currentLevel: 0 },
     masks: {},
     faceSets: {},
+    hiddenFaceSets: {},
 
     enterSculptMode: (entityId) =>
       set((state) => {
@@ -250,6 +256,26 @@ export const useSculptModeStore = create<SculptModeState>()(
         if (state.faceSets[entityId]) {
           state.faceSets[entityId].fill(-1);
         }
+        state.hiddenFaceSets[entityId] = [];
+      }),
+
+    toggleFaceSetVisibility: (entityId, setId) =>
+      set((state) => {
+        if (!state.hiddenFaceSets[entityId]) {
+          state.hiddenFaceSets[entityId] = [];
+        }
+        const hidden = state.hiddenFaceSets[entityId];
+        const idx = hidden.indexOf(setId);
+        if (idx >= 0) {
+          hidden.splice(idx, 1);
+        } else {
+          hidden.push(setId);
+        }
+      }),
+
+    showAllFaceSets: (entityId) =>
+      set((state) => {
+        state.hiddenFaceSets[entityId] = [];
       }),
   }))
 );

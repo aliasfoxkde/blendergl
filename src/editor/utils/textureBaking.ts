@@ -3,6 +3,9 @@
  * and thickness baking. Generates textures from mesh geometry.
  */
 
+import type { Scene, Mesh, StandardMaterial } from "@babylonjs/core";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
+
 export interface BakingSettings {
   resolution: 512 | 1024 | 2048 | 4096 | 8192;
   samples: number;
@@ -297,6 +300,54 @@ function cross(
     a[2] * b[0] - a[0] * b[2],
     a[0] * b[1] - a[1] * b[0],
   ];
+}
+
+// --- Bake Preview ---
+
+/**
+ * Apply a baked normal map to a mesh for preview.
+ * Creates a RawTexture from the baked RGBA data and sets it as the bump texture.
+ */
+export function applyBakedNormalMapPreview(
+  mesh: Mesh,
+  normalMapData: Uint8Array,
+  resolution: number,
+  scene: Scene,
+): void {
+  // Create a data URL from the RGBA pixel data and load as texture
+  const canvas = document.createElement("canvas");
+  canvas.width = resolution;
+  canvas.height = resolution;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const imageData = new ImageData(resolution, resolution);
+  imageData.data.set(normalMapData);
+  ctx.putImageData(imageData, 0, 0);
+  const dataUrl = canvas.toDataURL("image/png");
+
+  const texture = new Texture(dataUrl, scene);
+
+  const material = mesh.material as StandardMaterial | null;
+  if (material) {
+    material.bumpTexture = texture;
+    material.bumpTexture.level = 1.0;
+    material.useParallax = false;
+    material.useParallaxOcclusion = false;
+  }
+}
+
+/**
+ * Remove baked normal map from a mesh.
+ */
+export function removeBakedNormalMapPreview(mesh: Mesh): void {
+  const material = mesh.material as StandardMaterial | null;
+  if (material) {
+    if (material.bumpTexture) {
+      material.bumpTexture.dispose();
+      material.bumpTexture = null;
+    }
+  }
 }
 
 /**

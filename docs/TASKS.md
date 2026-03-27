@@ -568,14 +568,14 @@
 - [x] Clear mask
 - [x] Symmetry (X, Y, Z axis mirror strokes)
 - [x] Face sets (mark regions for isolated operations)
-- [ ] Hide/show face sets during sculpting
+- [x] Hide/show face sets during sculpting
 
 ### 15.6 Detail Transfer
 - [x] Normal map baking (high-poly sculpt → low-poly mesh)
 - [x] Displacement map baking
 - [x] Ambient occlusion baking (cavity detection)
 - [x] Texture resolution settings (512, 1024, 2048, 4096)
-- [ ] Bake preview (normal map applied to low-poly)
+- [x] Bake preview (normal map applied to low-poly)
 - [x] Commit and push: Phase 15 complete
 
 ---
