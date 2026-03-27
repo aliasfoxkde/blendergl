@@ -1,0 +1,245 @@
+import { useEffect, useRef } from "react";
+import {
+  Engine,
+  Scene,
+  ArcRotateCamera,
+  Color3,
+  StandardMaterial,
+  MeshBuilder,
+  AbstractMesh,
+  PointerEventTypes,
+} from "@babylonjs/core";
+import {
+  createEngine,
+  createScene,
+  createCamera,
+  createDefaultLights,
+  createGrid,
+} from "@/editor/utils/engine";
+import { useSceneStore } from "@/editor/stores/sceneStore";
+import { useSelectionStore } from "@/editor/stores/selectionStore";
+
+interface ViewportProps {
+  onSceneReady?: (scene: Scene, engine: Engine) => void;
+}
+
+export function Viewport({ onSceneReady }: ViewportProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const engineRef = useRef<Engine | null>(null);
+  const sceneRef = useRef<Scene | null>(null);
+  const cameraRef = useRef<ArcRotateCamera | null>(null);
+  const meshMapRef = useRef<Map<string, AbstractMesh>>(new Map());
+
+  const entities = useSceneStore((s) => s.entities);
+  const { select, deselectAll, selectedIds, setHoveredEntity } =
+    useSelectionStore();
+
+  // Initialize engine + scene
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const engine = createEngine(canvas);
+    const scene = createScene(engine);
+    const camera = createCamera(scene, canvas);
+    createDefaultLights(scene);
+    createGrid(scene);
+
+    engineRef.current = engine;
+    sceneRef.current = scene;
+    cameraRef.current = camera;
+
+    // Render loop
+    engine.runRenderLoop(() => {
+      scene.render();
+    });
+
+    // Resize handling
+    const resizeObserver = new ResizeObserver(() => {
+      engine.resize();
+    });
+    resizeObserver.observe(canvas);
+
+    // Pick handling
+    scene.onPointerObservable.add((pointerInfo) => {
+      if (pointerInfo.type === PointerEventTypes.POINTERPICK) {
+        const pickResult = pointerInfo.pickInfo;
+        if (pickResult?.hit && pickResult.pickedMesh) {
+          const meshId = pickResult.pickedMesh.metadata?.entityId as
+            | string
+            | undefined;
+          if (meshId) {
+            const shiftKey = pointerInfo.event.shiftKey;
+            select(meshId, shiftKey);
+          }
+        } else {
+          deselectAll();
+        }
+      }
+
+      if (pointerInfo.type === PointerEventTypes.POINTERMOVE) {
+        const pickResult = pointerInfo.pickInfo;
+        if (pickResult?.hit && pickResult.pickedMesh) {
+          const meshId = pickResult.pickedMesh.metadata?.entityId as
+            | string
+            | undefined;
+          setHoveredEntity(meshId ?? null);
+          if (canvas) canvas.style.cursor = meshId ? "pointer" : "default";
+        } else {
+          setHoveredEntity(null);
+          if (canvas) canvas.style.cursor = "default";
+        }
+      }
+    });
+
+    onSceneReady?.(scene, engine);
+
+    return () => {
+      resizeObserver.disconnect();
+      scene.onPointerObservable.clear();
+      engine.dispose();
+      engineRef.current = null;
+      sceneRef.current = null;
+      cameraRef.current = null;
+      meshMapRef.current.clear();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync entities to Babylon meshes
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    const meshMap = meshMapRef.current;
+    const currentEntityIds = new Set(Object.keys(entities));
+
+    // Remove meshes for deleted entities
+    for (const [id, mesh] of meshMap) {
+      if (!currentEntityIds.has(id)) {
+        mesh.dispose();
+        meshMap.delete(id);
+      }
+    }
+
+    // Create/update meshes for existing entities
+    for (const [id, entity] of Object.entries(entities)) {
+      let mesh = meshMap.get(id) ?? undefined;
+
+      if (!mesh) {
+        // Create new mesh based on entity components
+        const meshComp = entity.components.mesh as
+          | { geometryType: string }
+          | undefined;
+        const geoType = meshComp?.geometryType ?? "cube";
+
+        const newMesh = createPrimitiveMesh(scene, geoType, id);
+        if (newMesh) {
+          newMesh.metadata = { entityId: id };
+          meshMap.set(id, newMesh);
+          mesh = newMesh;
+        }
+      }
+
+      if (mesh) {
+        // Sync transform
+        mesh.position.x = entity.transform.position.x;
+        mesh.position.y = entity.transform.position.y;
+        mesh.position.z = entity.transform.position.z;
+
+        mesh.rotation.x = (entity.transform.rotation.x * Math.PI) / 180;
+        mesh.rotation.y = (entity.transform.rotation.y * Math.PI) / 180;
+        mesh.rotation.z = (entity.transform.rotation.z * Math.PI) / 180;
+
+        mesh.scaling.x = entity.transform.scale.x;
+        mesh.scaling.y = entity.transform.scale.y;
+        mesh.scaling.z = entity.transform.scale.z;
+
+        // Sync visibility
+        mesh.isVisible = entity.visible;
+      }
+    }
+  }, [entities]);
+
+  // Sync selection highlighting
+  useEffect(() => {
+    const meshMap = meshMapRef.current;
+    for (const [id, mesh] of meshMap) {
+      const material = mesh.material as StandardMaterial;
+      if (!material) continue;
+
+      if (selectedIds.includes(id)) {
+        material.emissiveColor = new Color3(0.15, 0.15, 0.15);
+        mesh.renderOutline = true;
+        mesh.outlineColor = new Color3(0.4, 0.6, 1.0);
+        mesh.outlineWidth = 0.04;
+      } else {
+        material.emissiveColor = Color3.Black();
+        mesh.renderOutline = false;
+      }
+    }
+  }, [selectedIds]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="w-full h-full no-select outline-none"
+      style={{ touchAction: "none" }}
+    />
+  );
+}
+
+function createPrimitiveMesh(
+  scene: Scene,
+  geometryType: string,
+  entityId: string
+): AbstractMesh | undefined {
+  const material = new StandardMaterial(`mat_${entityId}`, scene);
+  material.diffuseColor = new Color3(0.6, 0.6, 0.6);
+  material.specularColor = new Color3(0.2, 0.2, 0.2);
+
+  let mesh: AbstractMesh;
+
+  switch (geometryType) {
+    case "sphere":
+      mesh = MeshBuilder.CreateSphere(
+        `mesh_${entityId}`,
+        { diameter: 1, segments: 32 },
+        scene
+      );
+      break;
+    case "plane":
+      mesh = MeshBuilder.CreateGround(
+        `mesh_${entityId}`,
+        { width: 1, height: 1 },
+        scene
+      );
+      break;
+    case "cylinder":
+      mesh = MeshBuilder.CreateCylinder(
+        `mesh_${entityId}`,
+        { diameter: 1, height: 1, tessellation: 32 },
+        scene
+      );
+      break;
+    case "cone":
+      mesh = MeshBuilder.CreateCylinder(
+        `mesh_${entityId}`,
+        { diameterTop: 0, diameterBottom: 1, height: 1, tessellation: 32 },
+        scene
+      );
+      break;
+    case "torus":
+      mesh = MeshBuilder.CreateTorus(
+        `mesh_${entityId}`,
+        { diameter: 1, thickness: 0.3, tessellation: 32 },
+        scene
+      );
+      break;
+    default:
+      mesh = MeshBuilder.CreateBox(`mesh_${entityId}`, { size: 1 }, scene);
+  }
+
+  mesh.material = material;
+  return mesh;
+}
