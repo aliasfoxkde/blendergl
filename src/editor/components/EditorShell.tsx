@@ -16,6 +16,7 @@ import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
+import { usePhysicsStore } from "@/editor/stores/physicsStore";
 import { createPrimitiveEntity } from "@/editor/utils/primitives";
 import type { PrimitiveType } from "@/editor/types";
 import { saveScene, loadLatestScene } from "@/editor/utils/storage";
@@ -33,6 +34,8 @@ export function EditorShell() {
   const shadingMode = useSettingsStore((s) => s.shadingMode);
   const snapEnabled = useSettingsStore((s) => s.snapEnabled);
   const cameraMode = useSettingsStore((s) => s.cameraMode);
+  const playMode = usePhysicsStore((s) => s.playMode);
+  const playTime = usePhysicsStore((s) => s.playTime);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [cursorPos, setCursorPos] = useState<string | null>(null);
   const [lastSaveTime, setLastSaveTime] = useState<string | null>(null);
@@ -124,7 +127,7 @@ export function EditorShell() {
         </aside>
 
         {/* Viewport */}
-        <main className="flex-1 relative bg-[#1a1a2e]">
+        <main className={`flex-1 relative bg-[#1a1a2e] ${playMode === "playing" ? "ring-2 ring-inset ring-green-500/50" : playMode === "paused" ? "ring-2 ring-inset ring-yellow-500/50" : ""}`}>
           <Viewport />
           <ScriptEditorPanel />
           <Timeline isOpen={timelineOpen} onToggle={() => setTimelineOpen(!timelineOpen)} />
@@ -161,6 +164,14 @@ export function EditorShell() {
         </span>
         <span className="capitalize">{shadingMode}</span>
         <span>{cameraMode}</span>
+        {playMode !== "stopped" && (
+          <>
+            <span className="text-gray-600">|</span>
+            <span className={playMode === "playing" ? "text-green-400" : "text-yellow-400"}>
+              {playMode === "playing" ? "PLAYING" : "PAUSED"} {playTime.toFixed(1)}s
+            </span>
+          </>
+        )}
         {snapEnabled && <span className="text-blue-400">Snap</span>}
         {cursorPos && <span className="text-gray-600">|</span>}
         {cursorPos && <span title="3D cursor position">Cursor: {cursorPos}</span>}

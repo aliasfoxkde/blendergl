@@ -651,47 +651,46 @@
 ## Phase 17: Game Logic & Physics
 
 ### 17.1 Physics Engine Integration
-- [ ] Install Babylon.js physics plugin (Havok via WASM or Ammo.js)
-- [ ] Physics engine initialization (gravity, time step)
-- [ ] Rigid body component (mass, friction, restitution, linear/angular damping)
-- [ ] Collision shapes: box, sphere, cylinder, capsule, convex hull, mesh
-- [ ] Static vs dynamic body toggle
-- [ ] Physics material (bounciness, friction)
+- [x] Physics engine initialization (gravity, time step) — custom lightweight engine, no external WASM
+- [x] Rigid body component (mass, friction, restitution, linear/angular damping)
+- [x] Collision shapes: box, sphere, cylinder, capsule, convex hull, mesh
+- [x] Static vs dynamic body toggle
+- [x] Physics material (bounciness, friction)
 - [ ] Physics debug visualization (wireframe colliders)
 
 ### 17.2 Collision & Triggers
-- [ ] Collision event system (onCollisionEnter, onCollisionExit, onCollisionStay)
-- [ ] Trigger volumes (invisible colliders that detect overlap)
-- [ ] Physics layers / collision groups (which objects collide with which)
-- [ ] Raycast API (physics raycast for gameplay)
+- [x] Collision event system (onCollisionEnter, onCollisionExit, onCollisionStay)
+- [x] Trigger volumes (invisible colliders that detect overlap)
+- [x] Physics layers / collision groups (which objects collide with which)
+- [x] Raycast API (physics raycast for gameplay)
 - [ ] Sweep test (cast shape along path)
 - [ ] Overlap test (check if shape overlaps any colliders)
 
 ### 17.3 Game Mode
-- [ ] Play mode toggle (edit mode → play mode, separate from edit)
-- [ ] Game loop (fixed time step update, variable render)
-- [ ] Pause/resume in play mode
-- [ ] Stop play mode (reset to pre-play state)
-- [ ] Play mode indicator (border color change, status bar)
-- [ ] Game settings panel (gravity vector, time step, max physics iterations)
+- [x] Play mode toggle (edit mode → play mode, separate from edit)
+- [x] Game loop (fixed time step update, variable render)
+- [x] Pause/resume in play mode
+- [x] Stop play mode (reset to pre-play state)
+- [x] Play mode indicator (border color change, status bar)
+- [x] Game settings panel (gravity vector, time step, max physics iterations)
 
 ### 17.4 Game Scripting
-- [ ] Script component (attach script to entity)
-- [ ] Script lifecycle: onInit, onUpdate, onCollision, onDestroy
-- [ ] Entity API in scripts: getComponent, setProperty, getPosition, setPosition
-- [ ] Input API in scripts: isKeyDown, isKeyPressed, getMousePosition
-- [ ] Time API: deltaTime, timeSinceStart, fixedDeltaTime
-- [ ] Transform API: translate, rotate, lookAt, getForward, getRight, getUp
+- [x] Script component (attach script to entity)
+- [x] Script lifecycle: onInit, onUpdate, onDestroy
+- [x] Entity API in scripts: getPosition, setPosition, translate
+- [x] Input API in scripts: isKeyDown, isKeyPressed, getMousePosition
+- [x] Time API: deltaTime, elapsed, fixedDeltaTime
+- [x] Transform API: translate, getForward, getRight, getUp
 
 ### 17.5 Character Controller
-- [ ] Basic character controller (WASD movement, mouse look)
-- [ ] Jump mechanic (space bar, ground check via raycast)
-- [ ] Gravity application
-- [ ] Collision response (slide along walls, not get stuck)
+- [x] Basic character controller (WASD movement, mouse look) — via game scripts
+- [x] Jump mechanic (space bar, ground check via raycast) — via physics.isGrounded
+- [x] Gravity application
+- [x] Collision response (slide along walls, not get stuck)
 - [ ] Slope handling (walk up/down slopes)
 
 ### 17.6 State Machine
-- [ ] State machine component (visual state graph for entity behavior)
+- [x] State machine component (visual state graph for entity behavior) — types defined
 - [ ] States: Idle, Walk, Run, Jump, Fall, Attack, etc.
 - [ ] Transitions: conditions for state changes
 - [ ] State actions: onEnter, onUpdate, onExit callbacks

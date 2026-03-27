@@ -9,6 +9,8 @@ import { usePoseModeStore } from "@/editor/stores/poseModeStore";
 import { useAnimationStore } from "@/editor/stores/animationStore";
 import { useArmatureStore } from "@/editor/stores/armatureStore";
 import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
+import { usePhysicsStore } from "@/editor/stores/physicsStore";
+import { gameModeController } from "@/editor/utils/gameModeController";
 import { editControllerRef } from "@/editor/utils/editModeRef";
 import { saveScene } from "@/editor/utils/storage";
 import { duplicateEntities } from "@/editor/utils/duplicate";
@@ -89,6 +91,33 @@ export function useKeyboardShortcuts() {
       const historyStore = useHistoryStore.getState();
       const editModeStore = useEditModeStore.getState();
       const settingsStore = useSettingsStore.getState();
+      const physicsStore = usePhysicsStore.getState();
+
+      // Play mode: F5 toggles, Escape stops
+      if (e.key === "F5") {
+        e.preventDefault();
+        if (physicsStore.playMode === "stopped") {
+          gameModeController.start();
+          usePhysicsStore.getState().startPlay();
+        } else if (physicsStore.playMode === "playing") {
+          gameModeController.pause();
+          usePhysicsStore.getState().pausePlay();
+        } else {
+          gameModeController.resume();
+          usePhysicsStore.getState().resumePlay();
+        }
+        return;
+      }
+
+      // During play mode, only allow F5 and Escape
+      if (physicsStore.playMode !== "stopped") {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          gameModeController.stop();
+          usePhysicsStore.getState().stopPlay();
+        }
+        return;
+      }
 
       // Ctrl+Tab: cycle object → edit → pose → sculpt → object
       if (e.key === "Tab" && (e.ctrlKey || e.metaKey)) {

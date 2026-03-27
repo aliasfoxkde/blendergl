@@ -11,6 +11,8 @@ import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useAiStore } from "@/editor/stores/aiStore";
+import { usePhysicsStore } from "@/editor/stores/physicsStore";
+import { gameModeController } from "@/editor/utils/gameModeController";
 import { duplicateEntities } from "@/editor/utils/duplicate";
 
 interface ToolbarProps {
@@ -53,6 +55,8 @@ export function Toolbar({
   const selectedIds = useSelectionStore((s) => s.selectedIds);
   const aiPanelOpen = useAiStore((s) => s.panelOpen);
   const toggleAiPanel = useAiStore((s) => s.togglePanel);
+  const playMode = usePhysicsStore((s) => s.playMode);
+  const playTime = usePhysicsStore((s) => s.playTime);
 
   useEffect(() => {
     if (!addMenuOpen) return;
@@ -361,6 +365,69 @@ export function Toolbar({
       >
         <ShadingIcon mode={shadingMode} />
       </ToolButton>
+
+      {/* Game Mode Controls */}
+      <div className="w-px h-5 bg-[#444]" />
+      {playMode === "stopped" ? (
+        <ToolButton
+          label="Play (F5)"
+          active={false}
+          onClick={() => {
+            gameModeController.start();
+            usePhysicsStore.getState().startPlay();
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5,3 19,12 5,21" />
+          </svg>
+        </ToolButton>
+      ) : (
+        <>
+          {playMode === "playing" ? (
+            <ToolButton
+              label="Pause (F5)"
+              active={false}
+              onClick={() => {
+                gameModeController.pause();
+                usePhysicsStore.getState().pausePlay();
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+              </svg>
+            </ToolButton>
+          ) : (
+            <ToolButton
+              label="Resume (F5)"
+              active={false}
+              onClick={() => {
+                gameModeController.resume();
+                usePhysicsStore.getState().resumePlay();
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5,3 19,12 5,21" />
+              </svg>
+            </ToolButton>
+          )}
+          <ToolButton
+            label="Stop (Esc)"
+            active={false}
+            onClick={() => {
+              gameModeController.stop();
+              usePhysicsStore.getState().stopPlay();
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="4" y="4" width="16" height="16" rx="2" />
+            </svg>
+          </ToolButton>
+          <span className="text-[9px] text-green-400 tabular-nums font-mono">
+            {playTime.toFixed(1)}s
+          </span>
+        </>
+      )}
 
       {/* Spacer */}
       <div className="flex-1" />

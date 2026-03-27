@@ -8,6 +8,7 @@ import { useArmatureStore } from "@/editor/stores/armatureStore";
 import { useAnimationStore } from "@/editor/stores/animationStore";
 import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
 import { useSettingsStore, PRINTER_PROFILES } from "@/editor/stores/settingsStore";
+import { usePhysicsStore } from "@/editor/stores/physicsStore";
 import { formatAnalysis, estimatePrint, analyzeMesh, repairMesh, fillHoles } from "@/editor/utils/meshAnalysis";
 import { sliceMesh } from "@/editor/utils/gcode/slicer";
 import { generateGcode, downloadGcode } from "@/editor/utils/gcode/gcodeGenerator";
@@ -298,6 +299,12 @@ export function PropertiesPanel() {
 
       {/* Animation */}
       <AnimationSection />
+
+      {/* Physics */}
+      <PhysicsSection entityId={entity.id} />
+
+      {/* Game Script */}
+      <GameScriptSection entityId={entity.id} />
     </div>
   );
 }
@@ -379,6 +386,250 @@ function TransformInput({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ---- Physics Section ----
+
+function PhysicsSection({ entityId }: { entityId: string }) {
+  const body = usePhysicsStore((s) => s.bodies[entityId]);
+  const setBody = usePhysicsStore((s) => s.setBody);
+  const enableBody = usePhysicsStore((s) => s.enableBody);
+  const disableBody = usePhysicsStore((s) => s.disableBody);
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border-b border-[#333]">
+      <button
+        className="w-full px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#282828] flex items-center justify-between"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span className="flex items-center gap-1.5">
+          Physics
+          {body?.enabled && <span className="w-1.5 h-1.5 rounded-full bg-green-400" />}
+        </span>
+        <span className="text-[10px] text-gray-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div className="px-3 py-2 space-y-1.5">
+          <PropertyRow label="Enable">
+            <input
+              type="checkbox"
+              checked={body?.enabled ?? false}
+              onChange={(e) => e.target.checked ? enableBody(entityId) : disableBody(entityId)}
+              className="accent-blue-500"
+            />
+          </PropertyRow>
+          <PropertyRow label="Type">
+            <select
+              value={body?.motionType ?? "dynamic"}
+              onChange={(e) => setBody(entityId, { motionType: e.target.value as "static" | "dynamic" | "kinematic" })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-1.5 py-0.5 text-[10px] text-gray-300 focus:border-blue-500 focus:outline-none"
+            >
+              <option value="static">Static</option>
+              <option value="dynamic">Dynamic</option>
+              <option value="kinematic">Kinematic</option>
+            </select>
+          </PropertyRow>
+          <PropertyRow label="Collider">
+            <select
+              value={body?.colliderShape ?? "box"}
+              onChange={(e) => setBody(entityId, { colliderShape: e.target.value as "box" | "sphere" | "cylinder" | "capsule" | "convex_hull" | "mesh" })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-1.5 py-0.5 text-[10px] text-gray-300 focus:border-blue-500 focus:outline-none"
+            >
+              <option value="box">Box</option>
+              <option value="sphere">Sphere</option>
+              <option value="cylinder">Cylinder</option>
+              <option value="capsule">Capsule</option>
+              <option value="convex_hull">Convex Hull</option>
+              <option value="mesh">Mesh</option>
+            </select>
+          </PropertyRow>
+          <SliderRow label="Mass" value={body?.mass ?? 1} min={0.01} max={100} step={0.1} onChange={(v) => setBody(entityId, { mass: v })} />
+          <SliderRow label="Friction" value={body?.friction ?? 0.5} min={0} max={1} step={0.01} onChange={(v) => setBody(entityId, { friction: v })} />
+          <SliderRow label="Bounce" value={body?.restitution ?? 0} min={0} max={1} step={0.01} onChange={(v) => setBody(entityId, { restitution: v })} />
+          <SliderRow label="Lin Damp" value={body?.linearDamping ?? 0} min={0} max={1} step={0.01} onChange={(v) => setBody(entityId, { linearDamping: v })} />
+          <SliderRow label="Ang Damp" value={body?.angularDamping ?? 0.05} min={0} max={1} step={0.01} onChange={(v) => setBody(entityId, { angularDamping: v })} />
+          <PropertyRow label="Trigger">
+            <input
+              type="checkbox"
+              checked={body?.isTrigger ?? false}
+              onChange={(e) => setBody(entityId, { isTrigger: e.target.checked })}
+              className="accent-blue-500"
+            />
+          </PropertyRow>
+          <PropertyRow label="Layer">
+            <input
+              type="number"
+              value={body?.collisionLayer ?? 1}
+              min={1}
+              max={32}
+              onChange={(e) => setBody(entityId, { collisionLayer: parseInt(e.target.value) || 1 })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-1.5 py-0.5 text-[10px] text-gray-300 focus:border-blue-500 focus:outline-none"
+            />
+          </PropertyRow>
+          <PropertyRow label="Mask">
+            <input
+              type="number"
+              value={body?.collisionMask ?? 1}
+              min={1}
+              max={32}
+              onChange={(e) => setBody(entityId, { collisionMask: parseInt(e.target.value) || 1 })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-1.5 py-0.5 text-[10px] text-gray-300 focus:border-blue-500 focus:outline-none"
+            />
+          </PropertyRow>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---- Game Script Section ----
+
+function GameScriptSection({ entityId }: { entityId: string }) {
+  const scripts = usePhysicsStore((s) => s.scripts[entityId] ?? []);
+  const addScript = usePhysicsStore((s) => s.addScript);
+  const removeScript = usePhysicsStore((s) => s.removeScript);
+  const updateScript = usePhysicsStore((s) => s.updateScript);
+  const [expanded, setExpanded] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const handleAddScript = () => {
+    const id = `script_${Date.now()}`;
+    addScript(entityId, {
+      id,
+      name: "New Script",
+      source: `// Game script for this entity\n// Available: input, time, entity, transform, physics, log\n\nfunction onUpdate(dt) {\n  // Runs every frame\n}`,
+      enabled: true,
+    });
+    setEditId(id);
+  };
+
+  return (
+    <div className="border-b border-[#333]">
+      <button
+        className="w-full px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#282828] flex items-center justify-between"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>Game Scripts ({scripts.length})</span>
+        <span className="text-[10px] text-gray-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div className="px-3 py-2 space-y-1.5">
+          {scripts.map((script) => (
+            <div key={script.id} className="border border-[#444] rounded bg-[#1a1a1a] p-1.5">
+              <div className="flex items-center justify-between mb-1">
+                <input
+                  type="text"
+                  value={script.name}
+                  onChange={(e) => updateScript(entityId, script.id, { name: e.target.value })}
+                  className="bg-transparent text-[10px] text-gray-300 flex-1 focus:outline-none"
+                />
+                <div className="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    checked={script.enabled}
+                    onChange={(e) => updateScript(entityId, script.id, { enabled: e.target.checked })}
+                    className="accent-blue-500"
+                    title="Enabled"
+                  />
+                  <button
+                    className="text-gray-500 hover:text-gray-300 text-[10px]"
+                    onClick={() => setEditId(editId === script.id ? null : script.id)}
+                  >
+                    {editId === script.id ? "▲" : "▼"}
+                  </button>
+                  <button
+                    className="text-gray-500 hover:text-red-400 text-[10px]"
+                    onClick={() => { removeScript(entityId, script.id); if (editId === script.id) setEditId(null); }}
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+              {editId === script.id && (
+                <textarea
+                  value={script.source}
+                  onChange={(e) => updateScript(entityId, script.id, { source: e.target.value })}
+                  className="w-full h-32 bg-[#0d0d0d] border border-[#444] rounded px-1.5 py-1 text-[10px] text-green-300 font-mono resize-y focus:border-blue-500 focus:outline-none"
+                  spellCheck={false}
+                />
+              )}
+            </div>
+          ))}
+          <button
+            className="w-full py-1 text-[10px] text-gray-400 hover:text-white border border-dashed border-[#444] rounded hover:border-blue-500 transition"
+            onClick={handleAddScript}
+          >
+            + Add Script
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---- Game Settings Section (in Settings Panel) ----
+
+function GameSettingsSection() {
+  const gameSettings = usePhysicsStore((s) => s.gameSettings);
+  const setGameSettings = usePhysicsStore((s) => s.setGameSettings);
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border-b border-[#333]">
+      <button
+        className="w-full px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#282828] flex items-center justify-between"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>Game Settings</span>
+        <span className="text-[10px] text-gray-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div className="px-3 py-2 space-y-1.5">
+          <PropertyRow label="Gravity Y">
+            <input
+              type="number"
+              value={gameSettings.gravity.y}
+              step={0.1}
+              onChange={(e) => setGameSettings({ gravity: { ...gameSettings.gravity, y: parseFloat(e.target.value) || 0 } })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-1.5 py-0.5 text-[10px] text-gray-300 focus:border-blue-500 focus:outline-none"
+            />
+          </PropertyRow>
+          <PropertyRow label="Gravity X">
+            <input
+              type="number"
+              value={gameSettings.gravity.x}
+              step={0.1}
+              onChange={(e) => setGameSettings({ gravity: { ...gameSettings.gravity, x: parseFloat(e.target.value) || 0 } })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-1.5 py-0.5 text-[10px] text-gray-300 focus:border-blue-500 focus:outline-none"
+            />
+          </PropertyRow>
+          <PropertyRow label="Gravity Z">
+            <input
+              type="number"
+              value={gameSettings.gravity.z}
+              step={0.1}
+              onChange={(e) => setGameSettings({ gravity: { ...gameSettings.gravity, z: parseFloat(e.target.value) || 0 } })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-1.5 py-0.5 text-[10px] text-gray-300 focus:border-blue-500 focus:outline-none"
+            />
+          </PropertyRow>
+          <PropertyRow label="Time Step">
+            <span className="text-[10px] text-gray-400">{gameSettings.fixedTimeStep.toFixed(4)}s (1/{Math.round(1 / gameSettings.fixedTimeStep)})</span>
+          </PropertyRow>
+          <PropertyRow label="Max Steps">
+            <input
+              type="number"
+              value={gameSettings.maxSubSteps}
+              min={1}
+              max={16}
+              onChange={(e) => setGameSettings({ maxSubSteps: parseInt(e.target.value) || 4 })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-1.5 py-0.5 text-[10px] text-gray-300 focus:border-blue-500 focus:outline-none"
+            />
+          </PropertyRow>
+        </div>
+      )}
     </div>
   );
 }
@@ -488,6 +739,7 @@ function SettingsPanel() {
         </PropertyRow>
       </Section>
       <PrintSettingsSection />
+      <GameSettingsSection />
       <div className="px-3 py-4 text-center">
         <p className="text-[10px] text-gray-600">Select an object to edit its properties</p>
       </div>

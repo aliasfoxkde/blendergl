@@ -258,3 +258,92 @@ export type {
   GraphData,
 } from "./nodeEditor";
 export { PORT_COLORS, CATEGORY_COLORS } from "./nodeEditor";
+
+// ---- Physics ----
+
+export type ColliderShape = "box" | "sphere" | "cylinder" | "capsule" | "convex_hull" | "mesh";
+export type BodyMotionType = "static" | "dynamic" | "kinematic";
+
+export interface PhysicsBodyData {
+  enabled: boolean;
+  motionType: BodyMotionType;
+  mass: number;
+  friction: number;
+  restitution: number;
+  linearDamping: number;
+  angularDamping: number;
+  colliderShape: ColliderShape;
+  isTrigger: boolean;
+  collisionLayer: number;
+  collisionMask: number;
+}
+
+export function createDefaultPhysicsBody(): PhysicsBodyData {
+  return {
+    enabled: false,
+    motionType: "dynamic",
+    mass: 1.0,
+    friction: 0.5,
+    restitution: 0.0,
+    linearDamping: 0.0,
+    angularDamping: 0.05,
+    colliderShape: "box",
+    isTrigger: false,
+    collisionLayer: 1,
+    collisionMask: 1,
+  };
+}
+
+// ---- Game Scripting ----
+
+export interface GameScriptData {
+  id: string;
+  name: string;
+  source: string; // JavaScript source code
+  enabled: boolean;
+}
+
+// ---- Game State Machine ----
+
+export interface StateMachineState {
+  id: string;
+  name: string;
+  onEnter?: string; // script code
+  onUpdate?: string; // script code
+  onExit?: string; // script code
+}
+
+export interface StateMachineTransition {
+  id: string;
+  fromStateId: string;
+  toStateId: string;
+  condition: string; // JavaScript expression returning boolean
+}
+
+export interface StateMachineData {
+  id: string;
+  initialStateId: string;
+  states: Record<string, StateMachineState>;
+  transitions: StateMachineTransition[];
+  parameters: Record<string, number | string | boolean>;
+}
+
+// ---- Game Settings ----
+
+export interface GameSettings {
+  gravity: Vec3;
+  fixedTimeStep: number;
+  maxSubSteps: number;
+}
+
+export function createDefaultGameSettings(): GameSettings {
+  return {
+    gravity: { x: 0, y: -9.81, z: 0 },
+    fixedTimeStep: 1 / 60,
+    maxSubSteps: 4,
+  };
+}
+
+// ---- Play Mode ----
+
+export type PlayModeState = "stopped" | "playing" | "paused";
