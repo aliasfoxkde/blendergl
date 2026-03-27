@@ -28,6 +28,7 @@ export function Toolbar({
   hasSelection,
 }: ToolbarProps) {
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [boolMenuOpen, setBoolMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const canUndo = useHistoryStore((s) => s.canUndo);
   const canRedo = useHistoryStore((s) => s.canRedo);
@@ -263,6 +264,50 @@ export function Toolbar({
       >
         <CopyIcon />
       </ToolButton>
+
+      {/* Boolean operations dropdown */}
+      {selectedIds.length === 2 && (
+        <div className="relative" ref={menuRef}>
+          <ToolButton
+            label="Boolean"
+            active={boolMenuOpen}
+            onClick={() => setBoolMenuOpen(!boolMenuOpen)}
+          >
+            <BooleanIcon />
+          </ToolButton>
+          {boolMenuOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-[#333] border border-[#444] rounded-lg shadow-xl py-1 min-w-[130px] z-50">
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#444] hover:text-white transition"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("boolean-op", { detail: { op: "union" } }));
+                  setBoolMenuOpen(false);
+                }}
+              >
+                Union
+              </button>
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#444] hover:text-white transition"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("boolean-op", { detail: { op: "difference" } }));
+                  setBoolMenuOpen(false);
+                }}
+              >
+                Difference
+              </button>
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#444] hover:text-white transition"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("boolean-op", { detail: { op: "intersection" } }));
+                  setBoolMenuOpen(false);
+                }}
+              >
+                Intersection
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Snap toggle */}
       <ToolButton
@@ -501,6 +546,15 @@ function PrinterIcon() {
       <polyline points="6 9 6 2 18 2 18 9" />
       <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
       <rect x="6" y="14" width="12" height="8" />
+    </svg>
+  );
+}
+
+function BooleanIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="9" cy="12" r="6" />
+      <circle cx="15" cy="12" r="6" />
     </svg>
   );
 }

@@ -34,6 +34,7 @@ import { exportSelectedToSTL } from "@/editor/utils/exportStl";
 import { sliceMesh } from "@/editor/utils/gcode/slicer";
 import { generateGcode, downloadGcode } from "@/editor/utils/gcode/gcodeGenerator";
 import { analyzeMesh } from "@/editor/utils/meshAnalysis";
+import { booleanOperation } from "@/editor/utils/csgOperations";
 import type { TransformMode } from "@/editor/types";
 
 interface ViewportProps {
@@ -150,6 +151,28 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     };
     window.addEventListener("export-gcode", handleExportGcode);
 
+    // Boolean operation event listener
+    const handleBooleanOp = async (e: Event) => {
+      const { op } = (e as CustomEvent).detail as { op: "union" | "difference" | "intersection" };
+      const currentSelectedIds = useSelectionStore.getState().selectedIds;
+      if (currentSelectedIds.length !== 2) return;
+
+      const [idA, idB] = currentSelectedIds;
+      const meshA = meshMapRef.current.get(idA) as Mesh | undefined;
+      const meshB = meshMapRef.current.get(idB) as Mesh | undefined;
+      if (!meshA || !meshB) return;
+
+      const result = await booleanOperation(meshA, meshB, op, scene);
+      if (result) {
+        result.metadata = { entityId: `csg_${Date.now()}` };
+        // Add the result mesh to the map
+        meshMapRef.current.set(result.metadata.entityId, result);
+        // The entity store would need to be updated too — for now just add the mesh
+        console.log(`Boolean ${op} completed: ${result.getTotalVertices()} vertices`);
+      }
+    };
+    window.addEventListener("boolean-op", handleBooleanOp);
+
     // Render loop
     engine.runRenderLoop(() => {
       scene.render();
@@ -250,6 +273,7 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       window.removeEventListener("import-gltf", handleImportGltf);
       window.removeEventListener("export-stl", handleExportStl);
       window.removeEventListener("export-gcode", handleExportGcode);
+      window.removeEventListener("boolean-op", handleBooleanOp);
       scene.onPointerObservable.clear();
       gizmoController.dispose();
       editControllerRef_local.current?.dispose();
