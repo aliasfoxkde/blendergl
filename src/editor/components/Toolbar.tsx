@@ -8,6 +8,7 @@ import { useEditModeStore } from "@/editor/stores/editModeStore";
 import { usePoseModeStore } from "@/editor/stores/poseModeStore";
 import { useArmatureStore } from "@/editor/stores/armatureStore";
 import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
+import { useTexturePaintStore } from "@/editor/stores/texturePaintStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useAiStore } from "@/editor/stores/aiStore";
@@ -88,7 +89,7 @@ export function Toolbar({
 
       {/* Mode indicator */}
       <button
-        title={`Switch Mode (Tab) — Current: ${editorMode === "edit" ? "Edit" : editorMode === "pose" ? "Pose" : editorMode === "sculpt" ? "Sculpt" : "Object"} Mode`}
+        title={`Switch Mode (Tab) — Current: ${editorMode === "edit" ? "Edit" : editorMode === "pose" ? "Pose" : editorMode === "sculpt" ? "Sculpt" : editorMode === "texture_paint" ? "TexPaint" : "Object"} Mode`}
         className={`px-2 h-7 flex items-center gap-1 rounded text-[10px] font-medium transition ${
           editorMode === "edit"
             ? "bg-blue-600/30 text-blue-300 border border-blue-500/50"
@@ -96,7 +97,9 @@ export function Toolbar({
               ? "bg-green-600/30 text-green-300 border border-green-500/50"
               : editorMode === "sculpt"
                 ? "bg-purple-600/30 text-purple-300 border border-purple-500/50"
-                : "text-gray-400 hover:text-white"
+                : editorMode === "texture_paint"
+                  ? "bg-orange-600/30 text-orange-300 border border-orange-500/50"
+                  : "text-gray-400 hover:text-white"
         }`}
         onClick={() => {
           if (editorMode === "object") {
@@ -123,13 +126,22 @@ export function Toolbar({
               setEditorMode("object");
               usePoseModeStore.getState().exitPoseMode();
             }
+          } else if (editorMode === "sculpt") {
+            if (activeEntityId) {
+              setEditorMode("texture_paint");
+              useSculptModeStore.getState().exitSculptMode();
+              useTexturePaintStore.getState().enterPaintMode(activeEntityId);
+            } else {
+              setEditorMode("object");
+              useSculptModeStore.getState().exitSculptMode();
+            }
           } else {
             setEditorMode("object");
-            useSculptModeStore.getState().exitSculptMode();
+            useTexturePaintStore.getState().exitPaintMode();
           }
         }}
       >
-        {editorMode === "edit" ? "Edit" : editorMode === "pose" ? "Pose" : editorMode === "sculpt" ? "Sculpt" : "Object"}
+        {editorMode === "edit" ? "Edit" : editorMode === "pose" ? "Pose" : editorMode === "sculpt" ? "Sculpt" : editorMode === "texture_paint" ? "TexPaint" : "Object"}
       </button>
 
       {/* Element mode buttons (edit mode only) */}

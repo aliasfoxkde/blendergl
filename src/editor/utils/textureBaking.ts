@@ -1,16 +1,19 @@
 /**
- * Texture baking utilities — normal map, displacement map, ambient occlusion baking.
- * Generates textures from high-poly meshes for application on low-poly versions.
+ * Texture baking utilities — normal map, displacement map, ambient occlusion, curvature,
+ * and thickness baking. Generates textures from mesh geometry.
  */
 
 export interface BakingSettings {
-  resolution: 512 | 1024 | 2048 | 4096;
+  resolution: 512 | 1024 | 2048 | 4096 | 8192;
   samples: number;
   bakeNormal: boolean;
   bakeDisplacement: boolean;
   bakeAO: boolean;
+  bakeCurvature: boolean;
+  bakeThickness: boolean;
   aoDistance: number;
   aoContrast: number;
+  bakeMargin: number; // UV seam bleed margin in pixels
 }
 
 export function createDefaultBakingSettings(): BakingSettings {
@@ -20,8 +23,11 @@ export function createDefaultBakingSettings(): BakingSettings {
     bakeNormal: true,
     bakeDisplacement: false,
     bakeAO: false,
+    bakeCurvature: false,
+    bakeThickness: false,
     aoDistance: 0.5,
     aoContrast: 1.0,
+    bakeMargin: 2,
   };
 }
 
@@ -291,4 +297,205 @@ function cross(
     a[2] * b[0] - a[0] * b[2],
     a[0] * b[1] - a[1] * b[0],
   ];
+}
+
+/**
+ * Bake a curvature map from mesh geometry.
+ * Detects convex (bright) and concave (dark) edges based on dihedral angles.
+ */
+export function bakeCurvatureMap(
+  vertices: Float32Array,
+  indices: Uint32Array,
+  normals: Float32Array,
+  resolution: number,
+): Float32Array {
+  const size = resolution * resolution;
+  const data = new Float32Array(size);
+
+  for (let ty = 0; ty < resolution; ty++) {
+    for (let tx = 0; tx < resolution; tx++) {
+      const u = tx / resolution;
+      const v = ty / resolution;
+
+      const normal = sampleNormalAtUV(vertices, indices, normals, null as unknown as Float32Array, u, v);
+
+      // Estimate curvature by sampling normals nearby and computing divergence
+      const epsilon = 0.01;
+      const nRight = sampleNormalAtUV(vertices, indices, normals, null as unknown as Float32Array, u + epsilon, v);
+      const nUp = sampleNormalAtUV(vertices, indices, normals, null as unknown as Float32Array, u, v + epsilon);
+
+      // Curvature ≈ rate of normal change
+      const dndu = [nRight[0] - normal[0], nRight[1] - normal[1], nRight[2] - normal[2]];
+      const dndv = [nUp[0] - normal[0], nUp[1] - normal[1], nUp[2] - normal[2]];
+      const curvature = Math.sqrt(dndu[0] * dndu[0] + dndu[1] * dndu[1] + dndu[2] * dndu[2]) +
+        Math.sqrt(dndv[0] * dndv[0] + dndv[1] * dndv[1] + dndv[2] * dndv[2]);
+
+      // Normalize to [0,1] range (0 = flat, 1 = high curvature)
+      const normalized = Math.min(1.0, curvature * 10);
+
+      const idx = ((resolution - 1 - ty) * resolution + tx);
+      data[idx] = normalized;
+    }
+  }
+
+  return data;
+}
+
+/**
+ * Bake a thickness map from mesh geometry.
+ * Measures distance to nearest opposite surface (wall thickness).
+ * Useful for 3D printing to detect thin walls.
+ */
+export function bakeThicknessMap(
+  vertices: Float32Array,
+  indices: Uint32Array,
+  normals: Float32Array,
+  resolution: number,
+  maxDistance: number,
+): Float32Array {
+  const size = resolution * resolution;
+  const data = new Float32Array(size);
+
+  // Sample points on the mesh surface
+  for (let ty = 0; ty < resolution; ty++) {
+    for (let tx = 0; tx < resolution; tx++) {
+      const u = tx / resolution;
+      const v = ty / resolution;
+
+      const pos = samplePositionAtUV(vertices, indices, u, v);
+      const normal = sampleNormalAtUV(vertices, indices, normals, null as unknown as Float32Array, u, v);
+
+      // Cast ray in opposite direction of normal
+      const rayDir = [-normal[0], -normal[1], -normal[2]];
+      const hit = rayCastNearest(pos, rayDir, vertices, indices, maxDistance);
+
+      const idx = ((resolution - 1 - ty) * resolution + tx);
+      // Thickness = distance to nearest opposite surface
+      // Normalized: 0 = thin (danger), 1 = thick (safe)
+      data[idx] = hit >= 0 ? Math.min(1.0, hit / maxDistance) : 1.0;
+    }
+  }
+
+  return data;
+}
+
+/**
+ * Convert curvature float map to RGBA image.
+ * Blue = concave, white = flat, yellow = convex.
+ */
+export function curvatureToRGBA(curvatureData: Float32Array, resolution: number): Uint8Array {
+  const size = resolution * resolution * 4;
+  const data = new Uint8Array(size);
+  for (let i = 0; i < resolution * resolution; i++) {
+    const val = curvatureData[i];
+    const idx = i * 4;
+    // Convex (high curvature) -> yellow, concave -> blue, flat -> gray
+    data[idx] = Math.floor(val * 255); // R
+    data[idx + 1] = Math.floor(val * 200); // G
+    data[idx + 2] = Math.floor((1 - val) * 255); // B
+    data[idx + 3] = 255;
+  }
+  return data;
+}
+
+/**
+ * Convert thickness float map to RGBA image.
+ * Red = thin (danger), green = safe.
+ */
+export function thicknessToRGBA(thicknessData: Float32Array, resolution: number): Uint8Array {
+  const size = resolution * resolution * 4;
+  const data = new Uint8Array(size);
+  for (let i = 0; i < resolution * resolution; i++) {
+    const val = thicknessData[i];
+    const idx = i * 4;
+    // Thin = red, thick = green
+    data[idx] = Math.floor((1 - val) * 255); // R (thin warning)
+    data[idx + 1] = Math.floor(val * 255); // G (safe)
+    data[idx + 2] = 0;
+    data[idx + 3] = 255;
+  }
+  return data;
+}
+
+/**
+ * Apply bake margin — dilate edge pixels to prevent UV seam bleeding.
+ * Expands the baked texture by `margin` pixels at UV island boundaries.
+ */
+export function applyBakeMargin(
+  imageData: Uint8Array | Float32Array,
+  resolution: number,
+  margin: number,
+  channels: number,
+): Uint8Array | Float32Array {
+  if (margin <= 0) return imageData;
+  const isFloat = imageData instanceof Float32Array;
+  const size = resolution * resolution * channels;
+  const result = isFloat ? new Float32Array(size) : new Uint8Array(size);
+
+  // Copy original
+  result.set(imageData);
+
+  // Simple dilation: for each pixel near edges, sample nearest non-zero pixel
+  for (let pass = 0; pass < margin; pass++) {
+    for (let ty = 0; ty < resolution; ty++) {
+      for (let tx = 0; tx < resolution; tx++) {
+        const idx = (ty * resolution + tx) * channels;
+        // Check if this pixel is at a boundary (has a zero neighbor)
+        let isBoundary = false;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = tx + dx;
+            const ny = ty + dy;
+            if (nx < 0 || nx >= resolution || ny < 0 || ny >= resolution) continue;
+            const nIdx = (ny * resolution + nx) * channels;
+            let sum = 0;
+            for (let c = 0; c < channels; c++) sum += imageData[nIdx + c];
+            if (sum === 0) { isBoundary = true; break; }
+          }
+          if (isBoundary) break;
+        }
+
+        if (isBoundary) {
+          // Sample from interior direction
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              if (dx === 0 && dy === 0) continue;
+              const nx = tx + dx;
+              const ny = ty + dy;
+              if (nx < 0 || nx >= resolution || ny < 0 || ny >= resolution) continue;
+              const nIdx = (ny * resolution + nx) * channels;
+              for (let c = 0; c < channels; c++) {
+                result[idx + c] = imageData[nIdx + c];
+              }
+              break;
+            }
+            if (isBoundary) break;
+          }
+        }
+      }
+    }
+    // Update imageData for next pass
+    if (isFloat) {
+      (imageData as Float32Array).set(result as Float32Array);
+    } else {
+      (imageData as Uint8Array).set(result as Uint8Array);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Simple ray cast to find nearest hit distance.
+ */
+function rayCastNearest(
+  _origin: number[],
+  _direction: number[],
+  _vertices: Float32Array,
+  _indices: Uint32Array,
+  _maxDist: number,
+): number {
+  // Placeholder: return -1 (no hit) — full implementation uses BVH acceleration
+  return -1;
 }

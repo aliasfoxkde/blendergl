@@ -11,7 +11,9 @@ interface UvState {
   uvData: Record<string, {
     uvs: number[][];  // [u, v] per vertex
     islands: UvIsland[];
-  }>;
+    pinnedVertices: number[];
+    seams: string[]; // "v0-v1" edge keys
+  }>
 
   // Settings
   settings: UvSettings;
@@ -22,6 +24,9 @@ interface UvState {
   selectedUvEdges: Set<[number, number]>;
   selectedUvFaces: Set<number>;
   selectedIslands: Set<number>;
+
+  // Seam tool
+  seamMode: boolean;
 
   // View state
   viewOffset: { x: number; y: number };
@@ -44,7 +49,7 @@ interface UvState {
   setUvPosition: (entityId: string, vertexIndex: number, u: number, v: number) => void;
   setUvPositions: (entityId: string, updates: { index: number; u: number; v: number }[]) => void;
 
-  applyProjection: (entityId: string, projectionType: UvProjectionType, positions: number[], normals: number[], indices: number[]) => void;
+  applyProjection: (entityId: string, projectionType: UvProjectionType, positions: number[], normals: number[], indices: number[], cameraMatrix?: number[] | null) => void;
   detectIslands: (entityId: string, indices: number[], uvs: number[][]) => void;
 
   packIslands: (entityId: string) => void;
@@ -53,12 +58,43 @@ interface UvState {
   setViewOffset: (offset: { x: number; y: number }) => void;
   setViewZoom: (zoom: number) => void;
 
+  // Seam marking
+  toggleSeamMode: () => void;
+  toggleSeam: (entityId: string, v0: number, v1: number) => void;
+  clearSeams: (entityId: string) => void;
+  markSeamFromSelectedEdges: (entityId: string) => void;
+
+  // UV pinning
+  pinVertices: (entityId: string, vertexIndices: number[]) => void;
+  unpinVertices: (entityId: string, vertexIndices: number[]) => void;
+  unpinAll: (entityId: string) => void;
+  isPinned: (entityId: string, vertexIndex: number) => boolean;
+
+  // UV alignment
+  alignSelectedU: (entityId: string) => void;
+  alignSelectedV: (entityId: string) => void;
+  distributeEvenlyU: (entityId: string) => void;
+  distributeEvenlyV: (entityId: string) => void;
+
+  // UV weld / rip / mirror
+  weldSelected: (entityId: string) => void;
+  weldAll: (entityId: string, threshold?: number) => void;
+  ripSelected: (entityId: string) => void;
+  mirrorSelectedU: (entityId: string) => void;
+  mirrorSelectedV: (entityId: string) => void;
+
+  // Island operations
+  rotateIslandsToAxes: (entityId: string) => void;
+  lockOverlappingIslands: (entityId: string) => void;
+
   // Procedural textures
   generatedTextures: Record<string, string>; // base64 data URLs
   generateCheckerTexture: (size?: number, checks?: number) => string;
   generateNoiseTexture: (size?: number, scale?: number) => string;
   generateGradientTexture: (size?: number, color1?: string, color2?: string, direction?: "horizontal" | "vertical" | "radial") => string;
   generateGridTexture: (size?: number, divisions?: number, lineWidth?: number) => string;
+  generateColorRampTexture: (size: number, stops: { pos: number; color: string }[]) => string;
+  combineTextures: (texA: string, texB: string, mode: "mix" | "multiply" | "add" | "subtract", factor: number) => string;
   clearTexture: (id: string) => void;
 }
 
@@ -67,7 +103,7 @@ export const useUvStore = create<UvState>()(
     panelOpen: false,
     uvData: {},
     settings: createDefaultUvSettings(),
-    editMode: "vertex",
+    editMode: "vertex" as UvEditMode,
     selectedUvVertices: new Set(),
     selectedUvEdges: new Set(),
     selectedUvFaces: new Set(),
@@ -75,6 +111,7 @@ export const useUvStore = create<UvState>()(
     viewOffset: { x: 0, y: 0 },
     viewZoom: 1.0,
     generatedTextures: {},
+    seamMode: false,
 
     togglePanel: () =>
       set((state) => {
@@ -172,11 +209,11 @@ export const useUvStore = create<UvState>()(
         }
       }),
 
-    applyProjection: (entityId, projectionType, positions, normals, indices) =>
+    applyProjection: (entityId, projectionType, positions, normals, indices, cameraMatrix) =>
       set((state) => {
-        const uvs = computeProjection(positions, normals, indices, projectionType);
+        const uvs = computeProjection(positions, normals, indices, projectionType, cameraMatrix);
         if (!state.uvData[entityId]) {
-          state.uvData[entityId] = { uvs: [], islands: [] };
+          state.uvData[entityId] = { uvs: [], islands: [], pinnedVertices: [], seams: [] };
         }
         state.uvData[entityId].uvs = uvs;
         state.selectedUvVertices.clear();
@@ -188,7 +225,7 @@ export const useUvStore = create<UvState>()(
       set((state) => {
         const islands = findUvIslands(indices, uvs);
         if (!state.uvData[entityId]) {
-          state.uvData[entityId] = { uvs: [], islands: [] };
+          state.uvData[entityId] = { uvs: [], islands: [], pinnedVertices: [], seams: [] };
         }
         state.uvData[entityId].islands = islands;
       }),
@@ -377,6 +414,367 @@ export const useUvStore = create<UvState>()(
       set((state) => {
         delete state.generatedTextures[id];
       }),
+
+    // Seam marking
+    toggleSeamMode: () =>
+      set((state) => {
+        state.seamMode = !state.seamMode;
+      }),
+
+    toggleSeam: (entityId, v0, v1) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data) return;
+        const key = `${Math.min(v0, v1)}-${Math.max(v0, v1)}`;
+        const idx = data.seams.indexOf(key);
+        if (idx >= 0) {
+          data.seams.splice(idx, 1);
+        } else {
+          data.seams.push(key);
+        }
+      }),
+
+    clearSeams: (entityId) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (data) data.seams.length = 0;
+      }),
+
+    markSeamFromSelectedEdges: (entityId) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data) return;
+        for (const edge of state.selectedUvEdges) {
+          const key = `${Math.min(edge[0], edge[1])}-${Math.max(edge[0], edge[1])}`;
+          if (!data.seams.includes(key)) {
+            data.seams.push(key);
+          }
+        }
+      }),
+
+    // UV pinning
+    pinVertices: (entityId, vertexIndices) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data) return;
+        for (const vi of vertexIndices) {
+          if (!data.pinnedVertices.includes(vi)) {
+            data.pinnedVertices.push(vi);
+          }
+        }
+      }),
+
+    unpinVertices: (entityId, vertexIndices) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data) return;
+        data.pinnedVertices = data.pinnedVertices.filter((vi) => !vertexIndices.includes(vi));
+      }),
+
+    unpinAll: (entityId) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (data) data.pinnedVertices.length = 0;
+      }),
+
+    isPinned: (entityId: string, vertexIndex: number): boolean => {
+      const data = useUvStore.getState().uvData[entityId];
+      return data ? data.pinnedVertices.includes(vertexIndex) : false;
+    },
+
+    // UV alignment
+    alignSelectedU: (entityId: string) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data || state.selectedUvVertices.size < 2) return;
+        // Average U of selected vertices
+        let sumU = 0;
+        let count = 0;
+        for (const vi of state.selectedUvVertices) {
+          const uv = data.uvs[vi];
+          if (uv) { sumU += uv[0]; count++; }
+        }
+        if (count === 0) return;
+        const avgU = sumU / count;
+        for (const vi of state.selectedUvVertices) {
+          const uv = data.uvs[vi];
+          if (uv) uv[0] = avgU;
+        }
+      }),
+
+    alignSelectedV: (entityId: string) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data || state.selectedUvVertices.size < 2) return;
+        let sumV = 0;
+        let count = 0;
+        for (const vi of state.selectedUvVertices) {
+          const uv = data.uvs[vi];
+          if (uv) { sumV += uv[1]; count++; }
+        }
+        if (count === 0) return;
+        const avgV = sumV / count;
+        for (const vi of state.selectedUvVertices) {
+          const uv = data.uvs[vi];
+          if (uv) uv[1] = avgV;
+        }
+      }),
+
+    distributeEvenlyU: (entityId: string) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data || state.selectedUvVertices.size < 2) return;
+        const selected = Array.from(state.selectedUvVertices).map((vi) => ({
+          vi,
+          u: data.uvs[vi]?.[0] ?? 0,
+        })).sort((a, b) => a.u - b.u);
+        const minU = selected[0].u;
+        const maxU = selected[selected.length - 1].u;
+        const step = selected.length > 1 ? (maxU - minU) / (selected.length - 1) : 0;
+        for (let i = 0; i < selected.length; i++) {
+          const uv = data.uvs[selected[i].vi];
+          if (uv) uv[0] = minU + step * i;
+        }
+      }),
+
+    distributeEvenlyV: (entityId: string) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data || state.selectedUvVertices.size < 2) return;
+        const selected = Array.from(state.selectedUvVertices).map((vi) => ({
+          vi,
+          v: data.uvs[vi]?.[1] ?? 0,
+        })).sort((a, b) => a.v - b.v);
+        const minV = selected[0].v;
+        const maxV = selected[selected.length - 1].v;
+        const step = selected.length > 1 ? (maxV - minV) / (selected.length - 1) : 0;
+        for (let i = 0; i < selected.length; i++) {
+          const uv = data.uvs[selected[i].vi];
+          if (uv) uv[1] = minV + step * i;
+        }
+      }),
+
+    // UV weld
+    weldSelected: (entityId: string) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data || state.selectedUvVertices.size < 2) return;
+        const selected = Array.from(state.selectedUvVertices);
+        // Average position
+        let sumU = 0, sumV = 0;
+        let count = 0;
+        for (const vi of selected) {
+          const uv = data.uvs[vi];
+          if (uv) { sumU += uv[0]; sumV += uv[1]; count++; }
+        }
+        if (count === 0) return;
+        const avgU = sumU / count;
+        const avgV = sumV / count;
+        for (const vi of selected) {
+          const uv = data.uvs[vi];
+          if (uv) { uv[0] = avgU; uv[1] = avgV; }
+        }
+      }),
+
+    weldAll: (entityId: string, threshold = 0.001) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data) return;
+        const processed = new Set<number>();
+        for (let i = 0; i < data.uvs.length; i++) {
+          if (processed.has(i)) continue;
+          const group = [i];
+          for (let j = i + 1; j < data.uvs.length; j++) {
+            if (processed.has(j)) continue;
+            const du = data.uvs[i][0] - data.uvs[j][0];
+            const dv = data.uvs[i][1] - data.uvs[j][1];
+            if (Math.sqrt(du * du + dv * dv) < threshold) {
+              group.push(j);
+            }
+          }
+          if (group.length > 1) {
+            let sumU = 0, sumV = 0;
+            for (const vi of group) { sumU += data.uvs[vi][0]; sumV += data.uvs[vi][1]; }
+            const avgU = sumU / group.length;
+            const avgV = sumV / group.length;
+            for (const vi of group) { data.uvs[vi] = [avgU, avgV]; processed.add(vi); }
+          }
+        }
+      }),
+
+    // UV rip
+    ripSelected: (entityId: string) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data || state.selectedUvVertices.size === 0) return;
+        // Offset selected vertices slightly to create a split visual
+        const offset = 0.005;
+        for (const vi of state.selectedUvVertices) {
+          const uv = data.uvs[vi];
+          if (uv) {
+            uv[0] += offset;
+            uv[1] += offset;
+          }
+        }
+      }),
+
+    // UV mirror
+    mirrorSelectedU: (entityId: string) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data || state.selectedUvVertices.size === 0) return;
+        // Mirror around 0.5 U
+        for (const vi of state.selectedUvVertices) {
+          const uv = data.uvs[vi];
+          if (uv) uv[0] = 1.0 - uv[0];
+        }
+      }),
+
+    mirrorSelectedV: (entityId: string) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data || state.selectedUvVertices.size === 0) return;
+        // Mirror around 0.5 V
+        for (const vi of state.selectedUvVertices) {
+          const uv = data.uvs[vi];
+          if (uv) uv[1] = 1.0 - uv[1];
+        }
+      }),
+
+    // Island operations
+    rotateIslandsToAxes: (entityId: string) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data) return;
+        for (const island of data.islands) {
+          // Find island bounding box and determine dominant axis
+          let minU = Infinity, minV = Infinity, maxU = -Infinity, maxV = -Infinity;
+          for (const vi of island.vertexIndices) {
+            const uv = data.uvs[vi];
+            if (!uv) continue;
+            minU = Math.min(minU, uv[0]); minV = Math.min(minV, uv[1]);
+            maxU = Math.max(maxU, uv[0]); maxV = Math.max(maxV, uv[1]);
+          }
+          const width = maxU - minU;
+          const height = maxV - minV;
+          // If taller than wide, rotate 90 degrees
+          if (height > width * 1.2) {
+            const centerX = (minU + maxU) / 2;
+            const centerY = (minV + maxV) / 2;
+            for (const vi of island.vertexIndices) {
+              const uv = data.uvs[vi];
+              if (!uv) continue;
+              const dx = uv[0] - centerX;
+              const dy = uv[1] - centerY;
+              uv[0] = centerX + dy;
+              uv[1] = centerY - dx;
+            }
+          }
+        }
+      }),
+
+    lockOverlappingIslands: (entityId: string) =>
+      set((state) => {
+        const data = state.uvData[entityId];
+        if (!data || data.islands.length < 2) return;
+        // Detect overlapping islands and mark for locking
+        const overlaps = new Map<number, number[]>();
+        for (let i = 0; i < data.islands.length; i++) {
+          for (let j = i + 1; j < data.islands.length; j++) {
+            if (islandsOverlap(data, data.islands[i], data.islands[j])) {
+              if (!overlaps.has(i)) overlaps.set(i, []);
+              if (!overlaps.has(j)) overlaps.set(j, []);
+              overlaps.get(i)!.push(j);
+              overlaps.get(j)!.push(i);
+            }
+          }
+        }
+        // Pin all vertices in overlapping islands
+        for (const [islandIdx] of overlaps) {
+          const island = data.islands[islandIdx];
+          for (const vi of island.vertexIndices) {
+            if (!data.pinnedVertices.includes(vi)) {
+              data.pinnedVertices.push(vi);
+            }
+          }
+        }
+      }),
+
+    // Color ramp texture
+    generateColorRampTexture: (size = 256, stops = [{ pos: 0, color: "#000000" }, { pos: 1, color: "#ffffff" }]) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = 1;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return "";
+
+      const gradient = ctx.createLinearGradient(0, 0, size, 0);
+      for (const stop of stops) {
+        gradient.addColorStop(Math.max(0, Math.min(1, stop.pos)), stop.color);
+      }
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, 1);
+
+      const id = `ramp_${Date.now()}`;
+      const dataUrl = canvas.toDataURL();
+      set((state) => {
+        state.generatedTextures[id] = dataUrl;
+      });
+      return dataUrl;
+    },
+
+    // Combine textures
+    combineTextures: (texA: string, texB: string, mode = "mix", factor = 0.5) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return "";
+
+      const imgA = new Image();
+      const imgB = new Image();
+      let loaded = 0;
+
+      const finish = () => {
+        ctx.drawImage(imgA, 0, 0, 256, 256);
+        if (mode === "mix") {
+          ctx.globalAlpha = factor;
+          ctx.drawImage(imgB, 0, 0, 256, 256);
+          ctx.globalAlpha = 1.0;
+        } else {
+          const imgDataA = ctx.getImageData(0, 0, 256, 256);
+          ctx.drawImage(imgB, 0, 0, 256, 256);
+          const imgDataB = ctx.getImageData(0, 0, 256, 256);
+          const result = ctx.createImageData(256, 256);
+          for (let i = 0; i < imgDataA.data.length; i += 4) {
+            const a = imgDataA.data[i] / 255;
+            const b = imgDataB.data[i] / 255;
+            let val: number;
+            if (mode === "multiply") val = a * b;
+            else if (mode === "add") val = Math.min(1, a + b);
+            else val = Math.max(0, a - b); // subtract
+            const c = Math.floor(val * 255);
+            result.data[i] = c;
+            result.data[i + 1] = c;
+            result.data[i + 2] = c;
+            result.data[i + 3] = 255;
+          }
+          ctx.putImageData(result, 0, 0);
+        }
+        const id = `combined_${Date.now()}`;
+        const dataUrl = canvas.toDataURL();
+        set((state) => {
+          state.generatedTextures[id] = dataUrl;
+        });
+      };
+
+      imgA.onload = () => { loaded++; if (loaded >= 2) finish(); };
+      imgB.onload = () => { loaded++; if (loaded >= 2) finish(); };
+      imgA.src = texA;
+      imgB.src = texB;
+
+      return "";
+    },
   }))
 );
 
@@ -387,9 +785,13 @@ function computeProjection(
   normals: number[],
   _indices: number[],
   type: UvProjectionType,
+  cameraMatrix?: number[] | null,
 ): number[][] {
   const vertexCount = positions.length / 3;
 
+  if (type === "camera" && cameraMatrix) {
+    return cameraProjection(positions, vertexCount, cameraMatrix);
+  }
   if (type === "smart" || type === "cube") {
     return cubeProjection(positions, normals, vertexCount);
   }
@@ -399,8 +801,33 @@ function computeProjection(
   if (type === "sphere") {
     return sphereProjection(positions, vertexCount);
   }
-  // camera projection: use smart as fallback
   return cubeProjection(positions, normals, vertexCount);
+}
+
+function cameraProjection(positions: number[], vertexCount: number, cameraMatrix: number[]): number[][] {
+  // cameraMatrix is a 4x4 view-projection matrix (16 floats, column-major)
+  const uvs: number[][] = [];
+  for (let i = 0; i < vertexCount; i++) {
+    const x = positions[i * 3];
+    const y = positions[i * 3 + 1];
+    const z = positions[i * 3 + 2];
+
+    // Apply view-projection matrix
+    const cx = cameraMatrix[0] * x + cameraMatrix[4] * y + cameraMatrix[8] * z + cameraMatrix[12];
+    const cy = cameraMatrix[1] * x + cameraMatrix[5] * y + cameraMatrix[9] * z + cameraMatrix[13];
+    const cw = cameraMatrix[3] * x + cameraMatrix[7] * y + cameraMatrix[11] * z + cameraMatrix[15];
+
+    if (Math.abs(cw) < 0.0001) {
+      uvs.push([0.5, 0.5]);
+      continue;
+    }
+
+    // NDC to UV: [-1,1] -> [0,1]
+    const ndcX = cx / cw;
+    const ndcY = cy / cw;
+    uvs.push([(ndcX + 1) * 0.5, (ndcY + 1) * 0.5]);
+  }
+  return normalizeUvs(uvs);
 }
 
 function cubeProjection(positions: number[], normals: number[], vertexCount: number): number[][] {
@@ -589,4 +1016,35 @@ function simpleNoise(x: number, y: number): number {
 function pseudoRandom(x: number, y: number): number {
   let n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
   return n - Math.floor(n);
+}
+
+// Check if two UV islands overlap (AABB intersection)
+function islandsOverlap(
+  data: { uvs: number[][] },
+  islandA: UvIsland,
+  islandB: UvIsland,
+): boolean {
+  let minUA = Infinity, minVA = Infinity, maxUA = -Infinity, maxVA = -Infinity;
+  for (const vi of islandA.vertexIndices) {
+    const uv = data.uvs[vi];
+    if (!uv) continue;
+    minUA = Math.min(minUA, uv[0]); minVA = Math.min(minVA, uv[1]);
+    maxUA = Math.max(maxUA, uv[0]); maxVA = Math.max(maxVA, uv[1]);
+  }
+
+  let minUB = Infinity, minVB = Infinity, maxUB = -Infinity, maxVB = -Infinity;
+  for (const vi of islandB.vertexIndices) {
+    const uv = data.uvs[vi];
+    if (!uv) continue;
+    minUB = Math.min(minUB, uv[0]); minVB = Math.min(minVB, uv[1]);
+    maxUB = Math.max(maxUB, uv[0]); maxVB = Math.max(maxVB, uv[1]);
+  }
+
+  const margin = 0.001;
+  return (
+    minUA < maxUB + margin &&
+    maxUA > minUB - margin &&
+    minVA < maxVB + margin &&
+    maxVA > minVB - margin
+  );
 }

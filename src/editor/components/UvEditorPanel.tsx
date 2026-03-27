@@ -38,6 +38,20 @@ export function UvEditorPanel() {
   const setEditMode = useUvStore((s) => s.setEditMode);
   const setSettings = useUvStore((s) => s.setSettings);
   const togglePanel = useUvStore((s) => s.togglePanel);
+  const seamMode = useUvStore((s) => s.seamMode);
+  const toggleSeamMode = useUvStore((s) => s.toggleSeamMode);
+  const markSeamFromSelectedEdges = useUvStore((s) => s.markSeamFromSelectedEdges);
+  const clearSeams = useUvStore((s) => s.clearSeams);
+  const pinVertices = useUvStore((s) => s.pinVertices);
+  const unpinAll = useUvStore((s) => s.unpinAll);
+  const alignSelectedU = useUvStore((s) => s.alignSelectedU);
+  const alignSelectedV = useUvStore((s) => s.alignSelectedV);
+  const weldSelected = useUvStore((s) => s.weldSelected);
+  const ripSelected = useUvStore((s) => s.ripSelected);
+  const mirrorSelectedU = useUvStore((s) => s.mirrorSelectedU);
+  const mirrorSelectedV = useUvStore((s) => s.mirrorSelectedV);
+  const rotateIslandsToAxes = useUvStore((s) => s.rotateIslandsToAxes);
+  const lockOverlappingIslands = useUvStore((s) => s.lockOverlappingIslands);
 
   // Draw UV editor
   const draw = useCallback(() => {
@@ -443,6 +457,17 @@ export function UvEditorPanel() {
             Sph
           </button>
           <button
+            className="px-1.5 h-5 text-[9px] text-gray-400 hover:text-white rounded transition"
+            onClick={() => {
+              if (activeEntityId) {
+                handleApplyProjection("camera");
+              }
+            }}
+            title="Camera Projection (from current view)"
+          >
+            Cam
+          </button>
+          <button
             className="px-1.5 h-5 text-[9px] text-green-400 hover:text-green-200 rounded transition"
             onClick={() => {
               if (activeEntityId) packIslands(activeEntityId);
@@ -450,6 +475,27 @@ export function UvEditorPanel() {
             title="Pack UV Islands"
           >
             Pack
+          </button>
+          <button
+            className={`px-1.5 h-5 text-[9px] rounded transition ${seamMode ? "bg-red-600/40 text-red-200" : "text-gray-400 hover:text-white"}`}
+            onClick={toggleSeamMode}
+            title="Toggle Seam Marking Mode"
+          >
+            Seam
+          </button>
+          <button
+            className="px-1.5 h-5 text-[9px] text-gray-400 hover:text-white rounded transition"
+            onClick={() => { if (activeEntityId) { markSeamFromSelectedEdges(activeEntityId); } }}
+            title="Mark Selected Edges as Seams"
+          >
+            Mark
+          </button>
+          <button
+            className="px-1.5 h-5 text-[9px] text-gray-400 hover:text-white rounded transition"
+            onClick={() => { if (activeEntityId) { clearSeams(activeEntityId); } }}
+            title="Clear All Seams"
+          >
+            Clear
           </button>
           <div className="w-px h-4 bg-[#444] mx-1" />
           <button
@@ -505,9 +551,21 @@ export function UvEditorPanel() {
           Snap
         </label>
         <span>|</span>
-        <span>Selected: {selectedUvVertices.size} verts</span>
+        <button className="hover:text-white transition" onClick={() => { if (activeEntityId) weldSelected(activeEntityId); }} title="Weld selected UVs">Weld</button>
+        <button className="hover:text-white transition" onClick={() => { if (activeEntityId) ripSelected(activeEntityId); }} title="Rip selected UVs">Rip</button>
+        <button className="hover:text-white transition" onClick={() => { if (activeEntityId) mirrorSelectedU(activeEntityId); }} title="Mirror U">FlipU</button>
+        <button className="hover:text-white transition" onClick={() => { if (activeEntityId) mirrorSelectedV(activeEntityId); }} title="Mirror V">FlipV</button>
         <span>|</span>
-        <span>Scroll to zoom, Alt+drag to pan</span>
+        <button className="hover:text-white transition" onClick={() => { if (activeEntityId) alignSelectedU(activeEntityId); }} title="Align U">AlignU</button>
+        <button className="hover:text-white transition" onClick={() => { if (activeEntityId) alignSelectedV(activeEntityId); }} title="Align V">AlignV</button>
+        <span>|</span>
+        <button className="hover:text-white transition" onClick={() => { if (activeEntityId) pinVertices(activeEntityId, Array.from(selectedUvVertices)); }} title="Pin selected">Pin</button>
+        <button className="hover:text-white transition" onClick={() => { if (activeEntityId) unpinAll(activeEntityId); }} title="Unpin all">Unpin</button>
+        <span>|</span>
+        <button className="hover:text-white transition" onClick={() => { if (activeEntityId) rotateIslandsToAxes(activeEntityId); }} title="Rotate islands to axes">RotIsle</button>
+        <button className="hover:text-white transition" onClick={() => { if (activeEntityId) lockOverlappingIslands(activeEntityId); }} title="Lock overlapping islands">LockOverlap</button>
+        <span>|</span>
+        <span>Selected: {selectedUvVertices.size}</span>
       </div>
     </div>
   );

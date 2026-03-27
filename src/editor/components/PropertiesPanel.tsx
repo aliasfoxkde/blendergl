@@ -13,6 +13,7 @@ import { useConstraintStore } from "@/editor/stores/constraintStore";
 import { PoseLibraryPanel } from "@/editor/components/PoseLibraryPanel";
 import { NlaEditor } from "@/editor/components/NlaEditor";
 import { WeightPaintPanel } from "@/editor/components/WeightPaintPanel";
+import { TexturePaintPanel } from "@/editor/components/TexturePaintPanel";
 import { exportAnimationToJSON } from "@/editor/utils/animationExport";
 import { formatAnalysis, estimatePrint, analyzeMesh, repairMesh, fillHoles } from "@/editor/utils/meshAnalysis";
 import { sliceMesh } from "@/editor/utils/gcode/slicer";
@@ -171,6 +172,14 @@ export function PropertiesPanel() {
     return (
       <div className="flex-1 overflow-y-auto">
         <WeightPaintPanel />
+      </div>
+    );
+  }
+
+  if (editorMode === "texture_paint") {
+    return (
+      <div className="flex-1 overflow-y-auto">
+        <TexturePaintPanel />
       </div>
     );
   }

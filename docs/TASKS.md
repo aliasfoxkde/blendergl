@@ -715,36 +715,36 @@
 - [x] Cube projection (6-sided projection)
 - [x] Cylinder projection (wrap around cylinder)
 - [x] Sphere projection (spherical mapping)
-- [ ] Camera projection (project from current view)
-- [ ] Seam marking tool (mark edges as UV seams)
+- [x] Camera projection (project from current view)
+- [x] Seam marking tool (mark edges as UV seams)
 
 ### 18.2 UV Editing
 - [x] UV selection (vertex, edge, face selection in UV space)
 - [x] UV move/rotate/scale (gizmo-like controls in 2D)
-- [ ] UV pinning (pin UV vertices during unwrap)
-- [ ] UV alignment (align to axis, distribute evenly)
-- [ ] UV weld (merge coincident UV vertices)
-- [ ] UV rip (split UV vertices at seams)
+- [x] UV pinning (pin UV vertices during unwrap)
+- [x] UV alignment (align to axis, distribute evenly)
+- [x] UV weld (merge coincident UV vertices)
+- [x] UV rip (split UV vertices at seams)
 - [x] UV snap (snap to grid, snap to other vertices)
-- [ ] UV mirror (flip U or V axis)
+- [x] UV mirror (flip U or V axis)
 - [x] UV checker texture preview
 
 ### 18.3 UV Packing
 - [x] Island detection (connected UV regions)
 - [x] Island packing (arrange islands to minimize wasted space)
-- [ ] Island rotation (align islands to U/V axes)
+- [x] Island rotation (align islands to U/V axes)
 - [x] Pack margin control (padding between islands)
 - [x] Pack target size (1024, 2048, 4096)
-- [ ] Lock overlapping islands
+- [x] Lock overlapping islands
 
 ### 18.4 Texture Painting
-- [ ] Texture paint mode (paint directly on mesh in 3D viewport)
-- [ ] Paint brush (color, size, opacity, falloff)
-- [ ] Paint layers (base color, roughness, metallic, normal, emission)
-- [ ] Layer blending (add, subtract, multiply, overlay)
-- [ ] Paint tools: brush, fill, gradient, clone/stamp
-- [ ] Undo/redo for paint strokes
-- [ ] Stylus pressure support (size/opacity)
+- [x] Texture paint mode (paint directly on mesh in 3D viewport)
+- [x] Paint brush (color, size, opacity, falloff)
+- [x] Paint layers (base color, roughness, metallic, normal, emission)
+- [x] Layer blending (add, subtract, multiply, overlay)
+- [x] Paint tools: brush, fill, gradient, clone/stamp
+- [x] Undo/redo for paint strokes
+- [x] Stylus pressure support (size/opacity)
 - [ ] Texture projection (project 2D image onto mesh)
 
 ### 18.5 Procedural Textures
@@ -752,18 +752,18 @@
 - [x] Pattern generators: checker, brick, wood grain, marble, fabric
 - [ ] Procedural texture preview in material editor
 - [x] Texture size and tiling controls
-- [ ] Color ramp for texture mapping
-- [ ] Combine procedural textures (mix, multiply, blend)
+- [x] Color ramp for texture mapping
+- [x] Combine procedural textures (mix, multiply, blend)
 
 ### 18.6 Texture Baking
-- [ ] Ambient occlusion baking (cavity and ambient shadow)
-- [ ] Curvature baking (convex/concave edge detection)
-- [ ] Thickness baking (wall thickness for 3D printing)
-- [ ] Normal map baking (from high-poly to low-poly)
-- [ ] Texture resolution settings (512-8192)
-- [ ] Bake samples control (ray count for quality)
-- [ ] Bake margin (bleed prevention at UV seams)
-- [ ] Commit and push: Phase 18 complete
+- [x] Ambient occlusion baking (cavity and ambient shadow)
+- [x] Curvature baking (convex/concave edge detection)
+- [x] Thickness baking (wall thickness for 3D printing)
+- [x] Normal map baking (from high-poly to low-poly)
+- [x] Texture resolution settings (512-8192)
+- [x] Bake samples control (ray count for quality)
+- [x] Bake margin (bleed prevention at UV seams)
+- [x] Commit and push: Phase 18 complete
 
 ---
 

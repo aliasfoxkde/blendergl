@@ -75,7 +75,7 @@ export interface SceneSettings {
   backgroundColor: string;
 }
 
-export type EditorMode = "object" | "edit" | "pose" | "sculpt" | "weight_paint";
+export type EditorMode = "object" | "edit" | "pose" | "sculpt" | "weight_paint" | "texture_paint";
 export type TransformMode = "translate" | "rotate" | "scale";
 export type TransformSpace = "world" | "local";
 export type SelectionMode = "object" | "vertex" | "edge" | "face";
