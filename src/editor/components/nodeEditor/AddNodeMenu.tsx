@@ -4,16 +4,17 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { getAllNodeCategories, getNodeTypesByCategory, searchNodes } from "@/editor/utils/nodeEditor/nodeRegistry";
-import { CATEGORY_COLORS } from "@/editor/types/nodeEditor";
+import { CATEGORY_COLORS, type NodeGraphType } from "@/editor/types/nodeEditor";
 
 interface AddNodeMenuProps {
   x: number;
   y: number;
+  graphType: NodeGraphType;
   onAddNode: (type: string) => void;
   onClose: () => void;
 }
 
-export function AddNodeMenu({ x, y, onAddNode, onClose }: AddNodeMenuProps) {
+export function AddNodeMenu({ x, y, graphType, onAddNode, onClose }: AddNodeMenuProps) {
   const [query, setQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -36,13 +37,17 @@ export function AddNodeMenu({ x, y, onAddNode, onClose }: AddNodeMenuProps) {
   const categories = useMemo(() => getAllNodeCategories(), []);
   const results = useMemo(() => {
     if (query.trim()) {
-      return searchNodes(query.trim());
+      return searchNodes(query.trim(), graphType);
     }
     if (filterCategory) {
-      return getNodeTypesByCategory(filterCategory);
+      return getNodeTypesByCategory(filterCategory).filter(
+        (n) => !n.graphType || n.graphType === graphType
+      );
     }
-    return categories.flatMap((cat) => getNodeTypesByCategory(cat));
-  }, [query, filterCategory, categories]);
+    return categories.flatMap((cat) =>
+      getNodeTypesByCategory(cat).filter((n) => !n.graphType || n.graphType === graphType)
+    );
+  }, [query, filterCategory, categories, graphType]);
 
   return (
     <div

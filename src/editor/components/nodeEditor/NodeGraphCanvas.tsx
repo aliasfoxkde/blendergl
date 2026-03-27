@@ -5,12 +5,14 @@
  * and grid rendering.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNodeGraphStore } from "@/editor/stores/nodeGraphStore";
+import { useHistoryStore } from "@/editor/stores/historyStore";
 import { getNodeTypeDefinition } from "@/editor/utils/nodeEditor/nodeRegistry";
 import { GraphNodeView } from "./GraphNode";
 import { GraphConnectionView, TempConnection } from "./GraphConnection";
 import { AddNodeMenu } from "./AddNodeMenu";
+import { NodeGraphSnapshotCommand } from "@/editor/commands/nodeCommand";
 import type { PortDataType } from "@/editor/types/nodeEditor";
 
 interface NodeGraphCanvasProps {
@@ -40,6 +42,7 @@ export function NodeGraphCanvas({ width, height }: NodeGraphCanvasProps) {
   const selectedConnectionIds = useNodeGraphStore((s) => s.selectedConnectionIds);
   const viewOffset = useNodeGraphStore((s) => s.viewOffset);
   const viewZoom = useNodeGraphStore((s) => s.viewZoom);
+  const graphType = useNodeGraphStore((s) => s.graphType);
 
   const addNode = useNodeGraphStore((s) => s.addNode);
   const removeNode = useNodeGraphStore((s) => s.removeNode);
@@ -50,14 +53,98 @@ export function NodeGraphCanvas({ width, height }: NodeGraphCanvasProps) {
   const selectNode = useNodeGraphStore((s) => s.selectNode);
   const selectConnection = useNodeGraphStore((s) => s.selectConnection);
   const deselectAll = useNodeGraphStore((s) => s.deselectAll);
+  const selectAll = useNodeGraphStore((s) => s.selectAll);
+  const copySelected = useNodeGraphStore((s) => s.copySelected);
+  const pasteNodes = useNodeGraphStore((s) => s.pasteNodes);
   const setViewOffset = useNodeGraphStore((s) => s.setViewOffset);
   const setViewZoom = useNodeGraphStore((s) => s.setViewZoom);
+  const frames = useNodeGraphStore((s) => s.frames);
+  const removeFrame = useNodeGraphStore((s) => s.removeFrame);
+  const moveFrame = useNodeGraphStore((s) => s.moveFrame);
+  const resizeFrame = useNodeGraphStore((s) => s.resizeFrame);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [dragEnd, setDragEnd] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [panning, setPanning] = useState<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
+  const [frameDrag, setFrameDrag] = useState<{ frameId: string; startX: number; startY: number; ox: number; oy: number } | null>(null);
+  const [frameResize, setFrameResize] = useState<{ frameId: string; startX: number; startY: number; ow: number; oh: number; ox: number; oy: number } | null>(null);
+
+  // Keyboard shortcuts for node graph (when canvas is focused)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+
+      const ctrl = e.ctrlKey || e.metaKey;
+
+      if (ctrl && e.key === "c") {
+        e.preventDefault();
+        copySelected();
+        return;
+      }
+      if (ctrl && e.key === "v") {
+        e.preventDefault();
+        pasteNodes();
+        return;
+      }
+      if (ctrl && e.key === "d") {
+        e.preventDefault();
+        const store = useNodeGraphStore.getState();
+        if (store.selectedNodeIds.length > 0) {
+          // Capture snapshot before duplicate
+          const before = { nodes: JSON.parse(JSON.stringify(store.nodes)), connections: JSON.parse(JSON.stringify(store.connections)), graphType: store.graphType };
+          store.duplicateSelected();
+          const after = { nodes: JSON.parse(JSON.stringify(store.nodes)), connections: JSON.parse(JSON.stringify(store.connections)), graphType: store.graphType };
+          const cmd = new NodeGraphSnapshotCommand("Duplicate nodes", before, (snap) => {
+            useNodeGraphStore.getState().deserialize({ graphType: snap.graphType, nodes: snap.nodes, connections: snap.connections });
+          });
+          cmd.setAfterState(after);
+          useHistoryStore.getState().execute(cmd);
+        }
+        return;
+      }
+      if (ctrl && e.key === "a") {
+        e.preventDefault();
+        selectAll();
+        return;
+      }
+      if (ctrl && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        useHistoryStore.getState().undo();
+        return;
+      }
+      if (ctrl && (e.key === "z" && e.shiftKey) || (ctrl && e.key === "y")) {
+        e.preventDefault();
+        useHistoryStore.getState().redo();
+        return;
+      }
+      if ((e.key === "Delete" || e.key === "Backspace") && !ctrl) {
+        const store = useNodeGraphStore.getState();
+        if (store.selectedNodeIds.length > 0 || store.selectedConnectionIds.length > 0) {
+          e.preventDefault();
+          const before = { nodes: JSON.parse(JSON.stringify(store.nodes)), connections: JSON.parse(JSON.stringify(store.connections)), graphType: store.graphType };
+          store.deleteSelected();
+          const after = { nodes: JSON.parse(JSON.stringify(store.nodes)), connections: JSON.parse(JSON.stringify(store.connections)), graphType: store.graphType };
+          const cmd = new NodeGraphSnapshotCommand("Delete nodes", before, (snap) => {
+            useNodeGraphStore.getState().deserialize({ graphType: snap.graphType, nodes: snap.nodes, connections: snap.connections });
+          });
+          cmd.setAfterState(after);
+          useHistoryStore.getState().execute(cmd);
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        deselectAll();
+        setMenuPos(null);
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [copySelected, pasteNodes, selectAll, deselectAll]);
 
   // Convert screen coords to graph coords
   const screenToGraph = useCallback(
@@ -95,7 +182,7 @@ export function NodeGraphCanvas({ width, height }: NodeGraphCanvasProps) {
     [nodes]
   );
 
-  // Handle mouse move for connection dragging and panning
+  // Handle mouse move for connection dragging, panning, and frame manipulation
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
       if (drag) {
@@ -107,14 +194,35 @@ export function NodeGraphCanvas({ width, height }: NodeGraphCanvasProps) {
           y: panning.oy + (e.clientY - panning.startY),
         });
       }
+      if (frameDrag) {
+        const dx = (e.clientX - frameDrag.startX) / viewZoom;
+        const dy = (e.clientY - frameDrag.startY) / viewZoom;
+        moveFrame(frameDrag.frameId, { x: frameDrag.ox + dx, y: frameDrag.oy + dy });
+      }
+      if (frameResize) {
+        const dx = (e.clientX - frameResize.startX) / viewZoom;
+        const dy = (e.clientY - frameResize.startY) / viewZoom;
+        resizeFrame(frameResize.frameId, {
+          width: Math.max(100, frameResize.ow + dx),
+          height: Math.max(80, frameResize.oh + dy),
+        });
+      }
     },
-    [drag, panning, setViewOffset]
+    [drag, panning, frameDrag, frameResize, viewZoom, setViewOffset, moveFrame, resizeFrame]
   );
 
   const handleMouseUp = useCallback(
     (e: React.MouseEvent) => {
       if (panning) {
         setPanning(null);
+        return;
+      }
+      if (frameDrag) {
+        setFrameDrag(null);
+        return;
+      }
+      if (frameResize) {
+        setFrameResize(null);
         return;
       }
 
@@ -355,9 +463,89 @@ export function NodeGraphCanvas({ width, height }: NodeGraphCanvasProps) {
         <AddNodeMenu
           x={menuPos.x}
           y={menuPos.y}
+          graphType={graphType}
           onAddNode={handleAddNode}
           onClose={() => setMenuPos(null)}
         />
+      )}
+
+      {/* Frame nodes (in graph space) */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          transform: `translate(${viewOffset.x}px, ${viewOffset.y}px) scale(${viewZoom})`,
+          transformOrigin: "0 0",
+        }}
+      >
+        {Object.values(frames).map((frame) => (
+          <div
+            key={frame.id}
+            className="absolute pointer-events-auto rounded-lg border-2 border-dashed"
+            style={{
+              left: frame.position.x,
+              top: frame.position.y,
+              width: frame.size.width,
+              height: frame.size.height,
+              borderColor: frame.color,
+              backgroundColor: frame.color + "20",
+            }}
+            onMouseDown={(e) => {
+              if ((e.target as HTMLElement).closest(".frame-resize-handle")) return;
+              e.stopPropagation();
+              setFrameDrag({ frameId: frame.id, startX: e.clientX, startY: e.clientY, ox: frame.position.x, oy: frame.position.y });
+            }}
+          >
+            <div className="flex items-center justify-between px-2 py-0.5 select-none" style={{ backgroundColor: frame.color + "60" }}>
+              <span className="text-[10px] text-gray-300 font-medium">{frame.label}</span>
+              <button
+                className="text-gray-400 hover:text-gray-200 text-xs pointer-events-auto"
+                onClick={(e) => { e.stopPropagation(); removeFrame(frame.id); }}
+              >
+                ×
+              </button>
+            </div>
+            <div
+              className="frame-resize-handle absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize pointer-events-auto"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                setFrameResize({ frameId: frame.id, startX: e.clientX, startY: e.clientY, ow: frame.size.width, oh: frame.size.height, ox: frame.position.x, oy: frame.position.y });
+              }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Minimap */}
+      {Object.keys(nodes).length > 0 && (
+        <div
+          className="absolute top-2 right-2 w-32 h-24 bg-[#0d0d1a] border border-[#444] rounded overflow-hidden pointer-events-auto"
+          style={{ opacity: 0.8 }}
+        >
+          <svg className="w-full h-full">
+            {Object.values(nodes).map((node) => (
+              <rect
+                key={node.id}
+                x={node.position.x * 0.05 + 5}
+                y={node.position.y * 0.05 + 2}
+                width={10}
+                height={5}
+                fill={selectedNodeIds.includes(node.id) ? "#4488ff" : "#555"}
+                rx={1}
+              />
+            ))}
+            {/* Viewport indicator */}
+            <rect
+              x={-viewOffset.x / viewZoom * 0.05 + 5}
+              y={-viewOffset.y / viewZoom * 0.05 + 2}
+              width={(width / viewZoom) * 0.05}
+              height={(height / viewZoom) * 0.05}
+              fill="none"
+              stroke="#fff"
+              strokeWidth={0.5}
+              opacity={0.5}
+            />
+          </svg>
+        </div>
       )}
 
       {/* Zoom indicator */}

@@ -19,6 +19,10 @@ interface NodeGraphState {
   viewOffset: { x: number; y: number };
   viewZoom: number;
   entityId: string | null; // which entity this graph belongs to
+  clipboard: { nodes: Record<string, GraphNode>; connections: Record<string, GraphConnection> } | null;
+
+  // Frame nodes
+  frames: Record<string, { id: string; label: string; position: { x: number; y: number }; size: { width: number; height: number }; color: string }>;
 
   addNode: (type: string, position: { x: number; y: number }) => string | null;
   removeNode: (id: string) => void;
@@ -39,6 +43,16 @@ interface NodeGraphState {
   deserialize: (data: GraphData) => void;
   hasChanges: () => boolean;
   getNodeCount: () => number;
+  copySelected: () => void;
+  pasteNodes: (offset?: { x: number; y: number }) => void;
+  duplicateSelected: () => void;
+  selectAll: () => void;
+
+  // Frame node actions
+  addFrame: (label: string, position: { x: number; y: number }, size?: { width: number; height: number }) => string;
+  removeFrame: (id: string) => void;
+  resizeFrame: (id: string, size: { width: number; height: number }) => void;
+  moveFrame: (id: string, position: { x: number; y: number }) => void;
 }
 
 export const useNodeGraphStore = create<NodeGraphState>()(
@@ -51,6 +65,8 @@ export const useNodeGraphStore = create<NodeGraphState>()(
     viewOffset: { x: 0, y: 0 },
     viewZoom: 1,
     entityId: null,
+    clipboard: null,
+    frames: {},
 
     addNode: (type, position) => {
       const def = getNodeTypeDefinition(type);
@@ -273,6 +289,115 @@ export const useNodeGraphStore = create<NodeGraphState>()(
 
     getNodeCount: () => {
       return Object.keys(get().nodes).length;
+    },
+
+    copySelected: () => {
+      const state = get();
+      if (state.selectedNodeIds.length === 0) return;
+      const selectedSet = new Set(state.selectedNodeIds);
+      const nodes: Record<string, GraphNode> = {};
+      const connections: Record<string, GraphConnection> = {};
+      for (const id of state.selectedNodeIds) {
+        const node = state.nodes[id];
+        if (node) nodes[id] = JSON.parse(JSON.stringify(node));
+      }
+      // Copy connections between selected nodes
+      for (const [connId, conn] of Object.entries(state.connections)) {
+        if (selectedSet.has(conn.sourceNodeId) && selectedSet.has(conn.targetNodeId)) {
+          connections[connId] = JSON.parse(JSON.stringify(conn));
+        }
+      }
+      set((s) => { s.clipboard = { nodes, connections }; });
+    },
+
+    pasteNodes: (offset) => {
+      const state = get();
+      if (!state.clipboard) return;
+      const pasteOffset = offset ?? { x: 30, y: 30 };
+      const idMap = new Map<string, string>(); // old id → new id
+      const newIds: string[] = [];
+
+      for (const [oldId, node] of Object.entries(state.clipboard.nodes)) {
+        const newId = crypto.randomUUID();
+        idMap.set(oldId, newId);
+        set((s) => {
+          s.nodes[newId] = {
+            id: newId,
+            type: node.type,
+            position: { x: node.position.x + pasteOffset.x, y: node.position.y + pasteOffset.y },
+            values: JSON.parse(JSON.stringify(node.values)),
+          };
+        });
+        newIds.push(newId);
+      }
+
+      for (const conn of Object.values(state.clipboard.connections)) {
+        const newSrcId = idMap.get(conn.sourceNodeId);
+        const newTgtId = idMap.get(conn.targetNodeId);
+        if (newSrcId && newTgtId) {
+          const connId = crypto.randomUUID();
+          set((s) => {
+            s.connections[connId] = {
+              id: connId,
+              sourceNodeId: newSrcId,
+              sourcePortId: conn.sourcePortId,
+              targetNodeId: newTgtId,
+              targetPortId: conn.targetPortId,
+            };
+          });
+        }
+      }
+
+      set((s) => { s.selectedNodeIds = newIds; s.selectedConnectionIds = []; });
+    },
+
+    duplicateSelected: () => {
+      const state = get();
+      if (state.selectedNodeIds.length === 0) return;
+      state.copySelected();
+      state.pasteNodes();
+    },
+
+    selectAll: () => {
+      set((state) => {
+        state.selectedNodeIds = Object.keys(state.nodes);
+        state.selectedConnectionIds = Object.keys(state.connections);
+      });
+    },
+
+    // Frame node actions
+    addFrame: (label, position, size) => {
+      const id = crypto.randomUUID();
+      const colors = ["#334155", "#3b2f2f", "#2f3b2f", "#2f2f3b", "#3b3b2f"];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      set((state) => {
+        state.frames[id] = {
+          id,
+          label,
+          position: { ...position },
+          size: size ?? { width: 400, height: 300 },
+          color,
+        };
+      });
+      return id;
+    },
+
+    removeFrame: (id) => {
+      set((state) => { delete state.frames[id]; });
+    },
+
+    resizeFrame: (id, size) => {
+      set((state) => {
+        const frame = state.frames[id];
+        if (frame) frame.size = { ...size };
+      });
+    },
+
+    moveFrame: (id, position) => {
+      set((state) => {
+        const frame = state.frames[id];
+        if (frame) frame.position = { ...position };
+      });
     },
   }))
 );

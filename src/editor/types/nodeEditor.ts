@@ -30,6 +30,7 @@ export interface NodeTypeDefinition {
   type: string;
   category: string;
   label: string;
+  graphType?: NodeGraphType;
   inputs: PortDefinition[];
   outputs: PortDefinition[];
 }
@@ -84,4 +85,19 @@ export const CATEGORY_COLORS: Record<string, string> = {
   vector: "#8060e0",
   color: "#e0a040",
   texture: "#40c060",
+  // Compositing
+  process: "#6090c0",
+  mix: "#a060c0",
+  filter: "#c0a040",
+  // Geometry
+  transform: "#5080b0",
+  mesh: "#50a080",
+  generate: "#40a0a0",
+  // Logic
+  event: "#d04040",
+  action: "#d08040",
+  flow: "#40b0b0",
+  variable: "#a080c0",
+  entity: "#60c060",
+  debug: "#808080",
 };

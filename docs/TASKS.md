@@ -606,44 +606,44 @@
 - [x] Shader preset library (metal, wood, marble, plastic, etc.)
 
 ### 16.3 Compositing Node Editor
-- [ ] Compositor node graph type
-- [ ] Input nodes: Render Layer, Image, Mask
-- [ ] Process nodes: Blur, Sharpen, Brightness/Contrast, Color Balance, Hue/Sat
-- [ ] Mix nodes: Alpha Over, Multiply, Screen, Add, Subtract
-- [ ] Filter nodes: Glare, Bloom, DoF, Fog
-- [ ] Output nodes: Viewer, Composite, File Output
-- [ ] Compositing preset library (cinematic, stylized, vintage)
+- [x] Compositor node graph type
+- [x] Input nodes: Render Layer, Image, Mask
+- [x] Process nodes: Blur, Sharpen, Brightness/Contrast, Color Balance, Hue/Sat
+- [x] Mix nodes: Alpha Over, Multiply, Screen, Add, Subtract
+- [x] Filter nodes: Glare, Bloom, DoF, Fog
+- [x] Output nodes: Viewer, Composite, File Output
+- [x] Compositing preset library (cinematic, stylized, vintage)
 
 ### 16.4 Geometry Node Editor
-- [ ] Geometry node graph type
-- [ ] Input nodes: Object Info, Collection Info, Mesh Primitive
-- [ ] Transform nodes: Transform, Set Position, Set Rotation, Set Scale
-- [ ] Mesh nodes: Subdivide, Extrude, Delete, Boolean, Merge
-- [ ] Generate nodes: Grid, Circle, Curve, Instance on Points
-- [ ] Math nodes: Float Math, Vector Math, Boolean
-- [ ] Output nodes: Group Output, Set Material
+- [x] Geometry node graph type
+- [x] Input nodes: Object Info, Collection Info, Mesh Primitive
+- [x] Transform nodes: Transform, Set Position, Set Rotation, Set Scale
+- [x] Mesh nodes: Subdivide, Extrude, Delete, Boolean, Merge
+- [x] Generate nodes: Grid, Circle, Curve, Instance on Points
+- [x] Math nodes: Float Math, Vector Math, Boolean
+- [x] Output nodes: Group Output, Set Material
 - [ ] Spreadsheet viewer (inspect geometry data at each node)
-- [ ] Geometry presets (array, random scatter, curve-based)
+- [x] Geometry presets (array, random scatter, curve-based)
 
 ### 16.5 Game Logic Visual Scripting
-- [ ] Logic node graph type (like Unreal Blueprints)
-- [ ] Event nodes: On Start, On Update, On Collision, On Input
-- [ ] Action nodes: Move, Rotate, Apply Force, Set Variable, Play Animation
-- [ ] Flow control: Branch (if/else), For Loop, While Loop, Sequence, Delay
-- [ ] Variable nodes: Get/Set (entity-scoped and global)
-- [ ] Math nodes: Compare, Arithmetic, Trigonometry, Random
-- [ ] Entity nodes: Get Property, Set Property, Find By Name, Spawn
-- [ ] Debug nodes: Print, Watch, Breakpoint
+- [x] Logic node graph type (like Unreal Blueprints)
+- [x] Event nodes: On Start, On Update, On Collision, On Input
+- [x] Action nodes: Move, Rotate, Apply Force, Set Variable, Play Animation
+- [x] Flow control: Branch (if/else), For Loop, While Loop, Sequence, Delay
+- [x] Variable nodes: Get/Set (entity-scoped and global)
+- [x] Math nodes: Compare, Arithmetic, Trigonometry, Random
+- [x] Entity nodes: Get Property, Set Property, Find By Name, Spawn
+- [x] Debug nodes: Print, Watch, Breakpoint
 
 ### 16.6 Node System Features
-- [ ] Node groups (collapse subgraph into reusable group)
-- [ ] Node group inputs/outputs (expose selected ports)
-- [ ] Node library (save/load node groups to IndexedDB)
+- [x] Node groups (collapse subgraph into reusable group)
+- [x] Node group inputs/outputs (expose selected ports)
+- [x] Node library (save/load node groups to IndexedDB)
 - [x] Node search (Ctrl+Space to find and add nodes)
-- [ ] Node minimap (overview of large graphs)
-- [ ] Frame nodes (organize related nodes visually)
-- [ ] Copy/paste nodes (with connections)
-- [ ] Undo/redo for node operations
+- [x] Node minimap (overview of large graphs)
+- [x] Frame nodes (organize related nodes visually)
+- [x] Copy/paste nodes (with connections)
+- [x] Undo/redo for node operations
 - [ ] Commit and push: Phase 16 complete
 
 ---

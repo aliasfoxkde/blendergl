@@ -1,17 +1,6 @@
-export interface ShaderPreset {
-  name: string;
-  nodes: Array<{
-    type: string;
-    position: { x: number; y: number };
-    values?: Record<string, number | string | number[]>;
-  }>;
-  connections: Array<{
-    sourceNodeId: number;
-    sourcePortId: string;
-    targetNodeId: number;
-    targetPortId: string;
-  }>;
-}
+import type { NodePreset } from "./nodePresets";
+
+export type ShaderPreset = NodePreset;
 
 /**
  * Load a preset into the node graph store.
