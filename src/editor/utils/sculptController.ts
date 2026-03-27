@@ -314,6 +314,12 @@ export class SculptController {
       case "crease":
         this.applyCreaseBrush(positions, vertexIndices, weights, localCenter, normal, effectiveStrength);
         break;
+      case "clay_strips":
+        this.applyClayStripsBrush(positions, vertexIndices, weights, localCenter, normal, effectiveStrength);
+        break;
+      case "mask":
+        this.applyMaskBrush(vertexIndices, weights);
+        break;
     }
 
     this.mesh.updateVerticesData("position", positions);
@@ -524,6 +530,75 @@ export class SculptController {
       positions[vIdx * 3] += normal.x * sign * factor;
       positions[vIdx * 3 + 1] += normal.y * sign * factor;
       positions[vIdx * 3 + 2] += normal.z * sign * factor;
+    }
+  }
+
+  private applyClayStripsBrush(
+    positions: Float32Array,
+    vertexIndices: number[],
+    weights: number[],
+    _localCenter: Vector3,
+    normal: Vector3,
+    strength: number
+  ): void {
+    // Clay strips: like sculpt but with more buildup, uses vertex normals
+    const normals = this.mesh?.getVerticesData("normal") as Float32Array | null;
+    for (let i = 0; i < vertexIndices.length; i++) {
+      const vIdx = vertexIndices[i];
+      const w = weights[i];
+      const offset = -strength * w * 0.08;
+
+      let nx = normal.x;
+      let ny = normal.y;
+      let nz = normal.z;
+      if (normals) {
+        // Blend between average normal and vertex normal for more organic feel
+        nx = nx * 0.5 + normals[vIdx * 3] * 0.5;
+        ny = ny * 0.5 + normals[vIdx * 3 + 1] * 0.5;
+        nz = nz * 0.5 + normals[vIdx * 3 + 2] * 0.5;
+        const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+        nx /= len;
+        ny /= len;
+        nz /= len;
+      }
+
+      positions[vIdx * 3] += nx * offset;
+      positions[vIdx * 3 + 1] += ny * offset;
+      positions[vIdx * 3 + 2] += nz * offset;
+    }
+  }
+
+  private applyMaskBrush(
+    vertexIndices: number[],
+    weights: number[]
+  ): void {
+    // Paint mask: set vertex color alpha as mask indicator
+    if (!this.mesh) return;
+
+    const colors = this.mesh.getVerticesData("color") as Float32Array | null;
+    if (!colors) {
+      // Initialize vertex colors if not present
+      const vertexCount = this.mesh.getTotalVertices();
+      const newColors = new Float32Array(vertexCount * 4);
+      for (let i = 0; i < vertexCount; i++) {
+        newColors[i * 4] = 1;
+        newColors[i * 4 + 1] = 1;
+        newColors[i * 4 + 2] = 1;
+        newColors[i * 4 + 3] = 0; // alpha = 0 means unmasked
+      }
+      this.mesh.setVerticesData("color", newColors);
+      return;
+    }
+
+    for (let i = 0; i < vertexIndices.length; i++) {
+      const vIdx = vertexIndices[i];
+      // Set alpha to indicate masked (1) or unmasked (0)
+      colors[vIdx * 4 + 3] = Math.min(1, (colors[vIdx * 4 + 3] || 0) + weights[i] * 0.5);
+    }
+
+    this.mesh.updateVerticesData("color", colors);
+    if (this.mesh.material) {
+      (this.mesh.material as unknown as { needVertexAlpha: boolean }).needVertexAlpha = true;
     }
   }
 

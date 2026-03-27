@@ -227,7 +227,9 @@ export type SculptBrushType =
   | "inflate"
   | "pinch"
   | "flatten"
-  | "crease";
+  | "crease"
+  | "clay_strips"
+  | "mask";
 
 export type FalloffType = "smooth" | "sharp" | "spike";
 

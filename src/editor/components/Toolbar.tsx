@@ -616,6 +616,8 @@ const BRUSH_TYPES: { type: SculptBrushType; label: string; shortcut: string }[] 
   { type: "pinch", label: "Pinch", shortcut: "P" },
   { type: "flatten", label: "Flatten", shortcut: "F" },
   { type: "crease", label: "Crease", shortcut: "C" },
+  { type: "clay_strips", label: "Clay Strips", shortcut: "Shift+C" },
+  { type: "mask", label: "Mask", shortcut: "M" },
 ];
 
 function SculptBrushButtons() {

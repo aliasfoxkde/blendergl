@@ -542,8 +542,8 @@
 - [x] Pinch brush (pull vertices toward brush center)
 - [x] Flatten brush (project vertices to average plane)
 - [x] Crease brush (sharpen edges along stroke)
-- [ ] Clay strips brush (clay-like buildup)
-- [x] Brush settings: radius (1-500px), strength (0.01-1.0), falloff (smooth/sharp/spike)
+- [x] Clay strips brush (clay-like buildup)
+- [ ] Brush settings: radius (1-500px), strength (0.01-1.0), falloff (smooth/sharp/spike)
 - [x] Brush spacing control (distance between dab applications)
 - [x] Pressure sensitivity (PointerEvent pressure for stylus support)
 
@@ -563,7 +563,7 @@
 
 ### 15.5 Sculpt Tools
 - [ ] Sculpt mask (protect areas from brush strokes)
-- [ ] Mask brush (paint mask on/off)
+- [x] Mask brush (paint mask on/off)
 - [ ] Invert mask
 - [ ] Clear mask
 - [x] Symmetry (X, Y, Z axis mirror strokes)
