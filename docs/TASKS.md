@@ -813,10 +813,10 @@
 - [x] Render settings panel (resolution, quality, samples)
 - [x] Screenshot capture (PNG/JPEG)
 - [x] Render to file (high-resolution export)
-- [ ] Render region (render only selected area)
-- [ ] Render layers (separate passes: diffuse, specular, depth, normal)
-- [ ] Path tracing preview (WebGPU when available)
-- [ ] Denoising (post-process render to reduce noise)
+- [x] Render region (render only selected area)
+- [x] Render layers (separate passes: diffuse, specular, depth, normal)
+- [x] Path tracing preview (WebGPU when available)
+- [x] Denoising (post-process render to reduce noise)
 - [x] Commit and push: Phase 19 complete
 
 ---

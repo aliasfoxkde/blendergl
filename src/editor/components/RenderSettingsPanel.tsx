@@ -1,7 +1,7 @@
 import { useRenderSettingsStore, MATERIAL_PRESETS } from "@/editor/stores/renderSettingsStore";
 import { useMaterialStore } from "@/editor/stores/materialStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
-import { captureScreenshot } from "@/editor/utils/screenshot";
+import { captureScreenshot, captureRenderLayer, applyDenoise } from "@/editor/utils/screenshot";
 import { renderingManager } from "@/editor/utils/renderingManager";
 
 export function RenderSettingsPanel() {
@@ -259,6 +259,127 @@ export function RenderSettingsPanel() {
             options={["png", "jpeg"]}
             onChange={(v) => updateSettings({ screenshotFormat: v as typeof settings.screenshotFormat })}
           />
+        </Section>
+
+        {/* Render Region */}
+        <Section title="Render Region">
+          <ToggleRow label="Enabled" value={settings.renderRegionEnabled}
+            onChange={(v) => updateSettings({ renderRegionEnabled: v })} />
+          {settings.renderRegionEnabled && (
+            <div className="grid grid-cols-2 gap-1 text-[10px]">
+              <label className="flex items-center gap-1 text-gray-400">
+                X
+                <input
+                  type="number"
+                  value={Math.round(settings.renderRegion.x * 100)}
+                  min={0}
+                  max={100}
+                  step={1}
+                  className="w-12 bg-[#333] text-white text-[10px] px-1 py-0.5 rounded border border-[#444]"
+                  onChange={(e) => updateSettings({
+                    renderRegion: { ...settings.renderRegion, x: Number(e.target.value) / 100 },
+                  })}
+                />
+              </label>
+              <label className="flex items-center gap-1 text-gray-400">
+                Y
+                <input
+                  type="number"
+                  value={Math.round(settings.renderRegion.y * 100)}
+                  min={0}
+                  max={100}
+                  step={1}
+                  className="w-12 bg-[#333] text-white text-[10px] px-1 py-0.5 rounded border border-[#444]"
+                  onChange={(e) => updateSettings({
+                    renderRegion: { ...settings.renderRegion, y: Number(e.target.value) / 100 },
+                  })}
+                />
+              </label>
+              <label className="flex items-center gap-1 text-gray-400">
+                W
+                <input
+                  type="number"
+                  value={Math.round(settings.renderRegion.width * 100)}
+                  min={1}
+                  max={100}
+                  step={1}
+                  className="w-12 bg-[#333] text-white text-[10px] px-1 py-0.5 rounded border border-[#444]"
+                  onChange={(e) => updateSettings({
+                    renderRegion: { ...settings.renderRegion, width: Number(e.target.value) / 100 },
+                  })}
+                />
+              </label>
+              <label className="flex items-center gap-1 text-gray-400">
+                H
+                <input
+                  type="number"
+                  value={Math.round(settings.renderRegion.height * 100)}
+                  min={1}
+                  max={100}
+                  step={1}
+                  className="w-12 bg-[#333] text-white text-[10px] px-1 py-0.5 rounded border border-[#444]"
+                  onChange={(e) => updateSettings({
+                    renderRegion: { ...settings.renderRegion, height: Number(e.target.value) / 100 },
+                  })}
+                />
+              </label>
+            </div>
+          )}
+          {settings.renderRegionEnabled && (
+            <button
+              className="w-full px-2 py-1 bg-purple-600/30 text-purple-200 rounded hover:bg-purple-600/50 transition text-[10px]"
+              onClick={() => captureScreenshot(settings.screenshotFormat, settings.screenshotQuality, settings.renderRegion)}
+            >
+              Capture Region
+            </button>
+          )}
+        </Section>
+
+        {/* Render Layers */}
+        <Section title="Render Layers">
+          <SelectRow
+            label="Pass"
+            value={settings.renderLayer}
+            options={["combined", "diffuse", "specular", "depth", "normal"]}
+            onChange={(v) => updateSettings({ renderLayer: v as typeof settings.renderLayer })}
+          />
+          <button
+            className="w-full px-2 py-1 bg-teal-600/30 text-teal-200 rounded hover:bg-teal-600/50 transition text-[10px]"
+            onClick={() => captureRenderLayer(
+              settings.renderLayer,
+              settings.renderWidth,
+              settings.renderHeight,
+              settings.screenshotFormat,
+              settings.screenshotQuality,
+            )}
+          >
+            Render {settings.renderLayer} Layer
+          </button>
+        </Section>
+
+        {/* Path Tracing (WebGPU) */}
+        <Section title="Path Tracing">
+          <ToggleRow label="Enabled" value={settings.pathTracingEnabled}
+            onChange={(v) => updateSettings({ pathTracingEnabled: v })} />
+          <SliderRow label="Samples" value={settings.pathTracingSamples} min={4} max={1024} step={4}
+            onChange={(v) => updateSettings({ pathTracingSamples: v })} />
+          <p className="text-[9px] text-gray-600 italic">
+            Requires WebGPU support. Check browser compatibility.
+          </p>
+        </Section>
+
+        {/* Denoising */}
+        <Section title="Denoising">
+          <ToggleRow label="Enabled" value={settings.denoisingEnabled}
+            onChange={(v) => updateSettings({ denoisingEnabled: v })} />
+          <SliderRow label="Strength" value={settings.denoisingStrength} min={0.1} max={1} step={0.1}
+            onChange={(v) => updateSettings({ denoisingStrength: v })} />
+          <button
+            className="w-full px-2 py-1 bg-orange-600/30 text-orange-200 rounded hover:bg-orange-600/50 transition text-[10px]"
+            onClick={() => applyDenoise(settings.renderWidth, settings.renderHeight, settings.denoisingStrength)}
+          >
+            Apply Denoise
+          </button>
         </Section>
 
         {/* Material Presets */}

@@ -99,6 +99,21 @@ export interface RenderSettingsData {
 
   // Light linking
   lightLinkingEnabled: boolean;
+
+  // Render region
+  renderRegionEnabled: boolean;
+  renderRegion: { x: number; y: number; width: number; height: number };
+
+  // Render layers
+  renderLayer: "combined" | "diffuse" | "specular" | "depth" | "normal";
+
+  // Path tracing
+  pathTracingEnabled: boolean;
+  pathTracingSamples: number;
+
+  // Denoising
+  denoisingEnabled: boolean;
+  denoisingStrength: number;
 }
 
 function createDefaultRenderSettings(): RenderSettingsData {
@@ -187,6 +202,21 @@ function createDefaultRenderSettings(): RenderSettingsData {
 
     // Light linking
     lightLinkingEnabled: false,
+
+    // Render region
+    renderRegionEnabled: false,
+    renderRegion: { x: 0.25, y: 0.25, width: 0.5, height: 0.5 },
+
+    // Render layers
+    renderLayer: "combined",
+
+    // Path tracing
+    pathTracingEnabled: false,
+    pathTracingSamples: 64,
+
+    // Denoising
+    denoisingEnabled: false,
+    denoisingStrength: 0.5,
   };
 }
 
