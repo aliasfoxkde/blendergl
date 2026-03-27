@@ -5,8 +5,11 @@ import { SceneHierarchy } from "./SceneHierarchy";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { Toolbar } from "./Toolbar";
 import { useKeyboardShortcuts } from "@/editor/hooks/useKeyboardShortcuts";
+import { useAutoSave } from "@/editor/hooks/useAutoSave";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
+import { useSettingsStore } from "@/editor/stores/settingsStore";
+import { useEditModeStore } from "@/editor/stores/editModeStore";
 import { createPrimitiveEntity } from "@/editor/utils/primitives";
 import type { PrimitiveType } from "@/editor/types";
 import { saveScene } from "@/editor/utils/storage";
@@ -19,6 +22,11 @@ export function EditorShell() {
   const entities = useSceneStore((s) => s.entities);
   const transformMode = useSelectionStore((s) => s.transformMode);
   const setTransformMode = useSelectionStore((s) => s.setTransformMode);
+  const editorMode = useSelectionStore((s) => s.editorMode);
+  const elementMode = useEditModeStore((s) => s.elementMode);
+  const shadingMode = useSettingsStore((s) => s.shadingMode);
+  const snapEnabled = useSettingsStore((s) => s.snapEnabled);
+  const cameraMode = useSettingsStore((s) => s.cameraMode);
 
   const handleAddPrimitive = useCallback(
     (type: PrimitiveType) => {
@@ -41,8 +49,9 @@ export function EditorShell() {
 
   const objectCount = Object.keys(entities).length;
 
-  // Register keyboard shortcuts
+  // Register keyboard shortcuts and auto-save
   useKeyboardShortcuts();
+  useAutoSave();
 
   return (
     <div className="w-full h-full flex flex-col bg-[#1a1a1a] text-white overflow-hidden">
@@ -87,11 +96,18 @@ export function EditorShell() {
       </div>
 
       {/* Status bar */}
-      <footer className="h-6 bg-[#2a2a2a] border-t border-[#333] flex items-center px-3 shrink-0 text-xs text-gray-500 gap-4">
+      <footer className="h-6 bg-[#2a2a2a] border-t border-[#333] flex items-center px-3 shrink-0 text-xs text-gray-500 gap-3">
         <span>Objects: {objectCount}</span>
         <span>
           Selected: {selectedIds.length > 0 ? selectedIds.length : "None"}
         </span>
+        <span className="text-gray-600">|</span>
+        <span className="capitalize">
+          {editorMode === "edit" ? `${elementMode} (Edit)` : "Object"}
+        </span>
+        <span className="capitalize">{shadingMode}</span>
+        <span>{cameraMode}</span>
+        {snapEnabled && <span className="text-blue-400">Snap</span>}
         <Link
           to="/"
           className="ml-auto text-gray-500 hover:text-gray-300 transition"

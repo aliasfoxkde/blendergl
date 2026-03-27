@@ -57,6 +57,17 @@ export class TransformGizmoController {
     }
   }
 
+  setSnapDistance(distance: number): void {
+    if (this.gizmoManager.gizmos) {
+      const posGizmo = this.gizmoManager.gizmos.positionGizmo as
+        | PositionGizmo
+        | undefined;
+      if (posGizmo) {
+        posGizmo.snapDistance = distance;
+      }
+    }
+  }
+
   setAxisConstraint(axis: "x" | "y" | "z" | "all"): void {
     if (this.gizmoManager.gizmos) {
       const xGizmo = this.gizmoManager.gizmos.positionGizmo?.xGizmo;

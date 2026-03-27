@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import {
   Engine,
   Scene,
-  ArcRotateCamera,
   Color3,
   Vector3,
   StandardMaterial,
@@ -25,6 +24,9 @@ import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useMaterialStore } from "@/editor/stores/materialStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
+import { useSettingsStore } from "@/editor/stores/settingsStore";
+import { setCameraPreset, toggleOrtho } from "@/editor/utils/cameraUtils";
+import { cameraRef as sharedCameraRef } from "@/editor/utils/cameraRef";
 import type { TransformMode } from "@/editor/types";
 
 interface ViewportProps {
@@ -35,10 +37,10 @@ export function Viewport({ onSceneReady }: ViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const sceneRef = useRef<Scene | null>(null);
-  const cameraRef = useRef<ArcRotateCamera | null>(null);
   const meshMapRef = useRef<Map<string, AbstractMesh>>(new Map());
   const gizmoRef = useRef<TransformGizmoController | null>(null);
   const editControllerRef_local = useRef<EditModeController | null>(null);
+  // Note: camera is shared via sharedCameraRef from cameraRef.ts
 
   const entities = useSceneStore((s) => s.entities);
   const { select, deselectAll, selectedIds, setHoveredEntity } =
@@ -57,6 +59,11 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     selectFace,
   } = useEditModeStore();
 
+  const shadingMode = useSettingsStore((s) => s.shadingMode);
+  const snapEnabled = useSettingsStore((s) => s.snapEnabled);
+  const snapIncrement = useSettingsStore((s) => s.snapIncrement);
+  const setCameraMode = useSettingsStore((s) => s.setCameraMode);
+
   // Initialize engine + scene
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -74,7 +81,19 @@ export function Viewport({ onSceneReady }: ViewportProps) {
 
     engineRef.current = engine;
     sceneRef.current = scene;
-    cameraRef.current = camera;
+    sharedCameraRef.current = camera;
+
+    // Camera preset event listeners
+    const handleCameraPreset = (e: Event) => {
+      const preset = (e as CustomEvent).detail as string;
+      setCameraPreset(camera, preset as Parameters<typeof setCameraPreset>[1]);
+    };
+    const handleToggleOrtho = () => {
+      const isOrtho = toggleOrtho(camera);
+      setCameraMode(isOrtho ? "orthographic" : "perspective");
+    };
+    window.addEventListener("camera-preset", handleCameraPreset);
+    window.addEventListener("camera-toggle-ortho", handleToggleOrtho);
 
     // Render loop
     engine.runRenderLoop(() => {
@@ -171,13 +190,15 @@ export function Viewport({ onSceneReady }: ViewportProps) {
 
     return () => {
       resizeObserver.disconnect();
+      window.removeEventListener("camera-preset", handleCameraPreset);
+      window.removeEventListener("camera-toggle-ortho", handleToggleOrtho);
       scene.onPointerObservable.clear();
       gizmoController.dispose();
       editControllerRef_local.current?.dispose();
       engine.dispose();
       engineRef.current = null;
       sceneRef.current = null;
-      cameraRef.current = null;
+      sharedCameraRef.current = null;
       gizmoRef.current = null;
       editControllerRef_local.current = null;
       meshMapRef.current.clear();
@@ -277,6 +298,45 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       }
     }
   }, [materials]);
+
+  // Sync shading mode to all meshes
+  useEffect(() => {
+    const meshMap = meshMapRef.current;
+    for (const [, mesh] of meshMap) {
+      const material = mesh.material as StandardMaterial;
+      if (!material) continue;
+
+      switch (shadingMode) {
+        case "wireframe":
+          material.wireframe = true;
+          material.disableLighting = false;
+          break;
+        case "solid":
+          material.wireframe = false;
+          material.disableLighting = true;
+          material.diffuseColor = new Color3(0.7, 0.7, 0.7);
+          material.specularColor = Color3.Black();
+          material.emissiveColor = Color3.Black();
+          break;
+        case "material":
+        case "textured":
+          material.wireframe = false;
+          material.disableLighting = false;
+          break;
+      }
+    }
+  }, [shadingMode, materials]);
+
+  // Sync snap settings to gizmo controller
+  useEffect(() => {
+    const gizmo = gizmoRef.current;
+    if (!gizmo) return;
+    gizmo.setSnapEnabled(snapEnabled);
+    // Update snap distance to use the settings store value
+    if (snapEnabled) {
+      gizmo.setSnapDistance(snapIncrement);
+    }
+  }, [snapEnabled, snapIncrement]);
 
   // Sync gizmo mode and attach to selected mesh
   useEffect(() => {

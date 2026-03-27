@@ -5,6 +5,9 @@ import { PRIMITIVE_TYPES } from "@/editor/utils/primitives";
 import { useHistoryStore } from "@/editor/stores/historyStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
+import { useSettingsStore } from "@/editor/stores/settingsStore";
+import { useSceneStore } from "@/editor/stores/sceneStore";
+import { duplicateEntities } from "@/editor/utils/duplicate";
 
 interface ToolbarProps {
   onAddPrimitive: (type: PrimitiveType) => void;
@@ -37,6 +40,12 @@ export function Toolbar({
   const setElementMode = useEditModeStore((s) => s.setElementMode);
   const enterEditMode = useEditModeStore((s) => s.enterEditMode);
   const exitEditMode = useEditModeStore((s) => s.exitEditMode);
+
+  const shadingMode = useSettingsStore((s) => s.shadingMode);
+  const setShadingMode = useSettingsStore((s) => s.setShadingMode);
+  const snapEnabled = useSettingsStore((s) => s.snapEnabled);
+  const setSnapEnabled = useSettingsStore((s) => s.setSnapEnabled);
+  const selectedIds = useSelectionStore((s) => s.selectedIds);
 
   useEffect(() => {
     if (!addMenuOpen) return;
@@ -196,6 +205,45 @@ export function Toolbar({
         <TrashIcon />
       </ToolButton>
 
+      {/* Duplicate */}
+      <ToolButton
+        label="Duplicate (Shift+D)"
+        onClick={() => {
+          if (selectedIds.length > 0) {
+            duplicateEntities(
+              selectedIds,
+              useSceneStore.getState(),
+              useSelectionStore.getState(),
+              useHistoryStore.getState()
+            );
+          }
+        }}
+        disabled={!hasSelection}
+      >
+        <CopyIcon />
+      </ToolButton>
+
+      {/* Snap toggle */}
+      <ToolButton
+        label={`Snap ${snapEnabled ? "ON" : "OFF"}`}
+        active={snapEnabled}
+        onClick={() => setSnapEnabled(!snapEnabled)}
+      >
+        <MagnetIcon />
+      </ToolButton>
+
+      {/* Shading mode */}
+      <ToolButton
+        label={`Shading: ${shadingMode} (Z)`}
+        onClick={() => {
+          const modes = ["material", "wireframe", "solid"] as const;
+          const idx = modes.indexOf(shadingMode as typeof modes[number]);
+          setShadingMode(modes[(idx + 1) % modes.length]);
+        }}
+      >
+        <ShadingIcon mode={shadingMode} />
+      </ToolButton>
+
       {/* Spacer */}
       <div className="flex-1" />
 
@@ -322,6 +370,49 @@ function RedoIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M21 7v6h-6" />
       <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3L21 13" />
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+    </svg>
+  );
+}
+
+function MagnetIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M6 15V9a6 6 0 0112 0v6" />
+      <path d="M6 11h12" />
+      <line x1="6" y1="15" x2="6" y2="19" />
+      <line x1="18" y1="15" x2="18" y2="19" />
+    </svg>
+  );
+}
+
+function ShadingIcon({ mode }: { mode: string }) {
+  if (mode === "wireframe") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+      </svg>
+    );
+  }
+  if (mode === "solid") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a7 7 0 017 7" />
     </svg>
   );
 }

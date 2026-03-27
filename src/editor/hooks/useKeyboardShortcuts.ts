@@ -3,9 +3,18 @@ import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useHistoryStore } from "@/editor/stores/historyStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
+import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { editControllerRef } from "@/editor/utils/editModeRef";
 import { saveScene } from "@/editor/utils/storage";
-import type { TransformMode } from "@/editor/types";
+import { duplicateEntities } from "@/editor/utils/duplicate";
+import type { TransformMode, ShadingMode, CameraPreset } from "@/editor/types";
+
+// Camera preset key mapping
+const CAMERA_PRESETS: Record<string, CameraPreset> = {
+  "1": "front",
+  "3": "right",
+  "7": "top",
+};
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
@@ -17,6 +26,7 @@ export function useKeyboardShortcuts() {
       const sceneStore = useSceneStore.getState();
       const historyStore = useHistoryStore.getState();
       const editModeStore = useEditModeStore.getState();
+      const settingsStore = useSettingsStore.getState();
 
       // Tab: toggle object/edit mode
       if (e.key === "Tab") {
@@ -29,6 +39,30 @@ export function useKeyboardShortcuts() {
         } else {
           selectionStore.setEditorMode("object");
           editModeStore.exitEditMode();
+        }
+        return;
+      }
+
+      // Numpad camera presets
+      if (e.code.startsWith("Numpad")) {
+        const numpadKey = e.code.replace("Numpad", "");
+        e.preventDefault();
+
+        if (numpadKey === "5") {
+          // Toggle ortho/perspective
+          window.dispatchEvent(new CustomEvent("camera-toggle-ortho"));
+          return;
+        }
+
+        const preset = CAMERA_PRESETS[numpadKey];
+        if (preset) {
+          const ctrlPreset: Record<string, CameraPreset> = { "1": "back", "3": "left", "7": "bottom" };
+          const cameraPreset = e.ctrlKey ? ctrlPreset[numpadKey] : preset;
+          if (cameraPreset) {
+            window.dispatchEvent(
+              new CustomEvent("camera-preset", { detail: cameraPreset })
+            );
+          }
         }
         return;
       }
@@ -58,7 +92,6 @@ export function useKeyboardShortcuts() {
           break;
         case "e":
           if (selectionStore.editorMode === "edit") {
-            // Edit mode: extrude selected faces
             const controller = editControllerRef.current;
             if (controller && editModeStore.selectedFaces.size > 0) {
               const faceIds = Array.from(editModeStore.selectedFaces);
@@ -75,10 +108,27 @@ export function useKeyboardShortcuts() {
         case "r":
           selectionStore.setTransformMode("scale" as TransformMode);
           break;
+        case "z":
+          // Z key: cycle shading mode (object mode)
+          if (!e.ctrlKey && !e.metaKey && selectionStore.editorMode === "object") {
+            const modes: ShadingMode[] = ["material", "wireframe", "solid"];
+            const current = modes.indexOf(settingsStore.shadingMode);
+            const next = modes[(current + 1) % modes.length];
+            settingsStore.setShadingMode(next);
+            return;
+          }
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (e.shiftKey) {
+              historyStore.redo();
+            } else {
+              historyStore.undo();
+            }
+          }
+          break;
         case "x":
         case "delete":
           if (selectionStore.editorMode === "edit") {
-            // Edit mode: delete selected faces
             const controller = editControllerRef.current;
             if (controller && editModeStore.selectedFaces.size > 0) {
               const faceIds = Array.from(editModeStore.selectedFaces);
@@ -88,17 +138,29 @@ export function useKeyboardShortcuts() {
               editModeStore.deselectAll();
             }
           } else if (selectionStore.selectedIds.length > 0) {
-            // Object mode: delete entities
             for (const id of selectionStore.selectedIds) {
               sceneStore.removeEntity(id);
             }
             selectionStore.deselectAll();
           }
           break;
+        case "d":
+          if (e.shiftKey) {
+            e.preventDefault();
+            // Duplicate selected entities
+            if (selectionStore.selectedIds.length > 0) {
+              duplicateEntities(
+                selectionStore.selectedIds,
+                sceneStore,
+                selectionStore,
+                historyStore
+              );
+            }
+          }
+          break;
         case "a":
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            // Select all entities
             const allIds = Object.keys(sceneStore.entities);
             if (allIds.length > 0) {
               selectionStore.select(allIds[0], false);
@@ -108,13 +170,24 @@ export function useKeyboardShortcuts() {
             }
           }
           break;
-        case "z":
+        case "p":
+          // Ctrl+P: parent selected to last selected (Blender convention)
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            if (e.shiftKey) {
-              historyStore.redo();
-            } else {
-              historyStore.undo();
+            const ids = selectionStore.selectedIds;
+            if (ids.length >= 2) {
+              // Parent all except last to last
+              const parentId = ids[ids.length - 1];
+              for (let i = 0; i < ids.length - 1; i++) {
+                sceneStore.setParent(ids[i], parentId);
+              }
+            }
+          }
+          // Alt+P: clear parent
+          if (e.altKey) {
+            e.preventDefault();
+            for (const id of selectionStore.selectedIds) {
+              sceneStore.setParent(id, null);
             }
           }
           break;
@@ -136,12 +209,6 @@ export function useKeyboardShortcuts() {
             editModeStore.exitEditMode();
           }
           selectionStore.deselectAll();
-          break;
-        case "d":
-          if (e.shiftKey) {
-            e.preventDefault();
-            // Duplicate - placeholder
-          }
           break;
       }
     };

@@ -11,6 +11,7 @@ interface SettingsState {
   autoSave: boolean;
   autoSaveIntervalMs: number;
   theme: "dark" | "light";
+  cameraMode: "perspective" | "orthographic";
 
   setShowGrid: (show: boolean) => void;
   setShowAxes: (show: boolean) => void;
@@ -20,6 +21,7 @@ interface SettingsState {
   setAngleSnap: (angle: number) => void;
   setAutoSave: (enabled: boolean) => void;
   setTheme: (theme: "dark" | "light") => void;
+  setCameraMode: (mode: "perspective" | "orthographic") => void;
 }
 
 export const useSettingsStore = create<SettingsState>()((set) => ({
@@ -32,6 +34,7 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   autoSave: true,
   autoSaveIntervalMs: 30000,
   theme: "dark",
+  cameraMode: "perspective",
 
   setShowGrid: (show) => set({ showGrid: show }),
   setShowAxes: (show) => set({ showAxes: show }),
@@ -41,4 +44,5 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   setAngleSnap: (angle) => set({ angleSnap: angle }),
   setAutoSave: (enabled) => set({ autoSave: enabled }),
   setTheme: (theme) => set({ theme }),
+  setCameraMode: (mode) => set({ cameraMode: mode }),
 }));
