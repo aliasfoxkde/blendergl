@@ -5,8 +5,22 @@
  */
 
 import type { Scene, AbstractMesh } from "@babylonjs/core";
+import { Color3, MeshBuilder, StandardMaterial } from "@babylonjs/core";
 import type { Vec3, PhysicsBodyData } from "@/editor/types";
 import { sceneRef } from "@/editor/utils/sceneRef";
+
+export interface SweepTestResult {
+  hit: boolean;
+  entityId: string | null;
+  distance: number;
+  normal: Vec3;
+  point: Vec3;
+}
+
+export interface OverlapTestResult {
+  hit: boolean;
+  entityIds: string[];
+}
 
 interface PhysicsObject {
   mesh: AbstractMesh;
@@ -164,7 +178,7 @@ class PhysicsEngine {
   private fixedUpdate(dt: number): void {
     const entries = Array.from(this.objects.entries());
 
-    for (const [, obj] of entries) {
+    for (const [id, obj] of entries) {
       if (obj.data.motionType !== "dynamic") continue;
 
       // Apply gravity
@@ -214,6 +228,11 @@ class PhysicsEngine {
         // Stop angular velocity on ground
         obj.angularVelocity.x *= 0.95;
         obj.angularVelocity.z *= 0.95;
+      }
+
+      // Slope handling
+      if (obj.isGrounded) {
+        this.applySlopeHandling(id);
       }
     }
 
@@ -267,6 +286,243 @@ class PhysicsEngine {
       };
     }
     return { x: 0.5, y: 0.5, z: 0.5 };
+  }
+
+  /**
+   * Sweep test — cast a shape along a direction and find first hit.
+   * Returns the closest hit distance, normal, point, and entity ID.
+   */
+  sweepTest(
+    entityId: string,
+    direction: Vec3,
+    maxDistance: number = 100,
+  ): SweepTestResult {
+    const obj = this.objects.get(entityId);
+    if (!obj) return { hit: false, entityId: null, distance: 0, normal: { x: 0, y: 1, z: 0 }, point: { x: 0, y: 0, z: 0 } };
+
+    const halfExt = this.getHalfExtents(obj);
+    const startPos = obj.mesh.position;
+    const dirLen = Math.sqrt(direction.x * direction.x + direction.y * direction.y + direction.z * direction.z);
+    if (dirLen < 0.0001) return { hit: false, entityId: null, distance: 0, normal: { x: 0, y: 1, z: 0 }, point: { x: 0, y: 0, z: 0 } };
+
+    const stepX = (direction.x / dirLen) * 0.1;
+    const stepY = (direction.y / dirLen) * 0.1;
+    const stepZ = (direction.z / dirLen) * 0.1;
+    const steps = Math.floor(maxDistance / 0.1);
+
+    for (let s = 1; s <= steps; s++) {
+      const testPos: Vec3 = {
+        x: startPos.x + stepX * s,
+        y: startPos.y + stepY * s,
+        z: startPos.z + stepZ * s,
+      };
+
+      for (const [otherId, otherObj] of this.objects) {
+        if (otherId === entityId) continue;
+        const otherHalf = this.getHalfExtents(otherObj);
+        const otherPos = otherObj.mesh.position;
+        if (this.checkOverlap(testPos, halfExt, { x: otherPos.x, y: otherPos.y, z: otherPos.z }, otherHalf)) {
+          // Calculate normal (direction of separation)
+          const overlapX = (halfExt.x + otherHalf.x) - Math.abs(testPos.x - otherPos.x);
+          const overlapY = (halfExt.y + otherHalf.y) - Math.abs(testPos.y - otherPos.y);
+          const overlapZ = (halfExt.z + otherHalf.z) - Math.abs(testPos.z - otherPos.z);
+          const minOverlap = Math.min(overlapX, overlapY, overlapZ);
+          const normal: Vec3 = { x: 0, y: 0, z: 0 };
+          if (minOverlap === overlapX) normal.x = testPos.x < otherPos.x ? -1 : 1;
+          else if (minOverlap === overlapY) normal.y = testPos.y < otherPos.y ? -1 : 1;
+          else normal.z = testPos.z < otherPos.z ? -1 : 1;
+
+          return {
+            hit: true,
+            entityId: otherId,
+            distance: (s * 0.1),
+            normal,
+            point: { ...testPos },
+          };
+        }
+      }
+    }
+
+    return { hit: false, entityId: null, distance: 0, normal: { x: 0, y: 1, z: 0 }, point: { x: 0, y: 0, z: 0 } };
+  }
+
+  /**
+   * Overlap test — check if a shape at a given position overlaps any colliders.
+   */
+  overlapTest(
+    position: Vec3,
+    halfExtents: Vec3,
+    excludeEntityId?: string,
+  ): OverlapTestResult {
+    const hits: string[] = [];
+
+    for (const [id, obj] of this.objects) {
+      if (id === excludeEntityId) continue;
+      const objHalf = this.getHalfExtents(obj);
+      const objPos = obj.mesh.position;
+      if (this.checkOverlap(position, halfExtents, { x: objPos.x, y: objPos.y, z: objPos.z }, objHalf)) {
+        hits.push(id);
+      }
+    }
+
+    return { hit: hits.length > 0, entityIds: hits };
+  }
+
+  /**
+   * Get the ground slope angle at an entity's position.
+   * Used for slope handling in character controllers.
+   * Returns angle in radians (0 = flat, PI/2 = vertical wall).
+   */
+  getSlopeAngle(entityId: string): number {
+    const obj = this.objects.get(entityId);
+    if (!obj || !obj.isGrounded) return 0;
+
+    // Cast rays around the entity to sample ground normal
+    const pos = obj.mesh.position;
+    const offsets = [
+      { x: -0.3, z: 0 }, { x: 0.3, z: 0 },
+      { x: 0, z: -0.3 }, { x: 0, z: 0.3 },
+    ];
+
+    let normalX = 0;
+    let normalY = 0;
+    let normalZ = 0;
+    let samples = 0;
+
+    for (const offset of offsets) {
+      const testX = pos.x + offset.x;
+      const testZ = pos.z + offset.z;
+
+      // Find ground height at this point
+      let groundY = this.groundY;
+      for (const [, otherObj] of this.objects) {
+        if (otherObj.data.motionType !== "static") continue;
+        const otherPos = otherObj.mesh.position;
+        const otherHalf = this.getHalfExtents(otherObj);
+        if (
+          Math.abs(testX - otherPos.x) < otherHalf.x &&
+          Math.abs(testZ - otherPos.z) < otherHalf.z
+        ) {
+          const topY = otherPos.y + otherHalf.y;
+          if (topY > groundY && topY <= pos.y + 0.5) {
+            groundY = topY;
+          }
+        }
+      }
+
+      // Estimate normal from height differences
+      const dy = groundY - this.groundY;
+      normalY += 1;
+      normalX -= offset.x * dy * 3;
+      normalZ -= offset.z * dy * 3;
+      samples++;
+    }
+
+    if (samples === 0) return 0;
+
+    // Normalize
+    const len = Math.sqrt(normalX * normalX + normalY * normalY + normalZ * normalZ);
+    if (len < 0.0001) return 0;
+
+    // Slope angle = acos(normal.y)
+    const slopeNormalY = normalY / len;
+    return Math.acos(Math.min(1, Math.max(-1, slopeNormalY)));
+  }
+
+  /**
+   * Get the max walkable slope angle (radians). Default: 45 degrees.
+   */
+  maxSlopeAngle: number = Math.PI / 4;
+
+  /**
+   * Apply slope handling to a dynamic body.
+   * If the slope is too steep, the character slides down.
+   */
+  applySlopeHandling(entityId: string): void {
+    const obj = this.objects.get(entityId);
+    if (!obj || !obj.isGrounded || obj.data.motionType !== "dynamic") return;
+
+    const slopeAngle = this.getSlopeAngle(entityId);
+
+    if (slopeAngle > this.maxSlopeAngle) {
+      // Too steep — apply sliding force
+      const slideForce = Math.sin(slopeAngle - this.maxSlopeAngle) * 9.81;
+      obj.velocity.x -= slideForce * 0.1;
+      obj.velocity.z -= slideForce * 0.1;
+    } else {
+      // On walkable slope — adjust velocity to follow slope
+      const slopeFactor = 1 - Math.sin(slopeAngle) * 0.3;
+      obj.velocity.x *= slopeFactor;
+      obj.velocity.z *= slopeFactor;
+    }
+  }
+
+  // ---- Debug visualization ----
+
+  private debugEnabled: boolean = false;
+  private debugMeshes: AbstractMesh[] = [];
+
+  setDebugEnabled(enabled: boolean): void {
+    this.debugEnabled = enabled;
+    if (!enabled) {
+      this.clearDebugMeshes();
+    }
+  }
+
+  isDebugEnabled(): boolean {
+    return this.debugEnabled;
+  }
+
+  private clearDebugMeshes(): void {
+    const scene = sceneRef.current;
+    if (scene) {
+      for (const mesh of this.debugMeshes) {
+        mesh.dispose();
+      }
+    }
+    this.debugMeshes = [];
+  }
+
+  /**
+   * Render wireframe colliders for all physics bodies.
+   */
+  renderDebugVisuals(): void {
+    if (!this.debugEnabled) return;
+
+    this.clearDebugMeshes();
+
+    const scene = this.scene;
+    if (!scene) return;
+
+    for (const [id, obj] of this.objects) {
+      const half = this.getHalfExtents(obj);
+      const isDynamic = obj.data.motionType === "dynamic";
+      const isTrigger = obj.data.isTrigger;
+
+      const debugMesh = MeshBuilder.CreateBox(
+        `debug_${id}`,
+        { width: half.x * 2, height: half.y * 2, depth: half.z * 2 },
+        scene,
+      );
+      debugMesh.position = obj.mesh.position.clone();
+      debugMesh.rotation = obj.mesh.rotation.clone();
+
+      const mat = new StandardMaterial(`debugMat_${id}`, scene);
+      mat.wireframe = true;
+
+      if (isTrigger) {
+        mat.diffuseColor = new Color3(0, 1, 1);
+      } else if (isDynamic) {
+        mat.diffuseColor = new Color3(1, 0.3, 0.3);
+      } else {
+        mat.diffuseColor = new Color3(0.3, 1, 0.3);
+      }
+      mat.alpha = 0.4;
+      debugMesh.material = mat;
+      debugMesh.isPickable = false;
+
+      this.debugMeshes.push(debugMesh);
+    }
   }
 
   private resolveCollision(_idA: string, _idB: string, objA: PhysicsObject, objB: PhysicsObject): void {

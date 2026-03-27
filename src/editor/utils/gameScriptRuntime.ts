@@ -6,6 +6,7 @@
 
 import type { Vec3 } from "@/editor/types";
 import { physicsEngine } from "./physicsEngine";
+import { stateMachineRuntime } from "./stateMachineRuntime";
 import { sceneRef } from "@/editor/utils/sceneRef";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { usePhysicsStore } from "@/editor/stores/physicsStore";
@@ -221,11 +222,21 @@ class GameScriptRuntime {
           }
           return null;
         },
+        sweepTest: (direction: Vec3, maxDistance?: number) => physicsEngine.sweepTest(entityId, direction, maxDistance),
+        overlapTest: (position: Vec3, halfExtents: Vec3) => physicsEngine.overlapTest(position, halfExtents, entityId),
+        getSlopeAngle: () => physicsEngine.getSlopeAngle(entityId),
       },
 
       // Logging
       log: (...args: unknown[]) => console.log(`[Game:${entityId}]`, ...args),
       warn: (...args: unknown[]) => console.warn(`[Game:${entityId}]`, ...args),
+
+      // State machine
+      stateMachine: {
+        setParameter: (key: string, value: number | string | boolean) => stateMachineRuntime.setParameter(entityId, key, value),
+        getParameter: (key: string) => stateMachineRuntime.getParameter(entityId, key),
+        getCurrentState: () => stateMachineRuntime.getCurrentState(entityId),
+      },
     };
 
     // Create script functions from source
@@ -240,6 +251,7 @@ class GameScriptRuntime {
         get entity() { return api.entity; },
         get transform() { return api.transform; },
         get physics() { return api.physics; },
+        get stateMachine() { return api.stateMachine; },
         log: api.log,
         warn: api.warn,
       };

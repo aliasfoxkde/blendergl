@@ -663,8 +663,8 @@
 - [x] Trigger volumes (invisible colliders that detect overlap)
 - [x] Physics layers / collision groups (which objects collide with which)
 - [x] Raycast API (physics raycast for gameplay)
-- [ ] Sweep test (cast shape along path)
-- [ ] Overlap test (check if shape overlaps any colliders)
+- [x] Sweep test (cast shape along path)
+- [x] Overlap test (check if shape overlaps any colliders)
 
 ### 17.3 Game Mode
 - [x] Play mode toggle (edit mode → play mode, separate from edit)
@@ -687,15 +687,16 @@
 - [x] Jump mechanic (space bar, ground check via raycast) — via physics.isGrounded
 - [x] Gravity application
 - [x] Collision response (slide along walls, not get stuck)
-- [ ] Slope handling (walk up/down slopes)
+- [x] Slope handling (walk up/down slopes)
 
 ### 17.6 State Machine
 - [x] State machine component (visual state graph for entity behavior) — types defined
-- [ ] States: Idle, Walk, Run, Jump, Fall, Attack, etc.
-- [ ] Transitions: conditions for state changes
-- [ ] State actions: onEnter, onUpdate, onExit callbacks
-- [ ] State machine visualization (node graph showing states and transitions)
-- [ ] Parameterized transitions (speed > threshold → Walk state)
+- [x] States: Idle, Walk, Run, Jump, Fall, Attack, etc.
+- [x] Transitions: conditions for state changes
+- [x] State actions: onEnter, onUpdate, onExit callbacks
+- [x] State machine visualization (node graph showing states and transitions)
+- [x] Parameterized transitions (speed > threshold → Walk state)
+- [x] Physics debug visualization (wireframe colliders)
 
 ### 17.7 Game Export
 - [ ] Export as standalone HTML (embed scene + scripts in single file)

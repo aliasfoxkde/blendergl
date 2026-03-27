@@ -6,6 +6,7 @@
 import { sceneRef } from "@/editor/utils/sceneRef";
 import { physicsEngine } from "./physicsEngine";
 import { gameScriptRuntime } from "./gameScriptRuntime";
+import { stateMachineRuntime } from "./stateMachineRuntime";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { usePhysicsStore } from "@/editor/stores/physicsStore";
 import { AbstractMesh } from "@babylonjs/core";
@@ -73,6 +74,14 @@ class GameModeController {
     // Register input handlers
     this.registerInputHandlers();
 
+    // Initialize and register state machines
+    stateMachineRuntime.init();
+    for (const [entityId, sms] of Object.entries(physicsStore.stateMachines)) {
+      for (const sm of sms) {
+        stateMachineRuntime.registerMachine(entityId, sm);
+      }
+    }
+
     // Start physics engine
     physicsEngine.start();
 
@@ -114,6 +123,9 @@ class GameModeController {
     // Destroy scripts
     gameScriptRuntime.destroy();
 
+    // Destroy state machines
+    stateMachineRuntime.destroy();
+
     // Remove input handlers
     this.unregisterInputHandlers();
 
@@ -153,6 +165,9 @@ class GameModeController {
 
     // Update scripts
     gameScriptRuntime.update(dt);
+
+    // Update state machines
+    stateMachineRuntime.update(dt);
 
     // Tick play time in store
     usePhysicsStore.getState().tickPlay(dt);
