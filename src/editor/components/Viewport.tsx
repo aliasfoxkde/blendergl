@@ -106,6 +106,7 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     postProcessPipeline.updateFromSettings(renderSettings);
     renderingManager.updateSSAO(renderSettings);
     renderingManager.updateShadows(renderSettings);
+    renderingManager.updateCSM(renderSettings);
     renderingManager.updateEnvironment(renderSettings);
   }, [renderSettings]);
 

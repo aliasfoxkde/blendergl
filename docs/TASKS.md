@@ -802,7 +802,7 @@
 ### 19.4 Shadows
 - [x] Shadow mapping (directional, point, spot light shadows)
 - [x] PCF soft shadows
-- [ ] Cascaded shadow maps (CSM for large scenes)
+- [x] Cascaded shadow maps (CSM for large scenes)
 - [x] Shadow resolution control
 - [x] Shadow bias control (prevent shadow acne/peter-panning)
 - [x] Contact shadows (fake shadows for small objects)

@@ -190,6 +190,29 @@ export function RenderSettingsPanel() {
             onChange={(v) => updateSettings({ shadowNormalBias: v })} />
           <ToggleRow label="Contact Shadows" value={settings.contactShadowsEnabled}
             onChange={(v) => updateSettings({ contactShadowsEnabled: v })} />
+          <ToggleRow label="CSM" value={settings.csmEnabled}
+            onChange={(v) => updateSettings({ csmEnabled: v })} />
+          {settings.csmEnabled && (
+            <>
+              <SelectRow
+                label="Cascades"
+                value={String(settings.csmCascades)}
+                options={["2", "3", "4"]}
+                onChange={(v) => updateSettings({ csmCascades: Number(v) })}
+              />
+              <SliderRow label="Lambda" value={settings.csmLambda} min={0} max={1} step={0.05}
+                onChange={(v) => updateSettings({ csmLambda: v })} />
+            </>
+          )}
+          <label className="flex items-center gap-2 text-gray-400">
+            <span className="w-20 shrink-0">Shadow Color</span>
+            <input
+              type="color"
+              value="#000000"
+              className="w-6 h-4 bg-transparent border border-[#444] rounded cursor-pointer"
+              onChange={(e) => renderingManager.setShadowColor(e.target.value)}
+            />
+          </label>
         </Section>
 
         {/* Render Output */}

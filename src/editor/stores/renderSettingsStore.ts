@@ -55,6 +55,10 @@ export interface RenderSettingsData {
   shadowBias: number;
   shadowNormalBias: number;
   contactShadowsEnabled: boolean;
+  csmEnabled: boolean;
+  csmCascades: number;
+  csmLambda: number;
+  csmShadowAutoCalc: boolean;
 
   // Environment
   environmentIntensity: number;
@@ -112,6 +116,10 @@ function createDefaultRenderSettings(): RenderSettingsData {
     shadowBias: 0.00005,
     shadowNormalBias: 0.02,
     contactShadowsEnabled: false,
+    csmEnabled: false,
+    csmCascades: 3,
+    csmLambda: 0.5,
+    csmShadowAutoCalc: true,
 
     environmentIntensity: 1.0,
     environmentRotation: 0,

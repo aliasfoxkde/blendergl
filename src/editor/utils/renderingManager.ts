@@ -6,6 +6,7 @@
 import type { Scene } from "@babylonjs/core";
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
+import { CascadedShadowGenerator } from "@babylonjs/core/Lights/Shadows/cascadedShadowGenerator";
 import { SSAO2RenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/ssao2RenderingPipeline";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
@@ -84,6 +85,44 @@ class RenderingManager {
         shadowGen.normalBias = settings.shadowNormalBias;
         shadowGen.useBlurExponentialShadowMap = settings.contactShadowsEnabled;
         shadowGen.setDarkness(0.5);
+      }
+    }
+  }
+
+  // --- CSM ---
+
+  updateCSM(settings: RenderSettingsData): void {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    // Find the studio_key directional light and replace its shadow gen with CSM
+    for (const light of scene.lights) {
+      if (light.name === "studio_key" && light instanceof DirectionalLight) {
+        const existingGen = light.getShadowGenerator();
+        if (existingGen) {
+          existingGen.dispose();
+        }
+
+        if (settings.csmEnabled) {
+          const csm = new CascadedShadowGenerator(settings.shadowResolution, light);
+          csm.useBlurExponentialShadowMap = true;
+          csm.blurKernel = 32;
+          csm.setDarkness(0.4);
+          csm.bias = settings.shadowBias;
+          csm.normalBias = settings.shadowNormalBias;
+          csm.lambda = settings.csmLambda;
+          csm.numCascades = settings.csmCascades;
+          csm.autoCalcDepthBounds = settings.csmShadowAutoCalc;
+        } else {
+          // Re-add standard shadow generator
+          const shadowGen = new ShadowGenerator(settings.shadowResolution, light);
+          shadowGen.useBlurExponentialShadowMap = settings.contactShadowsEnabled;
+          shadowGen.blurKernel = 32;
+          shadowGen.setDarkness(0.4);
+          shadowGen.bias = settings.shadowBias;
+          shadowGen.normalBias = settings.shadowNormalBias;
+        }
+        break;
       }
     }
   }
