@@ -476,21 +476,21 @@
 - [x] Armature store (Zustand): bones, active bone, pose mode
 
 ### 14.2 Bone Constraints
-- [ ] IK constraint (inverse kinematics solver — CCD or FABRIK)
-- [ ] Look-at constraint (bone points at target)
-- [ ] Parent constraint (bone follows parent transform)
-- [ ] Track-to constraint (bone axis tracks target)
-- [ ] Limit constraint (rotation limits per axis)
-- [ ] Constraint stack (multiple constraints per bone, ordered evaluation)
-- [ ] Constraint influence slider (0-1 blend)
+- [x] IK constraint (inverse kinematics solver — CCD or FABRIK)
+- [x] Look-at constraint (bone points at target)
+- [x] Parent constraint (bone follows parent transform)
+- [x] Track-to constraint (bone axis tracks target)
+- [x] Limit constraint (rotation limits per axis)
+- [x] Constraint stack (multiple constraints per bone, ordered evaluation)
+- [x] Constraint influence slider (0-1 blend)
 
 ### 14.3 Skinning
-- [ ] Weight paint mode (new editor mode)
-- [ ] Weight brush: paint vertex weights for active bone
-- [ ] Weight visualization (heat map: blue=0, red=1)
-- [ ] Auto-weight assignment (envelope-based, bone heat method)
-- [ ] Weight normalize (ensure vertex weights sum to 1.0)
-- [ ] Weight mirror (left-right symmetry)
+- [x] Weight paint mode (new editor mode)
+- [x] Weight brush: paint vertex weights for active bone
+- [x] Weight visualization (heat map: blue=0, red=1)
+- [x] Auto-weight assignment (envelope-based, bone heat method)
+- [x] Weight normalize (ensure vertex weights sum to 1.0)
+- [x] Weight mirror (left-right symmetry)
 - [ ] Babylon.js skinned mesh: apply skeleton to mesh
 - [ ] Skinned mesh rendering (GPU skinning via Babylon.js)
 
@@ -501,25 +501,25 @@
 - [x] Key deletion
 - [x] Key interpolation (linear, bezier easing)
 - [x] Animation clip management (create, rename, delete clips)
-- [ ] Animation blending (crossfade between clips)
-- [ ] NLA editor (Non-Linear Animation — blend multiple clips)
+- [x] Animation blending (crossfade between clips)
+- [x] NLA editor (Non-Linear Animation — blend multiple clips)
 
 ### 14.5 Timeline & Playback
 - [x] Timeline component (scrubable playback bar)
 - [x] Playback controls: play, pause, stop, jump to start/end
 - [x] Frame rate settings (24, 25, 30, 60 fps)
 - [x] Frame step (forward/backward by frame)
-- [ ] Play mode vs Edit mode (simulation toggle)
+- [x] Play mode vs Edit mode (simulation toggle)
 - [x] Looping toggle (loop, ping-pong, once)
 
 ### 14.6 Dope Sheet & Pose Library
 - [x] Dope sheet editor (keyframe visualization per channel)
 - [x] Key selection (click, box select, select all keys in range)
 - [x] Key manipulation (move, scale, delete selected keys)
-- [ ] Pose library: save current pose as named pose
-- [ ] Pose library: restore/apply saved pose
-- [ ] Pose library: blend between poses (slider)
-- [ ] Animation export (glTF animation clips)
+- [x] Pose library: save current pose as named pose
+- [x] Pose library: restore/apply saved pose
+- [x] Pose library: blend between poses (slider)
+- [x] Animation export (glTF animation clips)
 - [x] Commit and push: Phase 14 complete
 
 ---

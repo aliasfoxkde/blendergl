@@ -9,6 +9,11 @@ import { useAnimationStore } from "@/editor/stores/animationStore";
 import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
 import { useSettingsStore, PRINTER_PROFILES } from "@/editor/stores/settingsStore";
 import { usePhysicsStore } from "@/editor/stores/physicsStore";
+import { useConstraintStore } from "@/editor/stores/constraintStore";
+import { PoseLibraryPanel } from "@/editor/components/PoseLibraryPanel";
+import { NlaEditor } from "@/editor/components/NlaEditor";
+import { WeightPaintPanel } from "@/editor/components/WeightPaintPanel";
+import { exportAnimationToJSON } from "@/editor/utils/animationExport";
 import { formatAnalysis, estimatePrint, analyzeMesh, repairMesh, fillHoles } from "@/editor/utils/meshAnalysis";
 import { sliceMesh } from "@/editor/utils/gcode/slicer";
 import { generateGcode, downloadGcode } from "@/editor/utils/gcode/gcodeGenerator";
@@ -148,11 +153,24 @@ export function PropertiesPanel() {
 
   // Pose mode: show bone info + armature
   if (editorMode === "pose") {
+    const activeBoneId = usePoseModeStore.getState().activeBoneId;
     return (
       <div className="flex-1 overflow-y-auto">
         <PoseModePanel />
         <ArmatureSection entityId={activeEntityId} />
+        <ConstraintSection boneId={activeBoneId} />
         <AnimationSection />
+        <PoseLibrarySection />
+        <NlaSection />
+      </div>
+    );
+  }
+
+  // Weight paint mode
+  if (editorMode === "weight_paint") {
+    return (
+      <div className="flex-1 overflow-y-auto">
+        <WeightPaintPanel />
       </div>
     );
   }
@@ -1204,6 +1222,7 @@ function ArmatureSection({ entityId }: { entityId: string | null }) {
 function AnimationSection() {
   const clips = useAnimationStore((s) => s.clips);
   const activeClipId = useAnimationStore((s) => s.activeClipId);
+  const isPlayMode = useAnimationStore((s) => s.isPlayMode);
   const [expanded, setExpanded] = useState(false);
   const [newClipName, setNewClipName] = useState("Action");
 
@@ -1231,6 +1250,18 @@ function AnimationSection() {
               <PropertyRow label="Tracks">
                 <span className="text-xs text-gray-300">{activeClip.tracks.length}</span>
               </PropertyRow>
+              <PropertyRow label="Mode">
+                <button
+                  className={`text-[10px] px-2 py-0.5 rounded transition ${
+                    isPlayMode
+                      ? "bg-green-600/30 text-green-200 border border-green-500/50"
+                      : "bg-[#333] text-gray-400 border border-[#444] hover:text-white"
+                  }`}
+                  onClick={() => useAnimationStore.getState().togglePlayMode()}
+                >
+                  {isPlayMode ? "Play Mode" : "Edit Mode"}
+                </button>
+              </PropertyRow>
             </>
           )}
 
@@ -1248,6 +1279,21 @@ function AnimationSection() {
               }}
             >
               New
+            </button>
+            <button
+              className="text-[10px] text-gray-400 hover:text-white bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 transition"
+              onClick={() => {
+                const json = exportAnimationToJSON(clips);
+                const blob = new Blob([json], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "animation.json";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Export
             </button>
           </div>
 
@@ -1268,6 +1314,127 @@ function AnimationSection() {
               ))}
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PoseLibrarySection() {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border-b border-[#333]">
+      <button
+        className="w-full px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#282828] flex items-center justify-between"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>Pose Library</span>
+        <span className="text-[10px] text-gray-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && <PoseLibraryPanel />}
+    </div>
+  );
+}
+
+function NlaSection() {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border-b border-[#333]">
+      <button
+        className="w-full px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#282828] flex items-center justify-between"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>NLA Editor</span>
+        <span className="text-[10px] text-gray-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && <NlaEditor />}
+    </div>
+  );
+}
+
+function ConstraintSection({ boneId }: { boneId: string | null }) {
+  const [expanded, setExpanded] = useState(false);
+  const constraints = useConstraintStore((s) => s.constraints);
+  const addConstraint = useConstraintStore((s) => s.addConstraint);
+  const removeConstraint = useConstraintStore((s) => s.removeConstraint);
+  const setConstraintEnabled = useConstraintStore((s) => s.setConstraintEnabled);
+  const setConstraintInfluence = useConstraintStore((s) => s.setConstraintInfluence);
+
+  if (!boneId) return null;
+
+  const boneConstraints = Object.values(constraints).filter((c) => c.boneId === boneId);
+
+  return (
+    <div className="border-b border-[#333]">
+      <button
+        className="w-full px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#282828] flex items-center justify-between"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>Constraints ({boneConstraints.length})</span>
+        <span className="text-[10px] text-gray-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div className="px-3 py-2 space-y-1.5">
+          <div className="flex gap-1 flex-wrap">
+            {(["ik", "look_at", "track_to", "limit"] as const).map((type) => (
+              <button
+                key={type}
+                className="text-[9px] px-1.5 py-0.5 bg-[#333] text-gray-300 hover:bg-[#444] rounded border border-[#444] capitalize transition"
+                onClick={() =>
+                  addConstraint({
+                    type,
+                    boneId,
+                    enabled: true,
+                    influence: 1.0,
+                    targetBoneId: null,
+                    targetPosition: null,
+                    settings: {},
+                  })
+                }
+              >
+                + {type.replace("_", " ")}
+              </button>
+            ))}
+          </div>
+          {boneConstraints.map((c) => (
+            <div key={c.id} className="bg-[#2a2a3a] rounded p-1.5 space-y-1 border border-[#333]">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-gray-300 capitalize">{c.type.replace("_", " ")}</span>
+                <button
+                  className="text-[9px] text-red-400 hover:text-red-300"
+                  onClick={() => removeConstraint(c.id)}
+                >
+                  X
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] text-gray-500 w-8">On</span>
+                <button
+                  className={`w-5 h-3 rounded-full transition ${c.enabled ? "bg-blue-500" : "bg-[#444]"}`}
+                  onClick={() => setConstraintEnabled(c.id, !c.enabled)}
+                >
+                  <div className={`w-2.5 h-2.5 bg-white rounded-full shadow transition-transform ${c.enabled ? "translate-x-2" : "translate-x-0.5"}`} />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] text-gray-500 w-8">Inf</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={c.influence}
+                  className="flex-1 h-0.5 accent-blue-500"
+                  onChange={(e) => setConstraintInfluence(c.id, Number(e.target.value))}
+                />
+                <span className="text-gray-600 w-8 text-right tabular-nums text-[9px]">
+                  {c.influence.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

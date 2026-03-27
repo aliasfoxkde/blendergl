@@ -75,7 +75,7 @@ export interface SceneSettings {
   backgroundColor: string;
 }
 
-export type EditorMode = "object" | "edit" | "pose" | "sculpt";
+export type EditorMode = "object" | "edit" | "pose" | "sculpt" | "weight_paint";
 export type TransformMode = "translate" | "rotate" | "scale";
 export type TransformSpace = "world" | "local";
 export type SelectionMode = "object" | "vertex" | "edge" | "face";
@@ -189,7 +189,10 @@ export type AnimProperty =
   | "position.z"
   | "rotation.x"
   | "rotation.y"
-  | "rotation.z";
+  | "rotation.z"
+  | "scale.x"
+  | "scale.y"
+  | "scale.z";
 
 export type InterpolationType = "linear" | "step" | "bezier";
 
@@ -381,4 +384,48 @@ export function createDefaultUvSettings(): UvSettings {
     packMargin: 0.05,
     packSize: 1024,
   };
+}
+
+// ---- Bone Constraints ----
+
+export type ConstraintType = "ik" | "look_at" | "parent" | "track_to" | "limit";
+
+export interface BoneConstraint {
+  id: string;
+  type: ConstraintType;
+  boneId: string;
+  enabled: boolean;
+  influence: number; // 0-1
+  targetBoneId: string | null;
+  targetPosition: Vec3 | null;
+  settings: Record<string, number | string | boolean>;
+}
+
+// ---- Weight Paint ----
+
+export type WeightPaintMode = "paint" | "blur" | "multiply" | "lighten" | "darken";
+
+export interface WeightPaintSettings {
+  mode: WeightPaintMode;
+  brushRadius: number;
+  brushStrength: number;
+  brushFalloff: "smooth" | "sharp" | "spike";
+  activeBoneId: string | null;
+  normalizeWeights: boolean;
+  mirrorX: boolean;
+}
+
+// ---- Skinned Mesh ----
+
+export interface SkinWeights {
+  boneWeights: Record<string, Float32Array>; // boneId -> per-vertex weights
+}
+
+// ---- Animation Blending ----
+
+export interface AnimationBlendState {
+  clipA: string;
+  clipB: string;
+  factor: number; // 0 = clipA, 1 = clipB
+  looping: boolean;
 }
