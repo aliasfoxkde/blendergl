@@ -491,8 +491,8 @@
 - [x] Auto-weight assignment (envelope-based, bone heat method)
 - [x] Weight normalize (ensure vertex weights sum to 1.0)
 - [x] Weight mirror (left-right symmetry)
-- [ ] Babylon.js skinned mesh: apply skeleton to mesh
-- [ ] Skinned mesh rendering (GPU skinning via Babylon.js)
+- [x] Babylon.js skinned mesh: apply skeleton to mesh
+- [x] Skinned mesh rendering (GPU skinning via Babylon.js)
 
 ### 14.4 Keyframe Animation
 - [x] Animation store (Zustand): animations, active animation, playback state
@@ -699,10 +699,10 @@
 - [x] Physics debug visualization (wireframe colliders)
 
 ### 17.7 Game Export
-- [ ] Export as standalone HTML (embed scene + scripts in single file)
-- [ ] Export game settings (physics, controls, resolution)
-- [ ] Export scripts (inline into HTML)
-- [ ] Minimal runtime (stripped-down Babylon.js for game playback)
+- [x] Export as standalone HTML (embed scene + scripts in single file)
+- [x] Export game settings (physics, controls, resolution)
+- [x] Export scripts (inline into HTML)
+- [x] Minimal runtime (stripped-down Babylon.js for game playback)
 - [ ] Commit and push: Phase 17 complete
 
 ---

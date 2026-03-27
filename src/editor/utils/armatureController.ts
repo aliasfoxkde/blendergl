@@ -16,7 +16,7 @@ import {
 import { Bone, Skeleton } from "@babylonjs/core/Bones";
 import type { Scene } from "@babylonjs/core";
 import type { LinesMesh } from "@babylonjs/core/Meshes/linesMesh";
-import type { BoneData, ArmatureComponent, BoneTransform, Vec3 } from "@/editor/types";
+import type { BoneData, ArmatureComponent, BoneTransform, SkinWeights, Vec3 } from "@/editor/types";
 
 // Module-level ref for cross-component access (follows editModeRef pattern)
 export const armatureControllerRef: { current: ArmatureController | null } = {
@@ -156,6 +156,99 @@ export class ArmatureController {
   /** Get the Babylon.js Skeleton (for attaching to meshes). */
   getSkeleton(): Skeleton | null {
     return this.skeleton;
+  }
+
+  /**
+   * Apply skinned mesh rendering to a Babylon.js mesh.
+   * Sets mesh.skeleton and mesh.bonesMatrices from vertex weights.
+   */
+  applySkinning(
+    mesh: Mesh,
+    skinWeights: SkinWeights,
+    _armData: ArmatureComponent,
+  ): boolean {
+    if (!this.skeleton) return false;
+
+    const bones = this.skeleton.bones;
+    if (bones.length === 0) return false;
+
+    // Map bone IDs to skeleton indices
+    const boneIdToIndex = new Map<string, number>();
+    for (let i = 0; i < bones.length; i++) {
+      const boneId = bones[i].metadata?.boneId as string | undefined;
+      if (boneId) {
+        boneIdToIndex.set(boneId, i);
+      }
+    }
+
+
+    // Set numBoneInfluences to max bones per vertex (4 for StandardMaterial)
+    mesh.numBoneInfluencers = 4;
+
+    // Attach skeleton to mesh
+    mesh.skeleton = this.skeleton;
+
+    // Return skeleton to rest pose
+    this.skeleton.returnToRest();
+
+    // Set vertex bone data (indices and weights)
+    // Babylon.js expects: mesh.boneMatrices + mesh.metadata.bonesData
+    const vertexCount = mesh.getTotalVertices();
+    if (vertexCount === 0) return false;
+
+    // Build per-vertex bone indices and weights arrays
+    const boneIndices = new Float32Array(vertexCount * 4);
+    const boneWeights = new Float32Array(vertexCount * 4);
+
+    // Get all bone IDs that have weights
+    const weightedBoneIds = Object.keys(skinWeights.boneWeights);
+
+    for (let v = 0; v < vertexCount; v++) {
+      // Collect (weight, boneIndex) pairs for this vertex
+      const pairs: [number, number][] = [];
+      for (const boneId of weightedBoneIds) {
+        const weights = skinWeights.boneWeights[boneId];
+        if (!weights || v >= weights.length) continue;
+        const w = weights[v];
+        if (w <= 0) continue;
+        const boneIndex = boneIdToIndex.get(boneId);
+        if (boneIndex === undefined) continue;
+        pairs.push([w, boneIndex]);
+      }
+
+      // Sort by weight descending, take top 4
+      pairs.sort((a, b) => b[0] - a[0]);
+      const topN = pairs.slice(0, 4);
+
+      // Normalize weights
+      let totalW = 0;
+      for (const [w] of topN) totalW += w;
+
+      for (let j = 0; j < 4; j++) {
+        const idx = v * 4 + j;
+        if (j < topN.length) {
+          boneWeights[idx] = totalW > 0 ? topN[j][0] / totalW : 0;
+          boneIndices[idx] = topN[j][1];
+        } else {
+          boneWeights[idx] = 0;
+          boneIndices[idx] = 0;
+        }
+      }
+    }
+
+    // Set bone indices and weights as vertex buffer
+    mesh.setVerticesData("boneIndices", boneIndices);
+    mesh.setVerticesData("boneWeights", boneWeights);
+
+    return true;
+  }
+
+  /**
+   * Remove skinning from a mesh.
+   */
+  removeSkinning(mesh: Mesh): void {
+    mesh.skeleton = null;
+    mesh.numBoneInfluencers = 0;
   }
 
   /** Update bone visualization overlay. */
