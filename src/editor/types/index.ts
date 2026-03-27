@@ -79,7 +79,7 @@ export type EditorMode = "object" | "edit" | "pose" | "sculpt";
 export type TransformMode = "translate" | "rotate" | "scale";
 export type TransformSpace = "world" | "local";
 export type SelectionMode = "object" | "vertex" | "edge" | "face";
-export type ShadingMode = "wireframe" | "solid" | "material" | "textured";
+export type ShadingMode = "wireframe" | "solid" | "material" | "textured" | "xray";
 
 export type AiProvider = "anthropic" | "openai";
 

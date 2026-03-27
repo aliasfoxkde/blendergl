@@ -336,13 +336,7 @@ export function useKeyboardShortcuts() {
         case "a":
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            const allIds = Object.keys(sceneStore.entities);
-            if (allIds.length > 0) {
-              selectionStore.select(allIds[0], false);
-              for (let i = 1; i < allIds.length; i++) {
-                selectionStore.select(allIds[i], true);
-              }
-            }
+            selectionStore.selectAll(Object.keys(sceneStore.entities));
           }
           break;
         case "y":

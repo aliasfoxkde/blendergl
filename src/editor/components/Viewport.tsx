@@ -556,6 +556,7 @@ export function Viewport({ onSceneReady }: ViewportProps) {
         case "wireframe":
           material.wireframe = true;
           material.disableLighting = false;
+          material.alpha = 1;
           break;
         case "solid":
           material.wireframe = false;
@@ -563,12 +564,29 @@ export function Viewport({ onSceneReady }: ViewportProps) {
           material.diffuseColor = new Color3(0.7, 0.7, 0.7);
           material.specularColor = Color3.Black();
           material.emissiveColor = Color3.Black();
+          material.alpha = 1;
           break;
         case "material":
         case "textured":
           material.wireframe = false;
           material.disableLighting = false;
+          material.alpha = 1;
           break;
+        case "xray":
+          material.wireframe = false;
+          material.disableLighting = true;
+          material.alpha = 0.3;
+          material.backFaceCulling = false;
+          material.emissiveColor = new Color3(0.1, 0.2, 0.4);
+          mesh.renderOutline = true;
+          mesh.outlineColor = new Color3(0.3, 0.5, 0.8);
+          mesh.outlineWidth = 0.02;
+          break;
+      }
+      // Reset xray-specific properties when not in xray mode
+      if (shadingMode !== "xray") {
+        material.backFaceCulling = true;
+        mesh.renderOutline = false;
       }
     }
   }, [shadingMode, materials]);

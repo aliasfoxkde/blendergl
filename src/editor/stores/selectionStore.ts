@@ -20,6 +20,7 @@ interface SelectionState {
   select: (id: string, additive?: boolean) => void;
   deselect: (id: string) => void;
   deselectAll: () => void;
+  selectAll: (ids: string[]) => void;
   setActiveEntity: (id: string | null) => void;
   setEditorMode: (mode: EditorMode) => void;
   setSelectionMode: (mode: SelectionMode) => void;
@@ -62,6 +63,11 @@ export const useSelectionStore = create<SelectionState>()(
       set((state) => {
         state.selectedIds = [];
         state.activeEntityId = null;
+      }),
+
+    selectAll: (ids) =>
+      set((state) => {
+        state.selectedIds = [...ids];
       }),
 
     setActiveEntity: (id) =>

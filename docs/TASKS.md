@@ -824,18 +824,18 @@
 
 These items are deferred from earlier phases or nice-to-haves:
 
-- [ ] Auto-save indicator in status bar
-- [ ] Restore last scene on editor load
-- [ ] Mouse cursor 3D position in status bar
+- [x] Auto-save indicator in status bar
+- [x] Restore last scene on editor load
+- [x] Mouse cursor 3D position in status bar
 - [ ] SceneHierarchy parent-child drag UI
-- [ ] Drag-and-drop file upload
+- [x] Drag-and-drop file upload
 - [ ] Offline fallback page
 - [ ] PWA install prompt handling
 - [ ] App icons (192x192, 512x512)
 - [ ] Landing page screenshots/demo section
 - [ ] Collection support (entity grouping)
-- [ ] Grow/shrink selection, select linked
-- [ ] X-ray viewport mode
+- [x] Grow/shrink selection, select linked
+- [x] X-ray viewport mode
 - [ ] Configurable keyboard shortcut system
 - [ ] Unit tests for Phase 9 features (DuplicateCommand, camera presets, shading)
 

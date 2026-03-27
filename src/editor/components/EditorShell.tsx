@@ -22,6 +22,8 @@ import { usePhysicsStore } from "@/editor/stores/physicsStore";
 import { createPrimitiveEntity } from "@/editor/utils/primitives";
 import type { PrimitiveType } from "@/editor/types";
 import { saveScene, loadLatestScene } from "@/editor/utils/storage";
+import { importGltf } from "@/editor/utils/importGltf";
+import { sceneRef } from "@/editor/utils/sceneRef";
 
 export function EditorShell() {
   const addEntity = useSceneStore((s) => s.addEntity);
@@ -41,6 +43,7 @@ export function EditorShell() {
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [cursorPos, setCursorPos] = useState<string | null>(null);
   const [lastSaveTime, setLastSaveTime] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleAddPrimitive = useCallback(
     (type: PrimitiveType) => {
@@ -129,7 +132,27 @@ export function EditorShell() {
         </aside>
 
         {/* Viewport */}
-        <main className={`flex-1 relative bg-[#1a1a2e] ${playMode === "playing" ? "ring-2 ring-inset ring-green-500/50" : playMode === "paused" ? "ring-2 ring-inset ring-yellow-500/50" : ""}`}>
+        <main
+          className={`flex-1 relative bg-[#1a1a2e] ${playMode === "playing" ? "ring-2 ring-inset ring-green-500/50" : playMode === "paused" ? "ring-2 ring-inset ring-yellow-500/50" : ""}`}
+          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragOver(false);
+            const file = e.dataTransfer.files[0];
+            if (!file) return;
+            const ext = file.name.split(".").pop()?.toLowerCase();
+            if (ext === "gltf" || ext === "glb") {
+              const babylonScene = sceneRef.current;
+              if (babylonScene) importGltf(file, babylonScene);
+            }
+          }}
+        >
+          {isDragOver && (
+            <div className="absolute inset-0 z-50 bg-blue-500/10 border-2 border-dashed border-blue-400 flex items-center justify-center pointer-events-none">
+              <span className="text-blue-300 text-sm font-semibold">Drop .gltf/.glb file to import</span>
+            </div>
+          )}
           <Viewport />
           <ScriptEditorPanel />
           <Timeline isOpen={timelineOpen} onToggle={() => setTimelineOpen(!timelineOpen)} />
