@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Engine,
   Scene,
@@ -9,6 +9,7 @@ import {
   AbstractMesh,
   Mesh,
   PointerEventTypes,
+  Viewport as BabylonViewport,
 } from "@babylonjs/core";
 import {
   createEngine,
@@ -27,6 +28,7 @@ import { useEditModeStore } from "@/editor/stores/editModeStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { setCameraPreset, toggleOrtho } from "@/editor/utils/cameraUtils";
 import { cameraRef as sharedCameraRef } from "@/editor/utils/cameraRef";
+import { importGltf } from "@/editor/utils/importGltf";
 import type { TransformMode } from "@/editor/types";
 
 interface ViewportProps {
@@ -94,6 +96,13 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     };
     window.addEventListener("camera-preset", handleCameraPreset);
     window.addEventListener("camera-toggle-ortho", handleToggleOrtho);
+
+    // glTF import event listener
+    const handleImportGltf = async (e: Event) => {
+      const file = (e as CustomEvent).detail as File;
+      await importGltf(file, scene);
+    };
+    window.addEventListener("import-gltf", handleImportGltf);
 
     // Render loop
     engine.runRenderLoop(() => {
@@ -192,6 +201,7 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       resizeObserver.disconnect();
       window.removeEventListener("camera-preset", handleCameraPreset);
       window.removeEventListener("camera-toggle-ortho", handleToggleOrtho);
+      window.removeEventListener("import-gltf", handleImportGltf);
       scene.onPointerObservable.clear();
       gizmoController.dispose();
       editControllerRef_local.current?.dispose();
@@ -392,12 +402,108 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     );
   }, [selectedVertices, selectedFaces, selectedEdges]);
 
+  // Box select state
+  const [boxSelect, setBoxSelect] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only start box select in object mode, on left click, on empty space
+    if (editorMode !== "object" || e.button !== 0) return;
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    setBoxSelect({ startX: e.clientX - rect.left, startY: e.clientY - rect.top, currentX: e.clientX - rect.left, currentY: e.clientY - rect.top });
+  }, [editorMode]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!boxSelect) return;
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    setBoxSelect((prev) => prev ? { ...prev, currentX: e.clientX - rect.left, currentY: e.clientY - rect.top } : null);
+  }, [boxSelect]);
+
+  const handleMouseUp = useCallback(() => {
+    if (!boxSelect || !sceneRef.current) {
+      setBoxSelect(null);
+      return;
+    }
+
+    // Calculate selection rectangle bounds
+    const x1 = Math.min(boxSelect.startX, boxSelect.currentX);
+    const y1 = Math.min(boxSelect.startY, boxSelect.currentY);
+    const x2 = Math.max(boxSelect.startX, boxSelect.currentX);
+    const y2 = Math.max(boxSelect.startY, boxSelect.currentY);
+
+    // Only process if drag was meaningful
+    if (x2 - x1 > 5 || y2 - y1 > 5) {
+      const engine = engineRef.current;
+      if (engine) {
+        const scene = sceneRef.current;
+        const camera = scene.activeCamera;
+        let anySelected = false;
+
+        for (const [, mesh] of meshMapRef.current) {
+          if (!mesh.isVisible || !camera) continue;
+
+          // Project mesh center to screen
+          const worldPos = mesh.getBoundingInfo().boundingBox.centerWorld;
+          const viewport = new BabylonViewport(0, 0, engine.getRenderWidth(), engine.getRenderHeight());
+          const screenPos = Vector3.Project(
+            worldPos,
+            scene.getTransformMatrix(),
+            camera.getProjectionMatrix(),
+            viewport
+          );
+
+          // Check if screen position is within the selection rectangle
+          // Babylon screen coords: origin top-left, y down
+          const sx = screenPos.x;
+          const sy = screenPos.y;
+
+          if (sx >= x1 && sx <= x2 && sy >= y1 && sy <= y2) {
+            const entityId = mesh.metadata?.entityId as string | undefined;
+            if (entityId) {
+              select(entityId, anySelected);
+              anySelected = true;
+            }
+          }
+        }
+
+        if (!anySelected) {
+          deselectAll();
+        }
+      }
+    }
+
+    setBoxSelect(null);
+  }, [boxSelect, select, deselectAll]);
+
+  const boxRect = boxSelect
+    ? {
+        left: Math.min(boxSelect.startX, boxSelect.currentX),
+        top: Math.min(boxSelect.startY, boxSelect.currentY),
+        width: Math.abs(boxSelect.currentX - boxSelect.startX),
+        height: Math.abs(boxSelect.currentY - boxSelect.startY),
+      }
+    : null;
+
   return (
-    <canvas
-      ref={canvasRef}
-      className="w-full h-full no-select outline-none"
-      style={{ touchAction: "none" }}
-    />
+    <div
+      ref={containerRef}
+      className="w-full h-full relative"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full no-select outline-none"
+        style={{ touchAction: "none" }}
+      />
+      {boxRect && boxRect.width > 2 && boxRect.height > 2 && (
+        <div
+          className="absolute border border-blue-400 bg-blue-400/10 pointer-events-none"
+          style={{ left: boxRect.left, top: boxRect.top, width: boxRect.width, height: boxRect.height }}
+        />
+      )}
+    </div>
   );
 }
 

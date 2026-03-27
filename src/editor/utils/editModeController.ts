@@ -528,4 +528,208 @@ export class EditModeController {
     this.mesh = null;
     this.scene = null;
   }
+
+  // --- Advanced Mesh Operations ---
+
+  /**
+   * Subdivide all faces — each triangle becomes 4 triangles (midpoint subdivision).
+   */
+  subdivideAll(): {
+    oldPositions: Float32Array;
+    oldIndices: IndicesArray;
+    newPositions: Float32Array;
+    newIndices: IndicesArray;
+  } {
+    const positions = this.getPositions();
+    const indices = this.getIndices();
+    if (!positions || !indices) {
+      return {
+        oldPositions: new Float32Array(),
+        oldIndices: [],
+        newPositions: new Float32Array(),
+        newIndices: [],
+      };
+    }
+
+    const oldPositions = new Float32Array(positions);
+    const oldIndices = indices.slice() as IndicesArray;
+    const vertexCount = positions.length / 3;
+
+    // For each face, create 3 new midpoints and 4 new triangles
+    const newPositions: number[] = [...positions];
+    const newIndicesList: number[] = [];
+
+    for (let f = 0; f < oldIndices.length / 3; f++) {
+      const i0 = oldIndices[f * 3];
+      const i1 = oldIndices[f * 3 + 1];
+      const i2 = oldIndices[f * 3 + 2];
+
+      // Midpoints
+      const m01 = vertexCount + f * 3;
+      const m12 = vertexCount + f * 3 + 1;
+      const m20 = vertexCount + f * 3 + 2;
+
+      newPositions.push(
+        (positions[i0 * 3] + positions[i1 * 3]) / 2,
+        (positions[i0 * 3 + 1] + positions[i1 * 3 + 1]) / 2,
+        (positions[i0 * 3 + 2] + positions[i1 * 3 + 2]) / 2,
+        (positions[i1 * 3] + positions[i2 * 3]) / 2,
+        (positions[i1 * 3 + 1] + positions[i2 * 3 + 1]) / 2,
+        (positions[i1 * 3 + 2] + positions[i2 * 3 + 2]) / 2,
+        (positions[i2 * 3] + positions[i0 * 3]) / 2,
+        (positions[i2 * 3 + 1] + positions[i0 * 3 + 1]) / 2,
+        (positions[i2 * 3 + 2] + positions[i0 * 3 + 2]) / 2
+      );
+
+      // 4 triangles from original + 3 midpoints
+      newIndicesList.push(i0, m01, m20);
+      newIndicesList.push(i1, m12, m01);
+      newIndicesList.push(i2, m20, m12);
+      newIndicesList.push(m01, m12, m20);
+    }
+
+    return {
+      oldPositions,
+      oldIndices,
+      newPositions: new Float32Array(newPositions),
+      newIndices: newIndicesList as IndicesArray,
+    };
+  }
+
+  /**
+   * Merge selected vertices that are within threshold distance of each other.
+   * Returns the first vertex index of each merged group.
+   */
+  mergeVertices(vertexIds: number[], threshold: number): {
+    oldPositions: Float32Array;
+    oldIndices: IndicesArray;
+    newPositions: Float32Array;
+    newIndices: IndicesArray;
+  } {
+    const positions = this.getPositions();
+    const indices = this.getIndices();
+    if (!positions || !indices) {
+      return {
+        oldPositions: new Float32Array(),
+        oldIndices: [],
+        newPositions: new Float32Array(),
+        newIndices: [],
+      };
+    }
+
+    const oldPositions = new Float32Array(positions);
+    const oldIndices = indices.slice() as IndicesArray;
+
+    // Build merge map: for each vertex, find the canonical vertex to merge into
+    const mergeMap = new Map<number, number>();
+
+    for (const vId of vertexIds) {
+      if (mergeMap.has(vId)) continue;
+      let canonical = vId;
+
+      for (const otherId of vertexIds) {
+        if (otherId === vId || mergeMap.has(otherId)) continue;
+        const dx = positions[vId * 3] - positions[otherId * 3];
+        const dy = positions[vId * 3 + 1] - positions[otherId * 3 + 1];
+        const dz = positions[vId * 3 + 2] - positions[otherId * 3 + 2];
+        if (Math.sqrt(dx * dx + dy * dy + dz * dz) < threshold) {
+          canonical = Math.min(canonical, otherId);
+        }
+      }
+
+      mergeMap.set(vId, canonical);
+    }
+
+    // Remap indices
+    const newIndicesList: number[] = [];
+    for (const idx of oldIndices) {
+      const mapped = mergeMap.get(idx) ?? idx;
+      newIndicesList.push(mapped);
+    }
+
+    return {
+      oldPositions,
+      oldIndices,
+      newPositions: new Float32Array(positions),
+      newIndices: newIndicesList as IndicesArray,
+    };
+  }
+
+  /**
+   * Inset selected faces inward by a fraction (0-1).
+   * Creates new inner triangles for each selected face.
+   */
+  insetFaces(faceIds: number[], fraction: number): {
+    oldPositions: Float32Array;
+    oldIndices: IndicesArray;
+    newPositions: Float32Array;
+    newIndices: IndicesArray;
+  } {
+    const positions = this.getPositions();
+    const indices = this.getIndices();
+    if (!positions || !indices) {
+      return {
+        oldPositions: new Float32Array(),
+        oldIndices: [],
+        newPositions: new Float32Array(),
+        newIndices: [],
+      };
+    }
+
+    const oldPositions = new Float32Array(positions);
+    const oldIndices = indices.slice() as IndicesArray;
+    const vertexCount = positions.length / 3;
+    const faceSet = new Set(faceIds);
+    const frac = Math.max(0.05, Math.min(0.95, fraction));
+
+    const newPositions: number[] = [...positions];
+    const newIndicesList: number[] = [];
+
+    for (let f = 0; f < oldIndices.length / 3; f++) {
+      const v0 = oldIndices[f * 3];
+      const v1 = oldIndices[f * 3 + 1];
+      const v2 = oldIndices[f * 3 + 2];
+
+      if (faceSet.has(f)) {
+        // Create inset vertices: move each vertex toward centroid by fraction
+        const cx = (positions[v0 * 3] + positions[v1 * 3] + positions[v2 * 3]) / 3;
+        const cy = (positions[v0 * 3 + 1] + positions[v1 * 3 + 1] + positions[v2 * 3 + 1]) / 3;
+        const cz = (positions[v0 * 3 + 2] + positions[v1 * 3 + 2] + positions[v2 * 3 + 2]) / 3;
+
+        const iv0 = vertexCount + f * 3;
+        const iv1 = vertexCount + f * 3 + 1;
+        const iv2 = vertexCount + f * 3 + 2;
+
+        newPositions.push(
+          positions[v0 * 3] + (cx - positions[v0 * 3]) * frac,
+          positions[v0 * 3 + 1] + (cy - positions[v0 * 3 + 1]) * frac,
+          positions[v0 * 3 + 2] + (cz - positions[v0 * 3 + 2]) * frac,
+          positions[v1 * 3] + (cx - positions[v1 * 3]) * frac,
+          positions[v1 * 3 + 1] + (cy - positions[v1 * 3 + 1]) * frac,
+          positions[v1 * 3 + 2] + (cz - positions[v1 * 3 + 2]) * frac,
+          positions[v2 * 3] + (cx - positions[v2 * 3]) * frac,
+          positions[v2 * 3 + 1] + (cy - positions[v2 * 3 + 1]) * frac,
+          positions[v2 * 3 + 2] + (cz - positions[v2 * 3 + 2]) * frac
+        );
+
+        // Original face (outer)
+        newIndicesList.push(v0, v1, v2);
+        // Inner face
+        newIndicesList.push(iv0, iv1, iv2);
+        // Side quads connecting outer to inner
+        newIndicesList.push(v0, v1, iv1, v0, iv1, iv0);
+        newIndicesList.push(v1, v2, iv2, v1, iv2, iv1);
+        newIndicesList.push(v2, v0, iv0, v2, iv0, iv2);
+      } else {
+        newIndicesList.push(v0, v1, v2);
+      }
+    }
+
+    return {
+      oldPositions,
+      oldIndices,
+      newPositions: new Float32Array(newPositions),
+      newIndices: newIndicesList as IndicesArray,
+    };
+  }
 }

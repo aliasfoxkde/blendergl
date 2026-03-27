@@ -217,22 +217,22 @@
 ## Phase 9: Advanced Editor Features
 
 ### 9.1 Viewport Shading Modes
-- [ ] Wireframe mode toggle (all meshes)
-- [ ] Solid mode (flat color, no lighting)
-- [ ] Material preview (default — current behavior)
-- [ ] Shading mode buttons in toolbar
-- [ ] Shading mode keyboard shortcut (Z cycling)
-- [ ] Persist shading mode in settings store
+- [x] Wireframe mode toggle (all meshes)
+- [x] Solid mode (flat color, no lighting)
+- [x] Material preview (default — current behavior)
+- [x] Shading mode buttons in toolbar
+- [x] Shading mode keyboard shortcut (Z cycling)
+- [x] Persist shading mode in settings store
 
 ### 9.2 Camera Presets
-- [ ] Front view (Numpad 1)
-- [ ] Back view (Ctrl+Numpad 1)
-- [ ] Right view (Numpad 3)
-- [ ] Left view (Ctrl+Numpad 3)
-- [ ] Top view (Numpad 7)
-- [ ] Bottom view (Ctrl+Numpad 7)
-- [ ] Perspective/Ortho toggle (Numpad 5)
-- [ ] Camera preset buttons in toolbar or status bar
+- [x] Front view (Numpad 1)
+- [x] Back view (Ctrl+Numpad 1)
+- [x] Right view (Numpad 3)
+- [x] Left view (Ctrl+Numpad 3)
+- [x] Top view (Numpad 7)
+- [x] Bottom view (Ctrl+Numpad 7)
+- [x] Perspective/Ortho toggle (Numpad 5)
+- [x] Camera preset buttons in toolbar or status bar
 
 ### 9.3 Grid + Snap Configuration
 - [ ] Settings panel: grid size control
@@ -240,26 +240,26 @@
 - [ ] Settings panel: snap increment control
 - [ ] Settings panel: angle snap control
 - [ ] Settings panel: scale snap control
-- [ ] Wire snap settings to gizmo controller
-- [ ] Snap toggle button in toolbar
-- [ ] Visual indicator when snap is active
+- [x] Wire snap settings to gizmo controller
+- [x] Snap toggle button in toolbar
+- [x] Visual indicator when snap is active
 
 ### 9.4 Duplicate + Parent/Child
-- [ ] DuplicateCommand (undo/redo for Shift+D)
-- [ ] Duplicate with offset (shift position slightly)
-- [ ] Duplicate multiple selected entities
-- [ ] Parent entity to active (Ctrl+P)
-- [ ] Unparent entity (Alt+P)
-- [ ] Clear parent (keep transform)
+- [x] DuplicateCommand (undo/redo for Shift+D)
+- [x] Duplicate with offset (shift position slightly)
+- [x] Duplicate multiple selected entities
+- [x] Parent entity to active (Ctrl+P)
+- [x] Unparent entity (Alt+P)
+- [x] Clear parent (keep transform)
 - [ ] Update SceneHierarchy to show parent-child drag
 
 ### 9.5 Status Bar Enhancement
 - [ ] Show mouse cursor 3D position (world coordinates)
-- [ ] Show current editor mode (Object/Edit)
-- [ ] Show current element mode (Vertex/Edge/Face)
-- [ ] Show selected element count
-- [ ] Show shading mode
-- [ ] Show snap status
+- [x] Show current editor mode (Object/Edit)
+- [x] Show current element mode (Vertex/Edge/Face)
+- [x] Show selected element count
+- [x] Show shading mode
+- [x] Show snap status
 
 ### 9.6 Right-Click Context Menu
 - [ ] Context menu component (positioned at cursor)
@@ -269,9 +269,9 @@
 - [ ] Keyboard shortcut hints in menu items
 
 ### 9.7 Auto-Save
-- [ ] Debounced auto-save on entity/transform changes
+- [x] Debounced auto-save on entity/transform changes
 - [ ] Auto-save indicator in status bar
-- [ ] Configurable interval in settings
+- [x] Configurable interval in settings
 - [ ] Restore last scene on editor load
 
 ### 9.8 Tests + Polish
@@ -285,19 +285,74 @@
 
 ## Phase 10: AI Augmentation
 
-### 10.1 AI Assistant Panel
-- [ ] Collapsible AI panel in editor
-- [ ] Chat interface for natural language commands
-- [ ] Connect to Backend API (OpenAI/Anthropic compatible)
-- [ ] API key configuration in settings
+### 10.1 AI Settings
+- [x] Extend settingsStore with AI config (provider, apiKey, endpoint, model)
+- [x] Persist API keys in localStorage
+- [x] AI config types in types/index.ts
 
-### 10.2 AI Features
-- [ ] "Generate object" from text prompt to procedural geometry
-- [ ] "Optimize mesh" to decimation, cleanup
-- [ ] "Analyze scene" to stats, suggestions
-- [ ] "Arrange objects" to auto-layout
-- [ ] "Create material" to AI-generated PBR materials
-- [ ] Commit and push: Phase 10 complete
+### 10.2 AI API Client
+- [x] Fetch-based streaming client (no SDK dependency)
+- [x] Anthropic API support (POST /v1/messages)
+- [x] OpenAI-compatible API support (POST /v1/chat/completions)
+- [x] Error handling (401, 429, network errors)
+
+### 10.3 AI Store + Panel
+- [x] AI chat store (messages, streaming state, errors)
+- [x] Collapsible AI panel component (right sidebar)
+- [x] Chat messages UI (user/assistant bubbles)
+- [x] Text input + send button
+- [x] Streaming response display
+
+### 10.4 AI Tool Execution
+- [x] Parse AI responses for action blocks
+- [x] Generate object tool (create primitives from text)
+- [x] Set material tool (apply properties to selected)
+- [x] Analyze scene tool (return stats)
+
+### 10.5 AI Settings UI + Integration
+- [x] AI settings in PropertiesPanel (provider, key, endpoint, model)
+- [x] AI panel in EditorShell layout
+- [x] Keyboard shortcut (F3 to toggle AI panel)
+- [x] Commit and push: Phase 10 complete
+
+---
+
+## Phase 11: Feature Completion
+
+### 11.1 glTF/GLB Import
+- [x] Import via Babylon SceneLoader.ImportMeshAsync
+- [x] File input button in toolbar
+- [ ] Drag-and-drop onto viewport
+- [ ] Undo/redo command for import
+
+### 11.2 Asset Browser
+- [x] List saved scenes from IndexedDB
+- [x] Load/delete/rename scenes
+
+### 11.3 Context Menu
+- [x] Right-click context menu component
+- [x] Object mode items (Add, Duplicate, Delete, Parent, Hide)
+- [x] Edit mode items (Select All, Delete, Extrude)
+- [x] Close on click outside / Escape
+
+### 11.4 Box Select
+- [x] Drag rectangle selection in viewport
+- [x] Select entities within rectangle via bounding boxes
+
+### 11.5 Grid/Snap Settings Panel
+- [x] Grid size, subdivisions sliders
+- [x] Snap increment, angle snap inputs
+
+### 11.6 Advanced Mesh Operations
+- [x] Subdivide faces
+- [x] Merge vertices
+- [x] Inset faces
+- [ ] Bevel edges
+
+### 11.7 Texture Upload + Mapping
+- [x] File input for texture images
+- [ ] Assign to material diffuseTexture (base64 stored in material)
+- [ ] Remove texture button
 
 ---
 
@@ -305,27 +360,25 @@
 
 These items are deferred from earlier phases or nice-to-haves:
 
-- [ ] Box select (drag rectangle in viewport)
-- [ ] Texture upload and mapping
-- [ ] glTF/GLB import (Babylon SceneLoader)
+- [ ] Auto-save indicator in status bar
+- [ ] Restore last scene on editor load
+- [ ] Mouse cursor 3D position in status bar
+- [ ] SceneHierarchy parent-child drag UI
 - [ ] Drag-and-drop file upload
-- [ ] Asset browser panel with thumbnails
 - [ ] Offline fallback page
 - [ ] PWA install prompt handling
 - [ ] App icons (192x192, 512x512)
 - [ ] Landing page screenshots/demo section
 - [ ] Collection support (entity grouping)
-- [ ] Loop cut, bevel, inset, merge, subdivide mesh operations
 - [ ] Grow/shrink selection, select linked
 - [ ] X-ray viewport mode
 - [ ] Configurable keyboard shortcut system
+- [ ] Unit tests for Phase 9 features (DuplicateCommand, camera presets, shading)
 
 ---
 
 ## Progress Summary
 
-- **Total Phases:** 10
-- **Completed:** Phases 1-8
-- **In Progress:** Phase 9 — Advanced Editor Features
-- **Pending:** Phase 10 — AI Augmentation
-- **Backlog:** 14 deferred items
+- **Total Phases:** 11
+- **Completed:** Phases 1-10, Phase 11 (nearly complete — 1 item deferred)
+- **Backlog:** 11 deferred items

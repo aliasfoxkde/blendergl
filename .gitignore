@@ -33,3 +33,18 @@ coverage/
 # Wrangler
 .wrangler/
 .dev.vars
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Temp
+*.tmp
+*.temp
+*.bak
+*.swp

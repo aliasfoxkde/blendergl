@@ -4,6 +4,7 @@ import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useHistoryStore } from "@/editor/stores/historyStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
+import { useAiStore } from "@/editor/stores/aiStore";
 import { editControllerRef } from "@/editor/utils/editModeRef";
 import { saveScene } from "@/editor/utils/storage";
 import { duplicateEntities } from "@/editor/utils/duplicate";
@@ -68,6 +69,10 @@ export function useKeyboardShortcuts() {
       }
 
       switch (e.key.toLowerCase()) {
+        case "f3":
+          e.preventDefault();
+          useAiStore.getState().togglePanel();
+          return;
         // Element mode shortcuts (edit mode only)
         case "1":
           if (selectionStore.editorMode === "edit") {
@@ -103,6 +108,19 @@ export function useKeyboardShortcuts() {
             }
           } else {
             selectionStore.setTransformMode("rotate" as TransformMode);
+          }
+          break;
+        case "i":
+          if (selectionStore.editorMode === "edit") {
+            const controller = editControllerRef.current;
+            if (controller && editModeStore.selectedFaces.size > 0) {
+              const faceIds = Array.from(editModeStore.selectedFaces);
+              const data = controller.insetFaces(faceIds, 0.25);
+              controller.applyPositions(data.newPositions);
+              controller.applyIndices(data.newIndices);
+              controller.rebuildNormals();
+              editModeStore.deselectAll();
+            }
           }
           break;
         case "r":
@@ -145,9 +163,20 @@ export function useKeyboardShortcuts() {
           }
           break;
         case "d":
-          if (e.shiftKey) {
+          if (selectionStore.editorMode === "edit" && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
-            // Duplicate selected entities
+            // Subdivide in edit mode
+            const controller = editControllerRef.current;
+            if (controller) {
+              const data = controller.subdivideAll();
+              controller.applyPositions(data.newPositions);
+              controller.applyIndices(data.newIndices);
+              controller.rebuildNormals();
+              editModeStore.deselectAll();
+            }
+          } else if (e.shiftKey) {
+            e.preventDefault();
+            // Duplicate selected entities in object mode
             if (selectionStore.selectedIds.length > 0) {
               duplicateEntities(
                 selectionStore.selectedIds,

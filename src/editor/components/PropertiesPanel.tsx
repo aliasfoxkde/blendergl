@@ -2,6 +2,7 @@ import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useMaterialStore } from "@/editor/stores/materialStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
+import { useSettingsStore } from "@/editor/stores/settingsStore";
 
 export function PropertiesPanel() {
   const activeEntityId = useSelectionStore((s) => s.activeEntityId);
@@ -53,15 +54,7 @@ export function PropertiesPanel() {
   }
 
   if (!entity) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-4">
-        <p className="text-xs text-gray-500 text-center">
-          No object selected.
-          <br />
-          Click an object in the viewport or scene hierarchy.
-        </p>
-      </div>
-    );
+    return <SettingsPanel />;
   }
 
   const material = materials[entity.id];
@@ -189,6 +182,9 @@ export function PropertiesPanel() {
           step={0.01}
           onChange={(v) => updateMaterial(entity.id, { opacity: v })}
         />
+        <PropertyRow label="Texture">
+          <TextureUpload entityId={entity.id} />
+        </PropertyRow>
       </Section>
     </div>
   );
@@ -307,5 +303,95 @@ function SliderRow({
         </span>
       </div>
     </PropertyRow>
+  );
+}
+
+function SettingsPanel() {
+  const snapIncrement = useSettingsStore((s) => s.snapIncrement);
+  const setSnapIncrement = useSettingsStore((s) => s.setSnapIncrement);
+  const angleSnap = useSettingsStore((s) => s.angleSnap);
+  const setAngleSnap = useSettingsStore((s) => s.setAngleSnap);
+  const gridSize = useSceneStore((s) => s.scene.settings.gridSize);
+  const gridSubdivisions = useSceneStore((s) => s.scene.settings.gridSubdivisions);
+  const updateSettings = useSceneStore((s) => s.updateSettings);
+
+  return (
+    <div className="flex-1 overflow-y-auto">
+      <Section title="Grid & Snap">
+        <SliderRow
+          label="Grid Size"
+          value={gridSize}
+          min={5}
+          max={50}
+          step={1}
+          onChange={(v) => updateSettings({ gridSize: v })}
+        />
+        <SliderRow
+          label="Subdivs"
+          value={gridSubdivisions}
+          min={4}
+          max={40}
+          step={1}
+          onChange={(v) => updateSettings({ gridSubdivisions: v })}
+        />
+        <PropertyRow label="Snap Dist">
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={snapIncrement}
+              step={0.1}
+              min={0.01}
+              onChange={(e) => setSnapIncrement(parseFloat(e.target.value) || 0.5)}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+        </PropertyRow>
+        <PropertyRow label="Angle Snap">
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={angleSnap}
+              step={1}
+              min={1}
+              max={90}
+              onChange={(e) => setAngleSnap(parseFloat(e.target.value) || 15)}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+            />
+            <span className="text-[10px] text-gray-500">deg</span>
+          </div>
+        </PropertyRow>
+      </Section>
+      <div className="px-3 py-4 text-center">
+        <p className="text-[10px] text-gray-600">Select an object to edit its properties</p>
+      </div>
+    </div>
+  );
+}
+
+function TextureUpload({ entityId }: { entityId: string }) {
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      // Store texture data in material store (as emissive texture hint for now)
+      useMaterialStore.getState().updateMaterial(entityId, {
+        emissive: `texture:${base64}`,
+        emissiveIntensity: 1,
+      });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <label className="flex-1 cursor-pointer bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-[10px] text-gray-400 hover:text-gray-200 hover:border-blue-500 transition text-center">
+        Upload
+        <input type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+      </label>
+    </div>
   );
 }

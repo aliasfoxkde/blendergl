@@ -80,6 +80,23 @@ export type TransformSpace = "world" | "local";
 export type SelectionMode = "object" | "vertex" | "edge" | "face";
 export type ShadingMode = "wireframe" | "solid" | "material" | "textured";
 
+export type AiProvider = "anthropic" | "openai";
+
+export interface AiMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+}
+
+export interface AiConfig {
+  enabled: boolean;
+  provider: AiProvider;
+  apiKey: string;
+  endpoint: string;
+  model: string;
+}
+
 export interface ViewportConfig {
   showGrid: boolean;
   showAxes: boolean;
