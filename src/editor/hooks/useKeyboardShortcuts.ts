@@ -1,18 +1,19 @@
 import { useEffect } from "react";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useSceneStore } from "@/editor/stores/sceneStore";
+import { useHistoryStore } from "@/editor/stores/historyStore";
 import { saveScene } from "@/editor/utils/storage";
 import type { TransformMode } from "@/editor/types";
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't capture when typing in inputs
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
 
       const selectionStore = useSelectionStore.getState();
       const sceneStore = useSceneStore.getState();
+      const historyStore = useHistoryStore.getState();
 
       switch (e.key.toLowerCase()) {
         case "w":
@@ -36,13 +37,30 @@ export function useKeyboardShortcuts() {
         case "a":
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            // Select all - could be expanded
+            // Select all entities
+            const allIds = Object.keys(sceneStore.entities);
+            if (allIds.length > 0) {
+              selectionStore.select(allIds[0], false);
+              for (let i = 1; i < allIds.length; i++) {
+                selectionStore.select(allIds[i], true);
+              }
+            }
           }
           break;
         case "z":
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            // Undo - placeholder for undo system
+            if (e.shiftKey) {
+              historyStore.redo();
+            } else {
+              historyStore.undo();
+            }
+          }
+          break;
+        case "y":
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            historyStore.redo();
           }
           break;
         case "s":
@@ -53,6 +71,12 @@ export function useKeyboardShortcuts() {
           break;
         case "escape":
           selectionStore.deselectAll();
+          break;
+        case "d":
+          if (e.shiftKey) {
+            e.preventDefault();
+            // Duplicate - placeholder
+          }
           break;
       }
     };

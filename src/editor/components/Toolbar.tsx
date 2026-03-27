@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import type { PrimitiveType, TransformMode } from "@/editor/types";
 import { PRIMITIVE_TYPES } from "@/editor/utils/primitives";
+import { useHistoryStore } from "@/editor/stores/historyStore";
 
 interface ToolbarProps {
   onAddPrimitive: (type: PrimitiveType) => void;
@@ -22,6 +23,10 @@ export function Toolbar({
 }: ToolbarProps) {
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const canUndo = useHistoryStore((s) => s.canUndo);
+  const canRedo = useHistoryStore((s) => s.canRedo);
+  const undo = useHistoryStore((s) => s.undo);
+  const redo = useHistoryStore((s) => s.redo);
 
   useEffect(() => {
     if (!addMenuOpen) return;
@@ -118,6 +123,24 @@ export function Toolbar({
       {/* Spacer */}
       <div className="flex-1" />
 
+      {/* Undo/Redo */}
+      <ToolButton
+        label="Undo (Ctrl+Z)"
+        onClick={undo}
+        disabled={!canUndo}
+      >
+        <UndoIcon />
+      </ToolButton>
+      <ToolButton
+        label="Redo (Ctrl+Shift+Z)"
+        onClick={redo}
+        disabled={!canRedo}
+      >
+        <RedoIcon />
+      </ToolButton>
+
+      <div className="w-px h-5 bg-[#444]" />
+
       {/* Save */}
       <ToolButton label="Save (Ctrl+S)" onClick={onSave}>
         <SaveIcon />
@@ -205,6 +228,24 @@ function SaveIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
       <path d="M17 21v-8H7v8M7 3v5h8" />
+    </svg>
+  );
+}
+
+function UndoIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 7v6h6" />
+      <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" />
+    </svg>
+  );
+}
+
+function RedoIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M21 7v6h-6" />
+      <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3L21 13" />
     </svg>
   );
 }

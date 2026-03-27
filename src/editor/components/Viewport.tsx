@@ -16,8 +16,10 @@ import {
   createDefaultLights,
   createGrid,
 } from "@/editor/utils/engine";
+import { TransformGizmoController } from "@/editor/utils/gizmos";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
+import type { TransformMode } from "@/editor/types";
 
 interface ViewportProps {
   onSceneReady?: (scene: Scene, engine: Engine) => void;
@@ -29,10 +31,12 @@ export function Viewport({ onSceneReady }: ViewportProps) {
   const sceneRef = useRef<Scene | null>(null);
   const cameraRef = useRef<ArcRotateCamera | null>(null);
   const meshMapRef = useRef<Map<string, AbstractMesh>>(new Map());
+  const gizmoRef = useRef<TransformGizmoController | null>(null);
 
   const entities = useSceneStore((s) => s.entities);
   const { select, deselectAll, selectedIds, setHoveredEntity } =
     useSelectionStore();
+  const transformMode = useSelectionStore((s) => s.transformMode);
 
   // Initialize engine + scene
   useEffect(() => {
@@ -44,6 +48,10 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     const camera = createCamera(scene, canvas);
     createDefaultLights(scene);
     createGrid(scene);
+
+    // Initialize gizmo controller
+    const gizmoController = new TransformGizmoController(scene);
+    gizmoRef.current = gizmoController;
 
     engineRef.current = engine;
     sceneRef.current = scene;
@@ -97,10 +105,12 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     return () => {
       resizeObserver.disconnect();
       scene.onPointerObservable.clear();
+      gizmoController.dispose();
       engine.dispose();
       engineRef.current = null;
       sceneRef.current = null;
       cameraRef.current = null;
+      gizmoRef.current = null;
       meshMapRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -179,6 +189,22 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       }
     }
   }, [selectedIds]);
+
+  // Sync gizmo mode and attach to selected mesh
+  useEffect(() => {
+    const gizmo = gizmoRef.current;
+    if (!gizmo) return;
+
+    gizmo.mode = transformMode as TransformMode;
+
+    const activeId = selectedIds[0];
+    if (activeId) {
+      const mesh = meshMapRef.current.get(activeId) ?? undefined;
+      gizmo.attachToMesh(mesh ?? null);
+    } else {
+      gizmo.attachToMesh(null);
+    }
+  }, [transformMode, selectedIds]);
 
   return (
     <canvas
