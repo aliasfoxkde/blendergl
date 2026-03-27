@@ -543,40 +543,40 @@
 - [x] Flatten brush (project vertices to average plane)
 - [x] Crease brush (sharpen edges along stroke)
 - [x] Clay strips brush (clay-like buildup)
-- [ ] Brush settings: radius (1-500px), strength (0.01-1.0), falloff (smooth/sharp/spike)
+- [x] Brush settings: radius (1-500px), strength (0.01-1.0), falloff (smooth/sharp/spike)
 - [x] Brush spacing control (distance between dab applications)
 - [x] Pressure sensitivity (PointerEvent pressure for stylus support)
 
 ### 15.3 Dynamic Topology
-- [ ] Dyntopo toggle (adaptive tessellation during sculpting)
-- [ ] Detail size slider (target edge length for subdivision)
-- [ ] Subdivision while sculpting (split long edges)
-- [ ] Collapse while sculpting (merge short edges)
-- [ ] Remesh brush (uniform mesh density)
+- [x] Dyntopo toggle (adaptive tessellation during sculpting)
+- [x] Detail size slider (target edge length for subdivision)
+- [x] Subdivision while sculpting (split long edges)
+- [x] Collapse while sculpting (merge short edges)
+- [x] Remesh brush (uniform mesh density)
 
 ### 15.4 Multiresolution
-- [ ] Multiresolution modifier (subdivision levels 0-N)
-- [ ] Level selector (switch between detail levels)
-- [ ] Sculpt at any level (detail propagates up/down)
-- [ ] Subdivide to next level
-- [ ] Apply multiresolution (bake detail to base level)
+- [x] Multiresolution modifier (subdivision levels 0-N)
+- [x] Level selector (switch between detail levels)
+- [x] Sculpt at any level (detail propagates up/down)
+- [x] Subdivide to next level
+- [x] Apply multiresolution (bake detail to base level)
 
 ### 15.5 Sculpt Tools
-- [ ] Sculpt mask (protect areas from brush strokes)
+- [x] Sculpt mask (protect areas from brush strokes)
 - [x] Mask brush (paint mask on/off)
-- [ ] Invert mask
-- [ ] Clear mask
+- [x] Invert mask
+- [x] Clear mask
 - [x] Symmetry (X, Y, Z axis mirror strokes)
-- [ ] Face sets (mark regions for isolated operations)
+- [x] Face sets (mark regions for isolated operations)
 - [ ] Hide/show face sets during sculpting
 
 ### 15.6 Detail Transfer
-- [ ] Normal map baking (high-poly sculpt → low-poly mesh)
-- [ ] Displacement map baking
-- [ ] Ambient occlusion baking (cavity detection)
-- [ ] Texture resolution settings (512, 1024, 2048, 4096)
+- [x] Normal map baking (high-poly sculpt → low-poly mesh)
+- [x] Displacement map baking
+- [x] Ambient occlusion baking (cavity detection)
+- [x] Texture resolution settings (512, 1024, 2048, 4096)
 - [ ] Bake preview (normal map applied to low-poly)
-- [ ] Commit and push: Phase 15 complete
+- [x] Commit and push: Phase 15 complete
 
 ---
 
