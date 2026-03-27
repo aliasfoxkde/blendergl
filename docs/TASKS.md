@@ -379,10 +379,10 @@
 - [x] Mesh analysis stats (volume, surface area, dimensions, vertex/face count)
 
 ### 12.4 Boolean Operations (CSG)
-- [ ] Integrate manifold-3d WASM for boolean operations
-- [ ] Boolean union (combine two meshes)
-- [ ] Boolean difference (subtract one mesh from another)
-- [ ] Boolean intersection (keep overlapping volume)
+- [x] Integrate manifold-3d WASM for boolean operations
+- [x] Boolean union (combine two meshes)
+- [x] Boolean difference (subtract one mesh from another)
+- [x] Boolean intersection (keep overlapping volume)
 - [ ] Boolean modifier component (non-destructive, in entity components)
 - [ ] CSG preview (wireframe of result before committing)
 
