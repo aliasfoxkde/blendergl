@@ -602,8 +602,8 @@
 - [x] Color nodes: Mix Color, RGB to HSV, HSV to RGB, Color Ramp
 - [x] Texture nodes: Checker, Brick, Noise, Voronoi, Gradient
 - [x] Output node: Material Output (connects to Babylon ShaderMaterial)
-- [ ] Real-time preview (shader updates as nodes change)
-- [ ] Shader preset library (metal, wood, marble, plastic, etc.)
+- [x] Real-time preview (shader updates as nodes change)
+- [x] Shader preset library (metal, wood, marble, plastic, etc.)
 
 ### 16.3 Compositing Node Editor
 - [ ] Compositor node graph type
@@ -639,7 +639,7 @@
 - [ ] Node groups (collapse subgraph into reusable group)
 - [ ] Node group inputs/outputs (expose selected ports)
 - [ ] Node library (save/load node groups to IndexedDB)
-- [ ] Node search (Ctrl+Space to find and add nodes)
+- [x] Node search (Ctrl+Space to find and add nodes)
 - [ ] Node minimap (overview of large graphs)
 - [ ] Frame nodes (organize related nodes visually)
 - [ ] Copy/paste nodes (with connections)

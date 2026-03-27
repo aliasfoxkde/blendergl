@@ -10,6 +10,10 @@ import { NodeGraphCanvas } from "./NodeGraphCanvas";
 import { useNodeGraphStore } from "@/editor/stores/nodeGraphStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useSceneStore } from "@/editor/stores/sceneStore";
+import { sceneRef } from "@/editor/utils/sceneRef";
+import { compileAndApplyShader } from "@/editor/utils/nodeEditor/shaderCompiler";
+import { AbstractMesh } from "@babylonjs/core";
+import { SHADER_PRESETS, type ShaderPreset } from "@/editor/utils/nodeEditor/shaderPresets";
 
 export function NodeEditorPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -81,6 +85,58 @@ export function NodeEditorPanel() {
     return () => window.removeEventListener("toggle-node-editor", handler);
   }, []);
 
+  // Auto-compile shader when graph changes (debounced)
+  const nodes = useNodeGraphStore((s) => s.nodes);
+  const connections = useNodeGraphStore((s) => s.connections);
+  const storeEntityId = useNodeGraphStore((s) => s.entityId);
+
+  useEffect(() => {
+    if (!isOpen || !storeEntityId) return;
+
+    const timer = setTimeout(() => {
+      const scene = sceneRef.current;
+      if (!scene) return;
+
+      const mesh = scene.meshes.find(
+        (m) => m instanceof AbstractMesh && m.metadata?.entityId === storeEntityId
+      ) as AbstractMesh | undefined;
+
+      if (mesh) {
+        try {
+          const material = compileAndApplyShader(nodes, connections, scene, mesh);
+          if (material) {
+            material.build();
+            mesh.material = material;
+          }
+        } catch {
+          // Shader compilation errors are expected during graph editing
+        }
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, storeEntityId, nodes, connections]);
+
+  // Load shader preset
+  const loadPreset = useCallback((preset: ShaderPreset) => {
+    const store = useNodeGraphStore.getState();
+    store.clear();
+    const idMap: string[] = [];
+    for (const nodeDef of preset.nodes) {
+      const id = store.addNode(nodeDef.type, nodeDef.position);
+      if (!id) continue;
+      idMap.push(id);
+      if (id && nodeDef.values) {
+        for (const [portId, value] of Object.entries(nodeDef.values)) {
+          store.setNodeValue(id, portId, value);
+        }
+      }
+    }
+    for (const conn of preset.connections) {
+      store.addConnection(idMap[conn.sourceNodeId], conn.sourcePortId, idMap[conn.targetNodeId], conn.targetPortId);
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   return (
@@ -100,6 +156,20 @@ export function NodeEditorPanel() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <select
+            defaultValue=""
+            onChange={(e) => {
+              const preset = SHADER_PRESETS.find((p) => p.name === e.target.value);
+              if (preset) loadPreset(preset);
+              e.target.value = "";
+            }}
+            className="bg-[#1a1a1a] border border-[#444] rounded px-1.5 py-0.5 text-[10px] text-gray-400 focus:border-blue-500 focus:outline-none"
+          >
+            <option value="" disabled>Presets...</option>
+            {SHADER_PRESETS.map((p) => (
+              <option key={p.name} value={p.name}>{p.name}</option>
+            ))}
+          </select>
           <button
             className="text-gray-500 hover:text-gray-300 text-xs"
             onClick={() => {
