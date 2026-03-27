@@ -703,7 +703,7 @@
 - [x] Export game settings (physics, controls, resolution)
 - [x] Export scripts (inline into HTML)
 - [x] Minimal runtime (stripped-down Babylon.js for game playback)
-- [ ] Commit and push: Phase 17 complete
+- [x] Commit and push: Phase 17 complete
 
 ---
 
