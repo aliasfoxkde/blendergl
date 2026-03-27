@@ -347,3 +347,38 @@ export function createDefaultGameSettings(): GameSettings {
 // ---- Play Mode ----
 
 export type PlayModeState = "stopped" | "playing" | "paused";
+
+// ---- UV Mapping ----
+
+export type UvProjectionType = "smart" | "cube" | "cylinder" | "sphere" | "camera";
+export type UvEditMode = "vertex" | "edge" | "face" | "island";
+
+export interface UvIsland {
+  index: number;
+  faceIndices: number[];
+  vertexIndices: number[];
+}
+
+export interface UvSettings {
+  projectionType: UvProjectionType;
+  showGrid: boolean;
+  gridSize: number;
+  snapToGrid: boolean;
+  snapSize: number;
+  checkerSize: number;
+  packMargin: number;
+  packSize: number;
+}
+
+export function createDefaultUvSettings(): UvSettings {
+  return {
+    projectionType: "smart",
+    showGrid: true,
+    gridSize: 10,
+    snapToGrid: false,
+    snapSize: 0.01,
+    checkerSize: 8,
+    packMargin: 0.05,
+    packSize: 1024,
+  };
+}

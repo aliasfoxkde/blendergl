@@ -10,6 +10,7 @@ import { useAnimationStore } from "@/editor/stores/animationStore";
 import { useArmatureStore } from "@/editor/stores/armatureStore";
 import { useSculptModeStore } from "@/editor/stores/sculptModeStore";
 import { usePhysicsStore } from "@/editor/stores/physicsStore";
+import { useUvStore } from "@/editor/stores/uvStore";
 import { gameModeController } from "@/editor/utils/gameModeController";
 import { editControllerRef } from "@/editor/utils/editModeRef";
 import { saveScene } from "@/editor/utils/storage";
@@ -207,6 +208,12 @@ export function useKeyboardShortcuts() {
           if (!e.ctrlKey && !e.metaKey && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
             e.preventDefault();
             window.dispatchEvent(new CustomEvent("toggle-node-editor"));
+          }
+          return;
+        case "u":
+          if (!e.ctrlKey && !e.metaKey && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+            e.preventDefault();
+            useUvStore.getState().togglePanel();
           }
           return;
         // Element mode shortcuts (edit mode only)

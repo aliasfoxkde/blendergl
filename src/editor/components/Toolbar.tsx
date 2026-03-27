@@ -12,6 +12,7 @@ import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useAiStore } from "@/editor/stores/aiStore";
 import { usePhysicsStore } from "@/editor/stores/physicsStore";
+import { useUvStore } from "@/editor/stores/uvStore";
 import { gameModeController } from "@/editor/utils/gameModeController";
 import { duplicateEntities } from "@/editor/utils/duplicate";
 
@@ -455,6 +456,22 @@ export function Toolbar({
           <line x1="3" y1="5" x2="3" y2="9" />
           <line x1="11" y1="5" x2="11" y2="9" />
           <line x1="5" y1="11" x2="9" y2="11" />
+        </svg>
+      </ToolButton>
+
+      {/* UV Editor */}
+      <ToolButton
+        label="UV Editor (U)"
+        active={useUvStore((s) => s.panelOpen)}
+        onClick={() => useUvStore.getState().togglePanel()}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+          <circle cx="9" cy="9" r="1.5" fill="currentColor" />
+          <circle cx="15" cy="9" r="1.5" fill="currentColor" />
+          <circle cx="9" cy="15" r="1.5" fill="currentColor" />
+          <circle cx="15" cy="15" r="1.5" fill="currentColor" />
         </svg>
       </ToolButton>
 

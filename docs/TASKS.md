@@ -709,32 +709,32 @@
 ## Phase 18: UV Mapping & Texturing
 
 ### 18.1 UV Unwrapping
-- [ ] UV editor mode (2D canvas showing UV layout)
-- [ ] UV editor component (separate panel or tab alongside viewport)
-- [ ] Smart UV project (angle-based unwrapping)
-- [ ] Cube projection (6-sided projection)
-- [ ] Cylinder projection (wrap around cylinder)
-- [ ] Sphere projection (spherical mapping)
+- [x] UV editor mode (2D canvas showing UV layout)
+- [x] UV editor component (separate panel or tab alongside viewport)
+- [x] Smart UV project (angle-based unwrapping)
+- [x] Cube projection (6-sided projection)
+- [x] Cylinder projection (wrap around cylinder)
+- [x] Sphere projection (spherical mapping)
 - [ ] Camera projection (project from current view)
 - [ ] Seam marking tool (mark edges as UV seams)
 
 ### 18.2 UV Editing
-- [ ] UV selection (vertex, edge, face selection in UV space)
-- [ ] UV move/rotate/scale (gizmo-like controls in 2D)
+- [x] UV selection (vertex, edge, face selection in UV space)
+- [x] UV move/rotate/scale (gizmo-like controls in 2D)
 - [ ] UV pinning (pin UV vertices during unwrap)
 - [ ] UV alignment (align to axis, distribute evenly)
 - [ ] UV weld (merge coincident UV vertices)
 - [ ] UV rip (split UV vertices at seams)
-- [ ] UV snap (snap to grid, snap to other vertices)
+- [x] UV snap (snap to grid, snap to other vertices)
 - [ ] UV mirror (flip U or V axis)
-- [ ] UV checker texture preview
+- [x] UV checker texture preview
 
 ### 18.3 UV Packing
-- [ ] Island detection (connected UV regions)
-- [ ] Island packing (arrange islands to minimize wasted space)
+- [x] Island detection (connected UV regions)
+- [x] Island packing (arrange islands to minimize wasted space)
 - [ ] Island rotation (align islands to U/V axes)
-- [ ] Pack margin control (padding between islands)
-- [ ] Pack target size (1024, 2048, 4096)
+- [x] Pack margin control (padding between islands)
+- [x] Pack target size (1024, 2048, 4096)
 - [ ] Lock overlapping islands
 
 ### 18.4 Texture Painting
@@ -748,10 +748,10 @@
 - [ ] Texture projection (project 2D image onto mesh)
 
 ### 18.5 Procedural Textures
-- [ ] Noise texture generator (Perlin, Simplex, Worley/Voronoi)
-- [ ] Pattern generators: checker, brick, wood grain, marble, fabric
+- [x] Noise texture generator (Perlin, Simplex, Worley/Voronoi)
+- [x] Pattern generators: checker, brick, wood grain, marble, fabric
 - [ ] Procedural texture preview in material editor
-- [ ] Texture size and tiling controls
+- [x] Texture size and tiling controls
 - [ ] Color ramp for texture mapping
 - [ ] Combine procedural textures (mix, multiply, blend)
 
