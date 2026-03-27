@@ -496,6 +496,8 @@ function SettingsPanel() {
 }
 
 function TextureUpload({ entityId }: { entityId: string }) {
+  const material = useMaterialStore((s) => s.materials[entityId]);
+
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -503,22 +505,34 @@ function TextureUpload({ entityId }: { entityId: string }) {
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result as string;
-      // Store texture data in material store (as emissive texture hint for now)
       useMaterialStore.getState().updateMaterial(entityId, {
-        emissive: `texture:${base64}`,
-        emissiveIntensity: 1,
+        diffuseTexture: base64,
       });
     };
     reader.readAsDataURL(file);
     e.target.value = "";
   };
 
+  const handleRemove = () => {
+    useMaterialStore.getState().updateMaterial(entityId, {
+      diffuseTexture: undefined,
+    });
+  };
+
   return (
     <div className="flex items-center gap-1">
       <label className="flex-1 cursor-pointer bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-[10px] text-gray-400 hover:text-gray-200 hover:border-blue-500 transition text-center">
-        Upload
+        {material?.diffuseTexture ? "Replace" : "Upload"}
         <input type="file" accept="image/*" onChange={handleUpload} className="hidden" />
       </label>
+      {material?.diffuseTexture && (
+        <button
+          className="px-1.5 py-0.5 bg-[#1a1a1a] border border-[#444] rounded text-[10px] text-gray-400 hover:text-red-400 hover:border-red-500 transition"
+          onClick={handleRemove}
+        >
+          Remove
+        </button>
+      )}
     </div>
   );
 }

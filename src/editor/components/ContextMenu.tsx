@@ -100,6 +100,22 @@ export function ContextMenu() {
           },
         },
         {
+          label: "Bevel",
+          shortcut: "Ctrl+B",
+          disabled: editModeStore.selectedEdges.size === 0,
+          onClick: () => {
+            const controller = editControllerRef.current;
+            if (controller && editModeStore.selectedEdges.size > 0) {
+              const edgeKeys = Array.from(editModeStore.selectedEdges);
+              const data = controller.bevelEdges(edgeKeys, 0.1);
+              controller.applyPositions(data.newPositions);
+              controller.applyIndices(data.newIndices);
+              controller.rebuildNormals();
+              editModeStore.deselectAll();
+            }
+          },
+        },
+        {
           label: "Delete",
           shortcut: "X",
           disabled: editModeStore.selectedFaces.size === 0,

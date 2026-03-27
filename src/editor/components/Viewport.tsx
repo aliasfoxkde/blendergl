@@ -10,6 +10,7 @@ import {
   Mesh,
   PointerEventTypes,
   Viewport as BabylonViewport,
+  Texture,
 } from "@babylonjs/core";
 import {
   createEngine,
@@ -36,6 +37,8 @@ import { setCameraPreset, toggleOrtho } from "@/editor/utils/cameraUtils";
 import { cameraRef as sharedCameraRef } from "@/editor/utils/cameraRef";
 import { sceneRef as sharedSceneRef } from "@/editor/utils/sceneRef";
 import { importGltf } from "@/editor/utils/importGltf";
+import { ImportCommand } from "@/editor/utils/commands/importCommand";
+import { useHistoryStore } from "@/editor/stores/historyStore";
 import { exportSelectedToSTL } from "@/editor/utils/exportStl";
 import { sliceMesh } from "@/editor/utils/gcode/slicer";
 import { generateGcode, downloadGcode } from "@/editor/utils/gcode/gcodeGenerator";
@@ -127,7 +130,27 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     // glTF import event listener
     const handleImportGltf = async (e: Event) => {
       const file = (e as CustomEvent).detail as File;
-      await importGltf(file, scene);
+      const imported = await importGltf(file, scene);
+      if (imported.length > 0) {
+        const entityIds = imported.map((ent) => ent.id);
+        const historyStore = useHistoryStore.getState();
+        historyStore.execute(
+          new ImportCommand(`Import ${file.name}`, () => {
+            const sceneStore = useSceneStore.getState();
+            const selStore = useSelectionStore.getState();
+            for (const id of entityIds) {
+              sceneStore.removeEntity(id);
+              // Remove Babylon mesh
+              const mesh = meshMapRef.current.get(id);
+              if (mesh) {
+                mesh.dispose();
+                meshMapRef.current.delete(id);
+              }
+            }
+            selStore.deselectAll();
+          })
+        );
+      }
     };
     window.addEventListener("import-gltf", handleImportGltf);
 
@@ -490,6 +513,16 @@ export function Viewport({ onSceneReady }: ViewportProps) {
         material.emissiveColor = Color3.FromHexString(mat.emissive);
         material.alpha = mat.opacity;
         material.needDepthPrePass = mat.opacity < 1;
+
+        // Sync diffuse texture
+        const babylonScene = sceneRef.current;
+        if (mat.diffuseTexture && babylonScene) {
+          if (!material.diffuseTexture || (material.diffuseTexture as Texture).url !== mat.diffuseTexture) {
+            material.diffuseTexture = new Texture(mat.diffuseTexture, babylonScene);
+          }
+        } else {
+          material.diffuseTexture = null;
+        }
       }
     }
   }, [materials]);
@@ -746,6 +779,14 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        const file = e.dataTransfer?.files[0];
+        if (file && /\.(gltf|glb)$/i.test(file.name)) {
+          window.dispatchEvent(new CustomEvent("import-gltf", { detail: file }));
+        }
+      }}
     >
       <canvas
         ref={canvasRef}

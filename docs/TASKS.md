@@ -322,8 +322,8 @@
 ### 11.1 glTF/GLB Import
 - [x] Import via Babylon SceneLoader.ImportMeshAsync
 - [x] File input button in toolbar
-- [ ] Drag-and-drop onto viewport
-- [ ] Undo/redo command for import
+- [x] Drag-and-drop onto viewport
+- [x] Undo/redo command for import
 
 ### 11.2 Asset Browser
 - [x] List saved scenes from IndexedDB
@@ -347,12 +347,12 @@
 - [x] Subdivide faces
 - [x] Merge vertices
 - [x] Inset faces
-- [ ] Bevel edges
+- [x] Bevel edges
 
 ### 11.7 Texture Upload + Mapping
 - [x] File input for texture images
-- [ ] Assign to material diffuseTexture (base64 stored in material)
-- [ ] Remove texture button
+- [x] Assign to material diffuseTexture (base64 stored in material)
+- [x] Remove texture button
 
 ---
 

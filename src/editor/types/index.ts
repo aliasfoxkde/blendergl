@@ -53,6 +53,7 @@ export interface MaterialData {
   emissiveIntensity: number;
   opacity: number;
   alphaMode: "opaque" | "blend" | "mask";
+  diffuseTexture?: string; // base64 data URL
 }
 
 export interface SceneData {

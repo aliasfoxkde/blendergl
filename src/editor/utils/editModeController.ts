@@ -732,4 +732,165 @@ export class EditModeController {
       newIndices: newIndicesList as IndicesArray,
     };
   }
+
+  /**
+   * Bevel selected edges. Splits edge vertices apart along the face normal
+   * and fills the gap with quads.
+   */
+  bevelEdges(edgeKeys: string[], amount: number): {
+    oldPositions: Float32Array;
+    oldIndices: IndicesArray;
+    newPositions: Float32Array;
+    newIndices: IndicesArray;
+  } {
+    const positions = this.getPositions();
+    const indices = this.getIndices();
+    if (!positions || !indices) {
+      return {
+        oldPositions: new Float32Array(),
+        oldIndices: [],
+        newPositions: new Float32Array(),
+        newIndices: [],
+      };
+    }
+
+    const oldPositions = new Float32Array(positions);
+    const oldIndices = indices.slice() as IndicesArray;
+    const vertexCount = positions.length / 3;
+
+    // Build edge-to-faces map
+    const edgeFaces = new Map<string, number[]>();
+    for (let f = 0; f < indices.length / 3; f++) {
+      const v0 = indices[f * 3];
+      const v1 = indices[f * 3 + 1];
+      const v2 = indices[f * 3 + 2];
+      const edges = [
+        [Math.min(v0, v1), Math.max(v0, v1)],
+        [Math.min(v1, v2), Math.max(v1, v2)],
+        [Math.min(v2, v0), Math.max(v2, v0)],
+      ];
+      for (const [a, b] of edges) {
+        const key = `${a}_${b}`;
+        if (!edgeFaces.has(key)) edgeFaces.set(key, []);
+        edgeFaces.get(key)!.push(f);
+      }
+    }
+
+    // Get selected edge keys
+    const selectedEdgeKeys = new Set<string>(edgeKeys);
+
+    // Compute face normals
+    const faceNormals: { x: number; y: number; z: number }[] = [];
+    for (let f = 0; f < indices.length / 3; f++) {
+      const v0 = indices[f * 3];
+      const v1 = indices[f * 3 + 1];
+      const v2 = indices[f * 3 + 2];
+      const ax = positions[v1 * 3] - positions[v0 * 3];
+      const ay = positions[v1 * 3 + 1] - positions[v0 * 3 + 1];
+      const az = positions[v1 * 3 + 2] - positions[v0 * 3 + 2];
+      const bx = positions[v2 * 3] - positions[v0 * 3];
+      const by = positions[v2 * 3 + 1] - positions[v0 * 3 + 1];
+      const bz = positions[v2 * 3 + 2] - positions[v0 * 3 + 2];
+      const nx = ay * bz - az * by;
+      const ny = az * bx - ax * bz;
+      const nz = ax * by - ay * bx;
+      const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+      faceNormals.push({ x: nx / len, y: ny / len, z: nz / len });
+    }
+
+    // For each vertex, compute displacement from all selected edges touching it
+    const vertexOffset = new Map<number, { x: number; y: number; z: number }>();
+    for (const key of selectedEdgeKeys) {
+      const parts = key.split("_");
+      const va = parseInt(parts[0]);
+      const vb = parseInt(parts[1]);
+      const faces = edgeFaces.get(key) ?? [];
+
+      // Average normal of faces sharing this edge
+      let avgNx = 0, avgNy = 0, avgNz = 0;
+      for (const f of faces) {
+        avgNx += faceNormals[f].x;
+        avgNy += faceNormals[f].y;
+        avgNz += faceNormals[f].z;
+      }
+      const nLen = Math.sqrt(avgNx * avgNx + avgNy * avgNy + avgNz * avgNz) || 1;
+      avgNx /= nLen;
+      avgNy /= nLen;
+      avgNz /= nLen;
+
+      // Each endpoint moves along the average face normal
+      for (const v of [va, vb]) {
+        const existing = vertexOffset.get(v);
+        if (existing) {
+          existing.x += avgNx * amount;
+          existing.y += avgNy * amount;
+          existing.z += avgNz * amount;
+        } else {
+          vertexOffset.set(v, { x: avgNx * amount, y: avgNy * amount, z: avgNz * amount });
+        }
+      }
+    }
+
+    // Build vertex mapping: original vertex -> new beveled vertex
+    const vertexMap = new Map<number, number>();
+    const newPositionsArr: number[] = [...positions];
+    let nextVertex = vertexCount;
+
+    for (const [vid, offset] of vertexOffset) {
+      const newIdx = nextVertex++;
+      vertexMap.set(vid, newIdx);
+      newPositionsArr.push(
+        positions[vid * 3] + offset.x,
+        positions[vid * 3 + 1] + offset.y,
+        positions[vid * 3 + 2] + offset.z
+      );
+    }
+
+    // Rebuild indices: for faces touching selected edges, split to create bevel quads
+    const newIndicesList: number[] = [];
+
+    for (let f = 0; f < oldIndices.length / 3; f++) {
+      const v0 = oldIndices[f * 3];
+      const v1 = oldIndices[f * 3 + 1];
+      const v2 = oldIndices[f * 3 + 2];
+
+      // Check if any edge of this face is selected
+      const e0Key = `${Math.min(v0, v1)}_${Math.max(v0, v1)}`;
+      const e1Key = `${Math.min(v1, v2)}_${Math.max(v1, v2)}`;
+      const e2Key = `${Math.min(v2, v0)}_${Math.max(v2, v0)}`;
+
+      const hasSelectedEdge = selectedEdgeKeys.has(e0Key) || selectedEdgeKeys.has(e1Key) || selectedEdgeKeys.has(e2Key);
+
+      if (!hasSelectedEdge) {
+        newIndicesList.push(v0, v1, v2);
+        continue;
+      }
+
+      // Map vertices to beveled versions where applicable
+      const bv0 = vertexMap.has(v0) ? vertexMap.get(v0)! : v0;
+      const bv1 = vertexMap.has(v1) ? vertexMap.get(v1)! : v1;
+      const bv2 = vertexMap.has(v2) ? vertexMap.get(v2)! : v2;
+
+      // Inner face (beveled)
+      newIndicesList.push(bv0, bv1, bv2);
+
+      // Side quads for each edge that is selected
+      if (selectedEdgeKeys.has(e0Key)) {
+        newIndicesList.push(v0, v1, bv1, v0, bv1, bv0);
+      }
+      if (selectedEdgeKeys.has(e1Key)) {
+        newIndicesList.push(v1, v2, bv2, v1, bv2, bv1);
+      }
+      if (selectedEdgeKeys.has(e2Key)) {
+        newIndicesList.push(v2, v0, bv0, v2, bv0, bv2);
+      }
+    }
+
+    return {
+      oldPositions,
+      oldIndices,
+      newPositions: new Float32Array(newPositionsArr),
+      newIndices: newIndicesList as IndicesArray,
+    };
+  }
 }
