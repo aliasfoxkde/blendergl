@@ -12,6 +12,7 @@ import { Timeline } from "./Timeline";
 import { NodeEditorPanel } from "./nodeEditor/NodeEditorPanel";
 import { UvEditorPanel } from "./UvEditorPanel";
 import { RenderSettingsPanel } from "./RenderSettingsPanel";
+import { ShortcutsPanel } from "./ShortcutsPanel";
 import { useKeyboardShortcuts } from "@/editor/hooks/useKeyboardShortcuts";
 import { useAutoSave } from "@/editor/hooks/useAutoSave";
 import { useSceneStore } from "@/editor/stores/sceneStore";
@@ -159,6 +160,7 @@ export function EditorShell() {
           <NodeEditorPanel />
           <UvEditorPanel />
           <RenderSettingsPanel />
+          <ShortcutsPanel />
           {/* Viewport overlay info */}
           <div className="absolute bottom-2 left-2 text-xs text-gray-500 pointer-events-none">
             {objectCount === 0

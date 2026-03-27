@@ -828,24 +828,24 @@ These items are deferred from earlier phases or nice-to-haves:
 - [x] Auto-save indicator in status bar
 - [x] Restore last scene on editor load
 - [x] Mouse cursor 3D position in status bar
-- [ ] SceneHierarchy parent-child drag UI
+- [x] SceneHierarchy parent-child drag UI
 - [x] Drag-and-drop file upload
-- [ ] Offline fallback page
-- [ ] PWA install prompt handling
-- [ ] App icons (192x192, 512x512)
-- [ ] Landing page screenshots/demo section
-- [ ] Collection support (entity grouping)
+- [x] Offline fallback page
+- [x] PWA install prompt handling
+- [x] App icons (192x192, 512x512)
+- [x] Landing page screenshots/demo section
+- [x] Collection support (entity grouping)
 - [x] Grow/shrink selection, select linked
 - [x] X-ray viewport mode
-- [ ] Configurable keyboard shortcut system
-- [ ] Unit tests for Phase 9 features (DuplicateCommand, camera presets, shading)
+- [x] Configurable keyboard shortcut system
+- [x] Unit tests for Phase 9 features (DuplicateCommand, camera presets, shading)
 
 ---
 
 ## Progress Summary
 
 - **Total Phases:** 19
-- **Completed:** Phases 1-11, 14 (core), 15 (core), 16 (16.1+16.2), 17 (core), 18 (core), 19 (core)
-- **In Progress:** Phase 19 (remaining)
+- **Completed:** Phases 1-19 (all phases complete)
+- **In Progress:** —
 - **Planned:** —
-- **Backlog:** 14 deferred items
+- **Backlog:** All 14 items complete

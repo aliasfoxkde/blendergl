@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
+import { useCollectionStore } from "@/editor/stores/collectionStore";
 
 export function SceneHierarchy() {
   const entities = useSceneStore((s) => s.entities);
@@ -75,12 +76,15 @@ export function SceneHierarchy() {
 
   if (rootEntities.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4">
-        <p className="text-xs text-gray-500 text-center">
-          No objects in scene.
-          <br />
-          Use the toolbar to add primitives.
-        </p>
+      <div className="flex-1 overflow-y-auto p-1">
+        <CollectionsSection />
+        <div className="flex items-center justify-center p-4">
+          <p className="text-xs text-gray-500 text-center">
+            No objects in scene.
+            <br />
+            Use the toolbar to add primitives.
+          </p>
+        </div>
       </div>
     );
   }
@@ -91,6 +95,7 @@ export function SceneHierarchy() {
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDropOnRoot}
     >
+      <CollectionsSection />
       {rootEntities.map((entity) => (
         <EntityItem
           key={entity.id}
@@ -111,6 +116,88 @@ export function SceneHierarchy() {
           selectedIds={selectedIds}
         />
       ))}
+    </div>
+  );
+}
+
+function CollectionsSection() {
+  const collections = useCollectionStore((s) => s.collections);
+  const collectionOrder = useCollectionStore((s) => s.collectionOrder);
+  const activeCollectionId = useCollectionStore((s) => s.activeCollectionId);
+  const createCollection = useCollectionStore((s) => s.createCollection);
+  const removeCollection = useCollectionStore((s) => s.removeCollection);
+  const toggleCollectionVisibility = useCollectionStore((s) => s.toggleCollectionVisibility);
+  const setActiveCollection = useCollectionStore((s) => s.setActiveCollection);
+
+  if (collectionOrder.length === 0) {
+    return (
+      <div className="mb-1">
+        <div className="flex items-center justify-between px-2 py-1 text-[10px] uppercase tracking-wider text-gray-500">
+          <span>Collections</span>
+          <button
+            onClick={() => createCollection("Collection 1")}
+            className="text-gray-500 hover:text-white transition"
+            title="New Collection"
+          >
+            +
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-1">
+      <div className="flex items-center justify-between px-2 py-1 text-[10px] uppercase tracking-wider text-gray-500">
+        <span>Collections</span>
+        <button
+          onClick={() => createCollection(`Collection ${collectionOrder.length + 1}`)}
+          className="text-gray-500 hover:text-white transition"
+          title="New Collection"
+        >
+          +
+        </button>
+      </div>
+      {collectionOrder.map((colId) => {
+        const col = collections[colId];
+        if (!col) return null;
+        const isActive = colId === activeCollectionId;
+        return (
+          <div
+            key={colId}
+            className={`flex items-center gap-1 px-2 py-0.5 rounded cursor-pointer text-xs group ${
+              isActive ? "bg-blue-500/20 text-blue-300" : "text-gray-300 hover:bg-white/5"
+            }`}
+            onClick={() => setActiveCollection(colId)}
+          >
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ backgroundColor: col.color }}
+            />
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleCollectionVisibility(colId);
+              }}
+              className="w-3 text-center text-gray-500 hover:text-white"
+            >
+              {col.visible ? "👁" : "⊘"}
+            </button>
+            <span className="flex-1 truncate">{col.name}</span>
+            <span className="text-[10px] text-gray-500">{col.entityIds.length}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                removeCollection(colId);
+              }}
+              className="w-4 h-4 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400 transition"
+              title="Remove Collection"
+            >
+              ×
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

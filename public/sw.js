@@ -1,8 +1,9 @@
-const CACHE_NAME = "blendergl-v1";
+const CACHE_NAME = "blendergl-v2";
 const STATIC_ASSETS = [
   "/",
   "/editor",
   "/index.html",
+  "/offline.html",
   "/manifest.json",
   "/icons/icon-192.svg",
 ];
@@ -49,7 +50,11 @@ self.addEventListener("fetch", (event) => {
         return response;
       })
       .catch(() => {
-        // Fallback to cache
+        // For navigation requests, show offline page
+        if (event.request.mode === "navigate") {
+          return caches.match("/offline.html");
+        }
+        // Fallback to cache for other requests
         return caches.match(event.request);
       })
   );

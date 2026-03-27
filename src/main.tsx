@@ -20,3 +20,13 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
+
+// PWA install prompt handling
+window.addEventListener("beforeinstallprompt", (e) => {
+  // Prevent the default mini-infobar
+  e.preventDefault();
+  // Store the event for later use
+  (window as unknown as Record<string, unknown>).__pwaInstallPrompt = e;
+  // Dispatch custom event so components can react
+  window.dispatchEvent(new CustomEvent("pwa-install-available"));
+});

@@ -15,6 +15,7 @@ import { useAiStore } from "@/editor/stores/aiStore";
 import { usePhysicsStore } from "@/editor/stores/physicsStore";
 import { useUvStore } from "@/editor/stores/uvStore";
 import { useRenderSettingsStore } from "@/editor/stores/renderSettingsStore";
+import { useShortcutStore } from "@/editor/stores/shortcutStore";
 import { gameModeController } from "@/editor/utils/gameModeController";
 import { duplicateEntities } from "@/editor/utils/duplicate";
 
@@ -498,6 +499,22 @@ export function Toolbar({
           <circle cx="12" cy="12" r="9" />
           <circle cx="12" cy="12" r="3" />
           <circle cx="12" cy="12" r="6" strokeDasharray="2 2" />
+        </svg>
+      </ToolButton>
+
+      {/* Keyboard Shortcuts */}
+      <ToolButton
+        label="Keyboard Shortcuts"
+        active={useShortcutStore((s) => s.panelOpen)}
+        onClick={() => useShortcutStore.getState().togglePanel()}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <rect x="2" y="6" width="20" height="12" rx="2" />
+          <line x1="6" y1="10" x2="6" y2="10.01" />
+          <line x1="10" y1="10" x2="10" y2="10.01" />
+          <line x1="14" y1="10" x2="14" y2="10.01" />
+          <line x1="18" y1="10" x2="18" y2="10.01" />
+          <line x1="8" y1="14" x2="16" y2="14" />
         </svg>
       </ToolButton>
 
