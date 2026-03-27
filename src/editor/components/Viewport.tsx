@@ -28,7 +28,12 @@ import { useEditModeStore } from "@/editor/stores/editModeStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { setCameraPreset, toggleOrtho } from "@/editor/utils/cameraUtils";
 import { cameraRef as sharedCameraRef } from "@/editor/utils/cameraRef";
+import { sceneRef as sharedSceneRef } from "@/editor/utils/sceneRef";
 import { importGltf } from "@/editor/utils/importGltf";
+import { exportSelectedToSTL } from "@/editor/utils/exportStl";
+import { sliceMesh } from "@/editor/utils/gcode/slicer";
+import { generateGcode, downloadGcode } from "@/editor/utils/gcode/gcodeGenerator";
+import { analyzeMesh } from "@/editor/utils/meshAnalysis";
 import type { TransformMode } from "@/editor/types";
 
 interface ViewportProps {
@@ -83,6 +88,7 @@ export function Viewport({ onSceneReady }: ViewportProps) {
 
     engineRef.current = engine;
     sceneRef.current = scene;
+    sharedSceneRef.current = scene;
     sharedCameraRef.current = camera;
 
     // Camera preset event listeners
@@ -103,6 +109,46 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       await importGltf(file, scene);
     };
     window.addEventListener("import-gltf", handleImportGltf);
+
+    // STL export event listener
+    const handleExportStl = (e: Event) => {
+      const { selectedIds: ids } = (e as CustomEvent).detail as { selectedIds: Set<string> };
+      if (ids && ids.size > 0) {
+        exportSelectedToSTL(scene, ids);
+      } else {
+        exportSelectedToSTL(scene, new Set());
+      }
+    };
+    window.addEventListener("export-stl", handleExportStl);
+
+    // G-code export event listener
+    const handleExportGcode = (e: Event) => {
+      const { selectedIds: ids } = (e as CustomEvent).detail as { selectedIds: Set<string> };
+      const printSettings = useSettingsStore.getState().printSettings;
+
+      const meshes = scene.meshes.filter(
+        (m) => m.isVisible && m instanceof Mesh && m.metadata?.entityId &&
+          (ids && ids.size > 0 ? ids.has(m.metadata.entityId as string) : true)
+      ) as Mesh[];
+
+      if (meshes.length === 0) return;
+
+      // Use the first selected mesh for analysis, but slice all
+      const primaryMesh = meshes[0];
+      const analysis = analyzeMesh(primaryMesh);
+
+      const layers = sliceMesh(
+        primaryMesh.getVerticesData("position") as Float32Array,
+        primaryMesh.getIndices() as number[],
+        analysis.boundingBox.min.z,
+        analysis.boundingBox.max.z,
+        printSettings.layerHeight
+      );
+
+      const result = generateGcode(layers, printSettings, analysis.boundingBox);
+      downloadGcode(result.gcode, "print.gcode");
+    };
+    window.addEventListener("export-gcode", handleExportGcode);
 
     // Render loop
     engine.runRenderLoop(() => {
@@ -202,12 +248,15 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       window.removeEventListener("camera-preset", handleCameraPreset);
       window.removeEventListener("camera-toggle-ortho", handleToggleOrtho);
       window.removeEventListener("import-gltf", handleImportGltf);
+      window.removeEventListener("export-stl", handleExportStl);
+      window.removeEventListener("export-gcode", handleExportGcode);
       scene.onPointerObservable.clear();
       gizmoController.dispose();
       editControllerRef_local.current?.dispose();
       engine.dispose();
       engineRef.current = null;
       sceneRef.current = null;
+      sharedSceneRef.current = null;
       sharedCameraRef.current = null;
       gizmoRef.current = null;
       editControllerRef_local.current = null;

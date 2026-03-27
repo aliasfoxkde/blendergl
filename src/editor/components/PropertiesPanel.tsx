@@ -1,8 +1,14 @@
+import { useState, useEffect } from "react";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useMaterialStore } from "@/editor/stores/materialStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
+import { formatAnalysis, estimatePrint, analyzeMesh, repairMesh } from "@/editor/utils/meshAnalysis";
+import { sliceMesh } from "@/editor/utils/gcode/slicer";
+import { generateGcode, downloadGcode } from "@/editor/utils/gcode/gcodeGenerator";
+import { sceneRef } from "@/editor/utils/sceneRef";
+import type { Mesh } from "@babylonjs/core/Meshes/mesh.js";
 
 export function PropertiesPanel() {
   const activeEntityId = useSelectionStore((s) => s.activeEntityId);
@@ -186,6 +192,9 @@ export function PropertiesPanel() {
           <TextureUpload entityId={entity.id} />
         </PropertyRow>
       </Section>
+
+      {/* Mesh Info (3D Print) */}
+      <MeshInfoSection entityId={entity.id} />
     </div>
   );
 }
@@ -361,6 +370,7 @@ function SettingsPanel() {
           </div>
         </PropertyRow>
       </Section>
+      <PrintSettingsSection />
       <div className="px-3 py-4 text-center">
         <p className="text-[10px] text-gray-600">Select an object to edit its properties</p>
       </div>
@@ -392,6 +402,279 @@ function TextureUpload({ entityId }: { entityId: string }) {
         Upload
         <input type="file" accept="image/*" onChange={handleUpload} className="hidden" />
       </label>
+    </div>
+  );
+}
+
+function MeshInfoSection({ entityId }: { entityId: string }) {
+  const [info, setInfo] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [repairLog, setRepairLog] = useState<string | null>(null);
+  const [slicing, setSlicing] = useState(false);
+  const printSettings = useSettingsStore((s) => s.printSettings);
+
+  const analyze = () => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    const mesh = scene.meshes.find(
+      (m) => m.metadata?.entityId === entityId
+    ) as Mesh | undefined;
+
+    if (mesh) {
+      const analysis = analyzeMesh(mesh);
+      const print = estimatePrint(analysis, {
+        layerHeight: printSettings.layerHeight,
+        infillDensity: printSettings.infillDensity,
+        printSpeed: printSettings.printSpeed,
+      });
+      setInfo(
+        formatAnalysis(analysis) +
+          `\n\nEst. time: ~${print.estimatedTimeMinutes} min` +
+          `\nEst. material: ~${print.estimatedMaterialGrams}g` +
+          `\nEst. filament: ~${(print.estimatedMaterialMeters / 1000).toFixed(1)}m`
+      );
+    }
+  };
+
+  useEffect(() => {
+    analyze();
+  }, [entityId]);
+
+  const handleRepair = () => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    const mesh = scene.meshes.find(
+      (m) => m.metadata?.entityId === entityId
+    ) as Mesh | undefined;
+
+    if (mesh) {
+      const result = repairMesh(mesh);
+      setRepairLog(result.details.join("\n"));
+      analyze();
+    }
+  };
+
+  const handleSliceExport = () => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    const mesh = scene.meshes.find(
+      (m) => m.metadata?.entityId === entityId
+    ) as Mesh | undefined;
+    if (!mesh) return;
+
+    setSlicing(true);
+    // Run slicing in next frame to avoid blocking UI
+    requestAnimationFrame(() => {
+      try {
+        const positions = mesh.getVerticesData("position");
+        const indices = mesh.getIndices();
+        if (!positions || !indices) return;
+
+        const analysis = analyzeMesh(mesh);
+        const layers = sliceMesh(
+          positions as Float32Array,
+          indices as number[],
+          analysis.boundingBox.min.z,
+          analysis.boundingBox.max.z,
+          printSettings.layerHeight
+        );
+
+        const result = generateGcode(layers, printSettings, analysis.boundingBox);
+        downloadGcode(result.gcode, `${entityId}.gcode`);
+        setRepairLog(`Sliced: ${layers.length} layers, ${(result.totalTime / 60).toFixed(1)}min est.`);
+      } catch (err) {
+        setRepairLog(`Slice error: ${err}`);
+      } finally {
+        setSlicing(false);
+      }
+    });
+  };
+
+  return (
+    <div className="border-b border-[#333]">
+      <button
+        className="w-full px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#282828] flex items-center justify-between"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>Mesh Info (3D Print)</span>
+        <span className="text-[10px] text-gray-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div className="px-3 py-2 space-y-2">
+          {info ? (
+            <pre className="text-[10px] text-gray-400 whitespace-pre-wrap font-mono leading-relaxed">
+              {info}
+            </pre>
+          ) : (
+            <p className="text-[10px] text-gray-600">Analyzing...</p>
+          )}
+          {repairLog && (
+            <pre className="text-[10px] text-green-400 whitespace-pre-wrap font-mono leading-relaxed">
+              {repairLog}
+            </pre>
+          )}
+          <div className="flex gap-1">
+            <button
+              className="flex-1 text-[10px] text-gray-400 hover:text-white bg-[#1a1a1a] border border-[#444] rounded px-2 py-1 transition"
+              onClick={analyze}
+            >
+              Refresh
+            </button>
+            <button
+              className="flex-1 text-[10px] text-gray-400 hover:text-white bg-[#1a1a1a] border border-[#444] rounded px-2 py-1 transition"
+              onClick={handleRepair}
+            >
+              Repair Mesh
+            </button>
+          </div>
+          <button
+            className="w-full text-[10px] text-gray-400 hover:text-white bg-[#1a1a1a] border border-[#444] rounded px-2 py-1 transition disabled:opacity-50"
+            onClick={handleSliceExport}
+            disabled={slicing}
+          >
+            {slicing ? "Slicing..." : "Slice & Export G-code"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PrintSettingsSection() {
+  const [expanded, setExpanded] = useState(false);
+  const print = useSettingsStore((s) => s.printSettings);
+  const setPrint = useSettingsStore((s) => s.setPrintSettings);
+
+  return (
+    <div className="border-b border-[#333]">
+      <button
+        className="w-full px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#282828] flex items-center justify-between"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>Print Settings</span>
+        <span className="text-[10px] text-gray-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div className="px-3 py-2 space-y-1.5">
+          <SliderRow
+            label="Layer Ht"
+            value={print.layerHeight}
+            min={0.05}
+            max={0.4}
+            step={0.05}
+            onChange={(v) => setPrint({ layerHeight: v })}
+          />
+          <SliderRow
+            label="Infill %"
+            value={print.infillDensity}
+            min={0}
+            max={100}
+            step={5}
+            onChange={(v) => setPrint({ infillDensity: v })}
+          />
+          <PropertyRow label="Pattern">
+            <select
+              value={print.infillPattern}
+              onChange={(e) => setPrint({ infillPattern: e.target.value as "grid" | "lines" | "triangles" | "gyroid" | "honeycomb" })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+            >
+              <option value="grid">Grid</option>
+              <option value="lines">Lines</option>
+              <option value="triangles">Triangles</option>
+              <option value="gyroid">Gyroid</option>
+              <option value="honeycomb">Honeycomb</option>
+            </select>
+          </PropertyRow>
+          <PropertyRow label="Walls">
+            <input
+              type="number"
+              value={print.wallCount}
+              min={1}
+              max={10}
+              onChange={(e) => setPrint({ wallCount: parseInt(e.target.value) || 3 })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+            />
+          </PropertyRow>
+          <PropertyRow label="Top/Bot">
+            <input
+              type="number"
+              value={print.topBottomLayers}
+              min={0}
+              max={20}
+              onChange={(e) => setPrint({ topBottomLayers: parseInt(e.target.value) || 4 })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+            />
+          </PropertyRow>
+          <PropertyRow label="Support">
+            <input
+              type="checkbox"
+              checked={print.supportEnabled}
+              onChange={(e) => setPrint({ supportEnabled: e.target.checked })}
+              className="accent-blue-500"
+            />
+          </PropertyRow>
+          {print.supportEnabled && (
+            <SliderRow
+              label="Overhang"
+              value={print.supportOverhangAngle}
+              min={20}
+              max={80}
+              step={5}
+              onChange={(v) => setPrint({ supportOverhangAngle: v })}
+            />
+          )}
+          <PropertyRow label="Adhesion">
+            <select
+              value={print.adhesionType}
+              onChange={(e) => setPrint({ adhesionType: e.target.value as "none" | "skirt" | "brim" | "raft" })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+            >
+              <option value="none">None</option>
+              <option value="skirt">Skirt</option>
+              <option value="brim">Brim</option>
+              <option value="raft">Raft</option>
+            </select>
+          </PropertyRow>
+          <Section title="Speeds (mm/s)">
+            <SliderRow label="Print" value={print.printSpeed} min={10} max={200} step={5} onChange={(v) => setPrint({ printSpeed: v })} />
+            <SliderRow label="Outer" value={print.outerWallSpeed} min={10} max={150} step={5} onChange={(v) => setPrint({ outerWallSpeed: v })} />
+            <SliderRow label="Inner" value={print.innerWallSpeed} min={10} max={150} step={5} onChange={(v) => setPrint({ innerWallSpeed: v })} />
+            <SliderRow label="Infill" value={print.infillSpeed} min={10} max={200} step={5} onChange={(v) => setPrint({ infillSpeed: v })} />
+            <SliderRow label="Travel" value={print.travelSpeed} min={50} max={300} step={10} onChange={(v) => setPrint({ travelSpeed: v })} />
+          </Section>
+          <Section title="Temperatures (°C)">
+            <SliderRow label="Hotend" value={print.extruderTemp} min={150} max={300} step={5} onChange={(v) => setPrint({ extruderTemp: v })} />
+            <SliderRow label="Bed" value={print.bedTemp} min={0} max={120} step={5} onChange={(v) => setPrint({ bedTemp: v })} />
+          </Section>
+          <Section title="Hardware">
+            <PropertyRow label="Nozzle">
+              <input
+                type="number"
+                value={print.nozzleDiameter}
+                min={0.1}
+                max={1.0}
+                step={0.1}
+                onChange={(e) => setPrint({ nozzleDiameter: parseFloat(e.target.value) || 0.4 })}
+                className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+              />
+            </PropertyRow>
+            <PropertyRow label="Filament">
+              <input
+                type="number"
+                value={print.filamentDiameter}
+                min={1.5}
+                max={3.0}
+                step={0.25}
+                onChange={(e) => setPrint({ filamentDiameter: parseFloat(e.target.value) || 1.75 })}
+                className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+              />
+            </PropertyRow>
+          </Section>
+        </div>
+      )}
     </div>
   );
 }

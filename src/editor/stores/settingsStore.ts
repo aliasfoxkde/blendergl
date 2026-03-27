@@ -1,6 +1,46 @@
 import { create } from "zustand";
 import type { ShadingMode, AiProvider } from "@/editor/types";
 
+export interface PrintSettings {
+  layerHeight: number;
+  infillDensity: number;
+  infillPattern: "grid" | "lines" | "triangles" | "gyroid" | "honeycomb";
+  wallCount: number;
+  topBottomLayers: number;
+  supportEnabled: boolean;
+  supportOverhangAngle: number;
+  adhesionType: "none" | "skirt" | "brim" | "raft";
+  printSpeed: number;
+  outerWallSpeed: number;
+  innerWallSpeed: number;
+  infillSpeed: number;
+  travelSpeed: number;
+  extruderTemp: number;
+  bedTemp: number;
+  nozzleDiameter: number;
+  filamentDiameter: number;
+}
+
+const defaultPrintSettings: PrintSettings = {
+  layerHeight: 0.2,
+  infillDensity: 20,
+  infillPattern: "grid",
+  wallCount: 3,
+  topBottomLayers: 4,
+  supportEnabled: false,
+  supportOverhangAngle: 45,
+  adhesionType: "brim",
+  printSpeed: 50,
+  outerWallSpeed: 30,
+  innerWallSpeed: 50,
+  infillSpeed: 80,
+  travelSpeed: 150,
+  extruderTemp: 200,
+  bedTemp: 60,
+  nozzleDiameter: 0.4,
+  filamentDiameter: 1.75,
+};
+
 interface SettingsState {
   showGrid: boolean;
   showAxes: boolean;
@@ -18,6 +58,9 @@ interface SettingsState {
   aiApiKey: string;
   aiEndpoint: string;
   aiModel: string;
+
+  printSettings: PrintSettings;
+  setPrintSettings: (settings: Partial<PrintSettings>) => void;
 
   setShowGrid: (show: boolean) => void;
   setShowAxes: (show: boolean) => void;
@@ -82,6 +125,8 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   aiEndpoint: savedAiEndpoint,
   aiModel: savedAiModel,
 
+  printSettings: loadFromLocalStorage<PrintSettings>("blendergl-print-settings", defaultPrintSettings),
+
   setShowGrid: (show) => set({ showGrid: show }),
   setShowAxes: (show) => set({ showAxes: show }),
   setShadingMode: (mode) => set({ shadingMode: mode }),
@@ -115,5 +160,10 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   setAiModel: (model) => {
     persistToLocalStorage("blendergl-ai-model", model);
     set({ aiModel: model });
+  },
+  setPrintSettings: (settings) => {
+    const updated = { ...defaultPrintSettings, ...settings };
+    persistToLocalStorage("blendergl-print-settings", updated);
+    set({ printSettings: updated });
   },
 }));

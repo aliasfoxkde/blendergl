@@ -359,11 +359,11 @@
 ## Phase 12: 3D Printing & Slicing
 
 ### 12.1 STL Export
-- [ ] Binary STL export (80-byte header, 50-byte triangles, little-endian)
-- [ ] ASCII STL export (human-readable format)
-- [ ] STL export button in File menu and toolbar
-- [ ] Export selected objects only option
-- [ ] Mesh triangulation check before export (ensure all faces are triangles)
+- [x] Binary STL export (80-byte header, 50-byte triangles, little-endian)
+- [x] ASCII STL export (human-readable format)
+- [x] STL export button in File menu and toolbar
+- [x] Export selected objects only option
+- [x] Mesh triangulation check before export (ensure all faces are triangles)
 
 ### 12.2 3MF Format Support
 - [ ] 3MF file structure (XML-based, OPC package format)
@@ -371,12 +371,12 @@
 - [ ] 3MF import (parse mesh from 3MF package)
 
 ### 12.3 Mesh Validation & Repair
-- [ ] Manifold check (detect non-manifold edges, open boundaries)
-- [ ] Watertight validation (volume calculation, inside/outside test)
+- [x] Manifold check (detect non-manifold edges, open boundaries)
+- [x] Watertight validation (volume calculation, inside/outside test)
 - [ ] Hole filling (detect boundary loops, triangulate to close)
-- [ ] Normal repair (consistent winding order, face flip)
-- [ ] Degenerate face removal (zero-area faces, duplicate vertices)
-- [ ] Mesh analysis stats (volume, surface area, dimensions, vertex/face count)
+- [x] Normal repair (consistent winding order, face flip)
+- [x] Degenerate face removal (zero-area faces, duplicate vertices)
+- [x] Mesh analysis stats (volume, surface area, dimensions, vertex/face count)
 
 ### 12.4 Boolean Operations (CSG)
 - [ ] Integrate manifold-3d WASM for boolean operations
@@ -387,28 +387,28 @@
 - [ ] CSG preview (wireframe of result before committing)
 
 ### 12.5 Print Preparation Panel
-- [ ] Print settings panel in PropertiesPanel (when no entity selected)
-- [ ] Printer profile selector (bed size, nozzle diameter)
-- [ ] Layer height input (0.1mm - 0.4mm)
-- [ ] Infill density slider (0% - 100%)
-- [ ] Infill pattern selector (grid, lines, triangles, gyroid, honeycomb)
-- [ ] Shell/wall thickness (number of perimeters)
-- [ ] Support generation toggle + overhang angle threshold
-- [ ] Adhesion type (brim, raft, skirt, none)
-- [ ] Print speed settings (outer wall, inner wall, infill, travel)
-- [ ] Temperature settings (extruder, heated bed)
-- [ ] Estimated print time calculation
-- [ ] Estimated material usage calculation
+- [x] Print settings panel in PropertiesPanel (when no entity selected)
+- [x] Printer profile selector (bed size, nozzle diameter)
+- [x] Layer height input (0.1mm - 0.4mm)
+- [x] Infill density slider (0% - 100%)
+- [x] Infill pattern selector (grid, lines, triangles, gyroid, honeycomb)
+- [x] Shell/wall thickness (number of perimeters)
+- [x] Support generation toggle + overhang angle threshold
+- [x] Adhesion type (brim, raft, skirt, none)
+- [x] Print speed settings (outer wall, inner wall, infill, travel)
+- [x] Temperature settings (extruder, heated bed)
+- [x] Estimated print time calculation
+- [x] Estimated material usage calculation
 
 ### 12.6 G-code Generation
-- [ ] Basic slicer: slice mesh at layer heights (triangle-plane intersection)
-- [ ] Perimeter generation (outer and inner walls)
-- [ ] Inill pattern generation (selected pattern within perimeters)
+- [x] Basic slicer: slice mesh at layer heights (triangle-plane intersection)
+- [x] Perimeter generation (outer and inner walls)
+- [x] Infill pattern generation (selected pattern within perimeters)
 - [ ] Support generation (detect overhangs, generate support structures)
 - [ ] Retraction and travel moves
-- [ ] G-code output (standard Marlin/RepRap format)
+- [x] G-code output (standard Marlin/RepRap format)
 - [ ] G-code preview (layer-by-layer path visualization)
-- [ ] G-code download
+- [x] G-code download
 - [ ] Printer profile presets (Ender 3, Prusa MK4, Bambu Lab, etc.)
 
 ### 12.7 Print Preview
