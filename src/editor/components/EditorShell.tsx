@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { Viewport } from "./Viewport";
 import { SceneHierarchy } from "./SceneHierarchy";
@@ -8,6 +8,7 @@ import { AiPanel } from "./AiPanel";
 import { ContextMenu } from "./ContextMenu";
 import { AssetBrowser } from "./AssetBrowser";
 import { ScriptEditorPanel } from "./ScriptEditorPanel";
+import { Timeline } from "./Timeline";
 import { useKeyboardShortcuts } from "@/editor/hooks/useKeyboardShortcuts";
 import { useAutoSave } from "@/editor/hooks/useAutoSave";
 import { useSceneStore } from "@/editor/stores/sceneStore";
@@ -31,6 +32,7 @@ export function EditorShell() {
   const shadingMode = useSettingsStore((s) => s.shadingMode);
   const snapEnabled = useSettingsStore((s) => s.snapEnabled);
   const cameraMode = useSettingsStore((s) => s.cameraMode);
+  const [timelineOpen, setTimelineOpen] = useState(false);
 
   const handleAddPrimitive = useCallback(
     (type: PrimitiveType) => {
@@ -87,6 +89,7 @@ export function EditorShell() {
         <main className="flex-1 relative bg-[#1a1a2e]">
           <Viewport />
           <ScriptEditorPanel />
+          <Timeline isOpen={timelineOpen} onToggle={() => setTimelineOpen(!timelineOpen)} />
           {/* Viewport overlay info */}
           <div className="absolute bottom-2 left-2 text-xs text-gray-500 pointer-events-none">
             {objectCount === 0
@@ -115,7 +118,7 @@ export function EditorShell() {
         </span>
         <span className="text-gray-600">|</span>
         <span className="capitalize">
-          {editorMode === "edit" ? `${elementMode} (Edit)` : "Object"}
+          {editorMode === "edit" ? `${elementMode} (Edit)` : editorMode === "pose" ? "Pose" : "Object"}
         </span>
         <span className="capitalize">{shadingMode}</span>
         <span>{cameraMode}</span>

@@ -5,6 +5,8 @@ import { PRIMITIVE_TYPES } from "@/editor/utils/primitives";
 import { useHistoryStore } from "@/editor/stores/historyStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
+import { usePoseModeStore } from "@/editor/stores/poseModeStore";
+import { useArmatureStore } from "@/editor/stores/armatureStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useAiStore } from "@/editor/stores/aiStore";
@@ -79,24 +81,38 @@ export function Toolbar({
 
       {/* Mode indicator */}
       <button
-        title={`Switch Mode (Tab) — Current: ${editorMode === "edit" ? "Edit" : "Object"} Mode`}
+        title={`Switch Mode (Tab) — Current: ${editorMode === "edit" ? "Edit" : editorMode === "pose" ? "Pose" : "Object"} Mode`}
         className={`px-2 h-7 flex items-center gap-1 rounded text-[10px] font-medium transition ${
           editorMode === "edit"
             ? "bg-blue-600/30 text-blue-300 border border-blue-500/50"
-            : "text-gray-400 hover:text-white"
+            : editorMode === "pose"
+              ? "bg-green-600/30 text-green-300 border border-green-500/50"
+              : "text-gray-400 hover:text-white"
         }`}
         onClick={() => {
-          if (editorMode === "object" && activeEntityId) {
-            setEditorMode("edit");
-            enterEditMode(activeEntityId);
+          if (editorMode === "object") {
+            if (activeEntityId) {
+              setEditorMode("edit");
+              enterEditMode(activeEntityId);
+            }
+          } else if (editorMode === "edit") {
+            // Try to enter pose mode
+            const arm = activeEntityId ? useArmatureStore.getState().armatures[activeEntityId] : null;
+            if (arm) {
+              setEditorMode("pose");
+              exitEditMode();
+              usePoseModeStore.getState().enterPoseMode(activeEntityId!);
+            } else {
+              setEditorMode("object");
+              exitEditMode();
+            }
           } else {
             setEditorMode("object");
-            exitEditMode();
+            usePoseModeStore.getState().exitPoseMode();
           }
         }}
-        disabled={editorMode === "object" && !activeEntityId}
       >
-        {editorMode === "edit" ? "Edit" : "Object"}
+        {editorMode === "edit" ? "Edit" : editorMode === "pose" ? "Pose" : "Object"}
       </button>
 
       {/* Element mode buttons (edit mode only) */}

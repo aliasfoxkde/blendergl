@@ -9,7 +9,10 @@ import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useMaterialStore } from "@/editor/stores/materialStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
+import { useAnimationStore } from "@/editor/stores/animationStore";
+import { useArmatureStore } from "@/editor/stores/armatureStore";
 import { createPrimitiveEntity } from "@/editor/utils/primitives";
+import type { AnimProperty } from "@/editor/types";
 import type {
   BlenderGLApi,
   ScriptEntity,
@@ -18,6 +21,8 @@ import type {
   ScriptData,
   ScriptConsole,
   ScriptMaterial,
+  ScriptAnimation,
+  ScriptArmature,
   MathUtils,
   Vec3Op,
 } from "./api";
@@ -286,6 +291,119 @@ function createDataApi(): ScriptData {
   };
 }
 
+// ---- Animation implementation ----
+
+function createAnimationApi(): ScriptAnimation {
+  return {
+    createClip(name: string): string {
+      return useAnimationStore.getState().createClip(name);
+    },
+    deleteClip(clipId: string): void {
+      useAnimationStore.getState().deleteClip(clipId);
+    },
+    setActiveClip(clipId: string | null): void {
+      useAnimationStore.getState().setActiveClip(clipId);
+    },
+    getActiveClipId(): string | null {
+      return useAnimationStore.getState().activeClipId;
+    },
+    getClipIds(): string[] {
+      return Object.keys(useAnimationStore.getState().clips);
+    },
+    addKey(clipId: string, boneId: string, property: string, frame: number, value: number): void {
+      useAnimationStore.getState().addKey(clipId, boneId, property as AnimProperty, frame, value);
+    },
+    removeKey(clipId: string, trackId: string, keyIndex: number): void {
+      useAnimationStore.getState().removeKey(clipId, trackId, keyIndex);
+    },
+    getCurrentFrame(): number {
+      return useAnimationStore.getState().currentFrame;
+    },
+    setCurrentFrame(frame: number): void {
+      useAnimationStore.getState().setCurrentFrame(frame);
+    },
+    play(): void {
+      useAnimationStore.getState().setPlaybackState("playing");
+    },
+    pause(): void {
+      useAnimationStore.getState().setPlaybackState("paused");
+    },
+    stop(): void {
+      useAnimationStore.getState().setPlaybackState("stopped");
+      useAnimationStore.getState().setCurrentFrame(0);
+    },
+    setPlaybackState(state: "stopped" | "playing" | "paused"): void {
+      useAnimationStore.getState().setPlaybackState(state);
+    },
+  };
+}
+
+// ---- Armature implementation ----
+
+function createArmatureApi(): ScriptArmature {
+  return {
+    addArmature(entityId: string): void {
+      useArmatureStore.getState().addArmature(entityId);
+    },
+    removeArmature(entityId: string): void {
+      useArmatureStore.getState().removeArmature(entityId);
+    },
+    hasArmature(entityId: string): boolean {
+      return !!useArmatureStore.getState().armatures[entityId];
+    },
+    getBones(entityId: string) {
+      const arm = useArmatureStore.getState().armatures[entityId];
+      if (!arm) return [];
+      return Object.values(arm.bones).map((b) => ({
+        id: b.id,
+        name: b.name,
+        parentId: b.parentId,
+        length: b.length,
+        restPosition: { ...b.restPosition },
+        restRotation: { ...b.restRotation },
+        restScale: { ...b.restScale },
+      }));
+    },
+    addBone(entityId: string, name: string, parentId: string | null, position) {
+      const arm = useArmatureStore.getState().armatures[entityId];
+      if (!arm) return null;
+      const boneId = crypto.randomUUID();
+      const boneData = {
+        id: boneId,
+        name,
+        parentId,
+        length: 1,
+        restPosition: { x: position.x, y: position.y, z: position.z },
+        restRotation: { x: 0, y: 0, z: 0 },
+        restScale: { x: 1, y: 1, z: 1 },
+      };
+      useArmatureStore.getState().addBone(entityId, boneData);
+      return boneData;
+    },
+    removeBone(entityId: string, boneId: string): void {
+      useArmatureStore.getState().removeBone(entityId, boneId);
+    },
+    setBoneTransform(boneId: string, position?, rotation?): void {
+      // Find which entity owns this bone and update
+      const state = useArmatureStore.getState();
+      for (const [entityId, arm] of Object.entries(state.armatures)) {
+        const bone = arm.bones[boneId];
+        if (bone) {
+          const updates: Record<string, unknown> = {};
+          if (position) {
+            updates.restPosition = { x: position.x, y: position.y, z: position.z };
+          }
+          if (rotation) {
+            updates.restRotation = { x: rotation.x, y: rotation.y, z: rotation.z };
+          }
+          useArmatureStore.getState().updateBone(entityId, boneId, updates);
+          return;
+        }
+      }
+    },
+  };
+}
+
 // ---- Build the full API ----
 
 export function createBlenderGLApi(): BlenderGLApi {
@@ -294,6 +412,8 @@ export function createBlenderGLApi(): BlenderGLApi {
     ops: createOpsApi(),
     data: createDataApi(),
     utils: mathUtils,
+    animation: createAnimationApi(),
+    armature: createArmatureApi(),
     console: createConsole(),
     version: "0.1.0",
   };

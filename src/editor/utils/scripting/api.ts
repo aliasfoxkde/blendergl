@@ -122,6 +122,63 @@ export interface MathUtils {
   random(min?: number, max?: number): number;
 }
 
+// ---- Animation ----
+
+export interface ScriptAnimation {
+  /** Create a new animation clip. Returns clip ID. */
+  createClip(name: string): string;
+  /** Delete a clip. */
+  deleteClip(clipId: string): void;
+  /** Set the active clip. */
+  setActiveClip(clipId: string | null): void;
+  /** Get the active clip ID. */
+  getActiveClipId(): string | null;
+  /** Get all clip IDs. */
+  getClipIds(): string[];
+  /** Add a keyframe to a clip. */
+  addKey(clipId: string, boneId: string, property: string, frame: number, value: number): void;
+  /** Remove a keyframe. */
+  removeKey(clipId: string, trackId: string, keyIndex: number): void;
+  /** Get/set current frame. */
+  getCurrentFrame(): number;
+  setCurrentFrame(frame: number): void;
+  /** Play/pause/stop. */
+  play(): void;
+  pause(): void;
+  stop(): void;
+  /** Set playback state. */
+  setPlaybackState(state: "stopped" | "playing" | "paused"): void;
+}
+
+// ---- Armature ----
+
+export interface ScriptBone {
+  id: string;
+  name: string;
+  parentId: string | null;
+  length: number;
+  restPosition: Vec3;
+  restRotation: Vec3;
+  restScale: Vec3;
+}
+
+export interface ScriptArmature {
+  /** Add an armature to an entity. */
+  addArmature(entityId: string): void;
+  /** Remove an armature. */
+  removeArmature(entityId: string): void;
+  /** Check if entity has an armature. */
+  hasArmature(entityId: string): boolean;
+  /** Get bone data for an entity. */
+  getBones(entityId: string): ScriptBone[];
+  /** Add a bone. */
+  addBone(entityId: string, name: string, parentId: string | null, position: Vec3): ScriptBone | null;
+  /** Remove a bone. */
+  removeBone(entityId: string, boneId: string): void;
+  /** Update bone transform. */
+  setBoneTransform(boneId: string, position?: Vec3, rotation?: Vec3): void;
+}
+
 // ---- Top-level API ----
 
 export interface BlenderGLApi {
@@ -129,6 +186,8 @@ export interface BlenderGLApi {
   ops: ScriptOps;
   data: ScriptData;
   utils: MathUtils;
+  animation: ScriptAnimation;
+  armature: ScriptArmature;
   console: ScriptConsole;
   version: string;
 }

@@ -3,6 +3,9 @@ import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useMaterialStore } from "@/editor/stores/materialStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
+import { usePoseModeStore } from "@/editor/stores/poseModeStore";
+import { useArmatureStore } from "@/editor/stores/armatureStore";
+import { useAnimationStore } from "@/editor/stores/animationStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { formatAnalysis, estimatePrint, analyzeMesh, repairMesh } from "@/editor/utils/meshAnalysis";
 import { sliceMesh } from "@/editor/utils/gcode/slicer";
@@ -55,6 +58,17 @@ export function PropertiesPanel() {
             Deselect All
           </button>
         </div>
+      </div>
+    );
+  }
+
+  // Pose mode: show bone info + armature
+  if (editorMode === "pose") {
+    return (
+      <div className="flex-1 overflow-y-auto">
+        <PoseModePanel />
+        <ArmatureSection entityId={activeEntityId} />
+        <AnimationSection />
       </div>
     );
   }
@@ -195,6 +209,12 @@ export function PropertiesPanel() {
 
       {/* Mesh Info (3D Print) */}
       <MeshInfoSection entityId={entity.id} />
+
+      {/* Armature */}
+      <ArmatureSection entityId={entity.id} />
+
+      {/* Animation */}
+      <AnimationSection />
     </div>
   );
 }
@@ -673,6 +693,185 @@ function PrintSettingsSection() {
               />
             </PropertyRow>
           </Section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PoseModePanel() {
+  const selectedBoneIds = usePoseModeStore((s) => s.selectedBoneIds);
+  const activeBoneId = usePoseModeStore((s) => s.activeBoneId);
+  const activeEntityId = usePoseModeStore((s) => s.activeArmatureEntityId);
+  const armData = activeEntityId ? useArmatureStore((s) => s.armatures[activeEntityId]) : null;
+  const currentFrame = useAnimationStore((s) => s.currentFrame);
+
+  const activeBone = activeBoneId && armData ? armData.bones[activeBoneId] : null;
+
+  return (
+    <Section title="Pose Mode">
+      <PropertyRow label="Frame">
+        <span className="text-xs text-green-400 font-mono">{currentFrame}</span>
+      </PropertyRow>
+      <PropertyRow label="Bones">
+        <span className="text-xs text-gray-300">{selectedBoneIds.size} selected</span>
+      </PropertyRow>
+      {activeBone && (
+        <>
+          <PropertyRow label="Bone">
+            <span className="text-xs text-yellow-300">{activeBone.name}</span>
+          </PropertyRow>
+          <div className="text-[10px] text-gray-500 mt-1">
+            Pos: ({activeBone.restPosition.x.toFixed(2)}, {activeBone.restPosition.y.toFixed(2)}, {activeBone.restPosition.z.toFixed(2)})
+          </div>
+          <div className="text-[10px] text-gray-500">
+            Rot: ({activeBone.restRotation.x.toFixed(1)}, {activeBone.restRotation.y.toFixed(1)}, {activeBone.restRotation.z.toFixed(1)})
+          </div>
+          <div className="px-3 py-2">
+            <button
+              className="w-full text-[10px] text-gray-400 hover:text-white py-1 transition"
+              onClick={() => usePoseModeStore.getState().deselectAll()}
+            >
+              Deselect All Bones
+            </button>
+          </div>
+        </>
+      )}
+      <div className="px-3 py-1">
+        <p className="text-[10px] text-gray-600">Press I to insert keyframe</p>
+      </div>
+    </Section>
+  );
+}
+
+function ArmatureSection({ entityId }: { entityId: string | null }) {
+  const armData = entityId ? useArmatureStore((s) => s.armatures[entityId]) : null;
+  const [expanded, setExpanded] = useState(false);
+
+  if (!armData) return null;
+
+  const boneCount = Object.keys(armData.bones).length;
+
+  return (
+    <div className="border-b border-[#333]">
+      <button
+        className="w-full px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#282828] flex items-center justify-between"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>Armature ({boneCount} bones)</span>
+        <span className="text-[10px] text-gray-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div className="px-3 py-2 space-y-1">
+          <PropertyRow label="Roots">
+            <span className="text-xs text-gray-300">{armData.rootBoneIds.length}</span>
+          </PropertyRow>
+          <div className="flex gap-1 mt-1">
+            <button
+              className="flex-1 text-[10px] text-gray-400 hover:text-white bg-[#1a1a1a] border border-[#444] rounded px-2 py-1 transition"
+              onClick={() => {
+                if (!entityId) return;
+                const boneId = crypto.randomUUID();
+                useArmatureStore.getState().addBone(entityId, {
+                  id: boneId,
+                  name: `Bone.${String(boneCount).padStart(3, "0")}`,
+                  parentId: armData.rootBoneIds.length > 0 ? armData.rootBoneIds[0] : null,
+                  length: 1,
+                  restPosition: { x: 0, y: boneCount * 1, z: 0 },
+                  restRotation: { x: 0, y: 0, z: 0 },
+                  restScale: { x: 1, y: 1, z: 1 },
+                });
+              }}
+            >
+              Add Bone
+            </button>
+            <button
+              className="flex-1 text-[10px] text-gray-400 hover:text-white bg-[#1a1a1a] border border-[#444] rounded px-2 py-1 transition"
+              onClick={() => {
+                if (entityId) useArmatureStore.getState().removeArmature(entityId);
+              }}
+            >
+              Remove
+            </button>
+          </div>
+          {Object.values(armData.bones).map((bone) => (
+            <div key={bone.id} className="text-[10px] text-gray-400 py-0.5 border-t border-[#333]">
+              {bone.name} {bone.parentId ? `(parent: ${armData.bones[bone.parentId]?.name ?? "?"})` : "(root)"}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AnimationSection() {
+  const clips = useAnimationStore((s) => s.clips);
+  const activeClipId = useAnimationStore((s) => s.activeClipId);
+  const [expanded, setExpanded] = useState(false);
+  const [newClipName, setNewClipName] = useState("Action");
+
+  const activeClip = activeClipId ? clips[activeClipId] : null;
+
+  return (
+    <div className="border-b border-[#333]">
+      <button
+        className="w-full px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#282828] flex items-center justify-between"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>Animation ({Object.keys(clips).length} clips)</span>
+        <span className="text-[10px] text-gray-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div className="px-3 py-2 space-y-1.5">
+          {activeClip && (
+            <>
+              <PropertyRow label="Active">
+                <span className="text-xs text-blue-300">{activeClip.name}</span>
+              </PropertyRow>
+              <PropertyRow label="Duration">
+                <span className="text-xs text-gray-300">{activeClip.durationFrames} frames</span>
+              </PropertyRow>
+              <PropertyRow label="Tracks">
+                <span className="text-xs text-gray-300">{activeClip.tracks.length}</span>
+              </PropertyRow>
+            </>
+          )}
+
+          <div className="flex gap-1 mt-1">
+            <input
+              type="text"
+              value={newClipName}
+              onChange={(e) => setNewClipName(e.target.value)}
+              className="flex-1 bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-[10px] text-gray-200 focus:border-blue-500 focus:outline-none"
+            />
+            <button
+              className="text-[10px] text-gray-400 hover:text-white bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 transition"
+              onClick={() => {
+                useAnimationStore.getState().createClip(newClipName || "Action");
+              }}
+            >
+              New
+            </button>
+          </div>
+
+          {Object.values(clips).length > 0 && (
+            <div className="mt-1 space-y-0.5">
+              {Object.values(clips).map((clip) => (
+                <div
+                  key={clip.id}
+                  className={`text-[10px] px-1 py-0.5 rounded cursor-pointer transition ${
+                    clip.id === activeClipId
+                      ? "bg-blue-600/20 text-blue-300"
+                      : "text-gray-400 hover:text-white hover:bg-[#333]"
+                  }`}
+                  onClick={() => useAnimationStore.getState().setActiveClip(clip.id)}
+                >
+                  {clip.name} ({clip.tracks.length} tracks, {clip.durationFrames}f)
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -5,10 +5,14 @@ import { useHistoryStore } from "@/editor/stores/historyStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { useAiStore } from "@/editor/stores/aiStore";
+import { usePoseModeStore } from "@/editor/stores/poseModeStore";
+import { useAnimationStore } from "@/editor/stores/animationStore";
+import { useArmatureStore } from "@/editor/stores/armatureStore";
 import { editControllerRef } from "@/editor/utils/editModeRef";
 import { saveScene } from "@/editor/utils/storage";
 import { duplicateEntities } from "@/editor/utils/duplicate";
-import type { TransformMode, ShadingMode, CameraPreset } from "@/editor/types";
+import { armatureControllerRef } from "@/editor/utils/armatureController";
+import type { TransformMode, ShadingMode, CameraPreset, EditorMode, AnimProperty } from "@/editor/types";
 
 // Camera preset key mapping
 const CAMERA_PRESETS: Record<string, CameraPreset> = {
@@ -16,6 +20,62 @@ const CAMERA_PRESETS: Record<string, CameraPreset> = {
   "3": "right",
   "7": "top",
 };
+
+function insertKeyframeForSelectedBones() {
+  const poseStore = usePoseModeStore.getState();
+  const animStore = useAnimationStore.getState();
+  const armStore = useArmatureStore.getState();
+  const entityId = poseStore.activeArmatureEntityId;
+  if (!entityId) return;
+
+  const arm = armStore.armatures[entityId];
+  if (!arm) return;
+
+  // Ensure an active clip exists
+  let clipId = animStore.activeClipId;
+  if (!clipId) {
+    clipId = animStore.createClip("Action");
+  }
+
+  const frame = animStore.currentFrame;
+  const properties: AnimProperty[] = [
+    "position.x", "position.y", "position.z",
+    "rotation.x", "rotation.y", "rotation.z",
+  ];
+
+  const controller = armatureControllerRef.current;
+  const boneIds = poseStore.selectedBoneIds.size > 0
+    ? Array.from(poseStore.selectedBoneIds)
+    : (poseStore.activeBoneId ? [poseStore.activeBoneId] : []);
+
+  for (const boneId of boneIds) {
+    const bone = arm.bones[boneId];
+    if (!bone) continue;
+
+    for (const prop of properties) {
+      const propName = prop.split(".")[0] as "position" | "rotation";
+      const axis = prop.split(".")[1] as "x" | "y" | "z";
+
+      // Get current pose from controller if available, otherwise use rest pose
+      let value: number;
+      if (controller) {
+        const pose = controller.getBonePose(boneId);
+        if (pose) {
+          const posePart = propName === "position" ? pose.position : pose.rotation;
+          value = posePart[axis];
+        } else {
+          const restPart = propName === "position" ? bone.restPosition : bone.restRotation;
+          value = restPart[axis];
+        }
+      } else {
+        const restPart = propName === "position" ? bone.restPosition : bone.restRotation;
+        value = restPart[axis];
+      }
+
+      animStore.addKey(clipId, boneId, prop, frame, value);
+    }
+  }
+}
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
@@ -28,6 +88,35 @@ export function useKeyboardShortcuts() {
       const historyStore = useHistoryStore.getState();
       const editModeStore = useEditModeStore.getState();
       const settingsStore = useSettingsStore.getState();
+
+      // Ctrl+Tab: cycle object → edit → pose → object
+      if (e.key === "Tab" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const modes: EditorMode[] = ["object", "edit", "pose"];
+        const currentIdx = modes.indexOf(selectionStore.editorMode);
+        const nextIdx = (currentIdx + 1) % modes.length;
+        const nextMode = modes[nextIdx];
+        if (nextMode === "edit") {
+          if (selectionStore.activeEntityId) {
+            selectionStore.setEditorMode("edit");
+            editModeStore.enterEditMode(selectionStore.activeEntityId);
+          }
+        } else if (nextMode === "pose") {
+          // Enter pose mode — need armature on selected entity
+          const entityId = selectionStore.activeEntityId;
+          const arm = entityId ? useArmatureStore.getState().armatures[entityId] : null;
+          if (arm) {
+            selectionStore.setEditorMode("pose");
+            usePoseModeStore.getState().enterPoseMode(entityId!);
+            editModeStore.exitEditMode();
+          }
+        } else {
+          selectionStore.setEditorMode("object");
+          editModeStore.exitEditMode();
+          usePoseModeStore.getState().exitPoseMode();
+        }
+        return;
+      }
 
       // Tab: toggle object/edit mode
       if (e.key === "Tab") {
@@ -121,6 +210,9 @@ export function useKeyboardShortcuts() {
               controller.rebuildNormals();
               editModeStore.deselectAll();
             }
+          } else if (selectionStore.editorMode === "pose" && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            insertKeyframeForSelectedBones();
           }
           break;
         case "r":
@@ -237,7 +329,27 @@ export function useKeyboardShortcuts() {
             selectionStore.setEditorMode("object");
             editModeStore.exitEditMode();
           }
+          if (selectionStore.editorMode === "pose") {
+            selectionStore.setEditorMode("object");
+            usePoseModeStore.getState().exitPoseMode();
+          }
           selectionStore.deselectAll();
+          break;
+
+        // Left/Right arrows: step frame (pose mode)
+        case "arrowleft":
+          if (selectionStore.editorMode === "pose" && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            useAnimationStore.getState().stepBackward();
+            return;
+          }
+          break;
+        case "arrowright":
+          if (selectionStore.editorMode === "pose" && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            useAnimationStore.getState().stepForward();
+            return;
+          }
           break;
       }
     };

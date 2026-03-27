@@ -21,10 +21,13 @@ import {
 import { TransformGizmoController } from "@/editor/utils/gizmos";
 import { EditModeController } from "@/editor/utils/editModeController";
 import { editControllerRef } from "@/editor/utils/editModeRef";
+import { ArmatureController, armatureControllerRef } from "@/editor/utils/armatureController";
 import { useSceneStore } from "@/editor/stores/sceneStore";
 import { useSelectionStore } from "@/editor/stores/selectionStore";
 import { useMaterialStore } from "@/editor/stores/materialStore";
 import { useEditModeStore } from "@/editor/stores/editModeStore";
+import { usePoseModeStore } from "@/editor/stores/poseModeStore";
+import { useArmatureStore } from "@/editor/stores/armatureStore";
 import { useSettingsStore } from "@/editor/stores/settingsStore";
 import { setCameraPreset, toggleOrtho } from "@/editor/utils/cameraUtils";
 import { cameraRef as sharedCameraRef } from "@/editor/utils/cameraRef";
@@ -71,6 +74,11 @@ export function Viewport({ onSceneReady }: ViewportProps) {
   const snapEnabled = useSettingsStore((s) => s.snapEnabled);
   const snapIncrement = useSettingsStore((s) => s.snapIncrement);
   const setCameraMode = useSettingsStore((s) => s.setCameraMode);
+
+  // Pose mode state
+  const poseModeEntityId = usePoseModeStore((s) => s.activeArmatureEntityId);
+  const selectedBoneIds = usePoseModeStore((s) => s.selectedBoneIds);
+  const activeBoneId = usePoseModeStore((s) => s.activeBoneId);
 
   // Initialize engine + scene
   useEffect(() => {
@@ -235,6 +243,25 @@ export function Viewport({ onSceneReady }: ViewportProps) {
           return;
         }
 
+        // Pose mode: pick bones
+        if (editorMode === "pose" && pickResult?.hit && pickResult.pickedPoint) {
+          const armController = armatureControllerRef.current;
+          const armEntityId = usePoseModeStore.getState().activeArmatureEntityId;
+          if (armController && armEntityId) {
+            const armData = useArmatureStore.getState().armatures[armEntityId];
+            if (armData) {
+              const boneId = armController.pickBone(pickResult.pickedPoint, armData);
+              if (boneId) {
+                const shiftKey = pointerInfo.event.shiftKey;
+                usePoseModeStore.getState().selectBone(boneId, shiftKey);
+              } else {
+                usePoseModeStore.getState().deselectAll();
+              }
+            }
+          }
+          return;
+        }
+
         // Object mode: pick entities
         if (pickResult?.hit && pickResult.pickedMesh) {
           const meshId = pickResult.pickedMesh.metadata?.entityId as
@@ -277,6 +304,8 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       scene.onPointerObservable.clear();
       gizmoController.dispose();
       editControllerRef_local.current?.dispose();
+      armatureControllerRef.current?.dispose();
+      armatureControllerRef.current = null;
       engine.dispose();
       engineRef.current = null;
       sceneRef.current = null;
@@ -426,8 +455,8 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     const gizmo = gizmoRef.current;
     if (!gizmo) return;
 
-    // Hide gizmo in edit mode
-    if (editorMode === "edit") {
+    // Hide gizmo in edit/pose mode
+    if (editorMode === "edit" || editorMode === "pose") {
       gizmo.attachToMesh(null);
       return;
     }
@@ -474,6 +503,46 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       Array.from(selectedEdges)
     );
   }, [selectedVertices, selectedFaces, selectedEdges]);
+
+  // Pose mode: attach/detach armature controller
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (editorMode === "pose" && poseModeEntityId && scene) {
+      const controller = new ArmatureController();
+      controller.attach(poseModeEntityId, scene);
+      armatureControllerRef.current = controller;
+
+      const armData = useArmatureStore.getState().armatures[poseModeEntityId];
+      if (armData) {
+        controller.updateVisualization(
+          armData,
+          selectedBoneIds,
+          activeBoneId
+        );
+      }
+    } else {
+      if (armatureControllerRef.current) {
+        armatureControllerRef.current.dispose();
+        armatureControllerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (armatureControllerRef.current) {
+        armatureControllerRef.current.dispose();
+        armatureControllerRef.current = null;
+      }
+    };
+  }, [editorMode, poseModeEntityId]);
+
+  // Pose mode: update bone visualization on selection change
+  useEffect(() => {
+    const controller = armatureControllerRef.current;
+    if (!controller || !poseModeEntityId) return;
+    const armData = useArmatureStore.getState().armatures[poseModeEntityId];
+    if (!armData) return;
+    controller.updateVisualization(armData, selectedBoneIds, activeBoneId);
+  }, [selectedBoneIds, activeBoneId, poseModeEntityId]);
 
   // Box select state
   const [boxSelect, setBoxSelect] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);

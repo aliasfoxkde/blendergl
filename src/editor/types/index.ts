@@ -74,7 +74,7 @@ export interface SceneSettings {
   backgroundColor: string;
 }
 
-export type EditorMode = "object" | "edit";
+export type EditorMode = "object" | "edit" | "pose";
 export type TransformMode = "translate" | "rotate" | "scale";
 export type TransformSpace = "world" | "local";
 export type SelectionMode = "object" | "vertex" | "edge" | "face";
@@ -155,3 +155,64 @@ export function generateEntityId(): string {
 export function generateSceneId(): string {
   return `scene_${Date.now()}`;
 }
+
+// ---- Armature / Skeleton ----
+
+export interface BoneData {
+  id: string;
+  name: string;
+  parentId: string | null;
+  length: number;
+  restPosition: Vec3;
+  restRotation: Vec3;
+  restScale: Vec3;
+}
+
+export interface ArmatureComponent {
+  type: "armature";
+  bones: Record<string, BoneData>;
+  rootBoneIds: string[];
+}
+
+// ---- Animation ----
+
+export interface BoneTransform {
+  position: Vec3;
+  rotation: Vec3;
+  scale: Vec3;
+}
+
+export type AnimProperty =
+  | "position.x"
+  | "position.y"
+  | "position.z"
+  | "rotation.x"
+  | "rotation.y"
+  | "rotation.z";
+
+export type InterpolationType = "linear" | "step" | "bezier";
+
+export interface AnimationKeyData {
+  frame: number;
+  value: number;
+  interpolation: InterpolationType;
+  inTangent?: number;
+  outTangent?: number;
+}
+
+export interface AnimationTrack {
+  id: string;
+  boneId: string;
+  property: AnimProperty;
+  keys: AnimationKeyData[];
+}
+
+export interface AnimationClip {
+  id: string;
+  name: string;
+  framesPerSecond: number;
+  durationFrames: number;
+  tracks: AnimationTrack[];
+}
+
+export type PlaybackState = "stopped" | "playing" | "paused";
