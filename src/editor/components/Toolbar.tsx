@@ -374,6 +374,23 @@ export function Toolbar({
         <SparkleIcon />
       </ToolButton>
 
+      {/* Node Editor */}
+      <ToolButton
+        label="Node Editor (N)"
+        onClick={() => window.dispatchEvent(new CustomEvent("toggle-node-editor"))}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <circle cx="3" cy="3" r="2" />
+          <circle cx="11" cy="3" r="2" />
+          <circle cx="3" cy="11" r="2" />
+          <circle cx="11" cy="11" r="2" />
+          <line x1="5" y1="3" x2="9" y2="3" />
+          <line x1="3" y1="5" x2="3" y2="9" />
+          <line x1="11" y1="5" x2="11" y2="9" />
+          <line x1="5" y1="11" x2="9" y2="11" />
+        </svg>
+      </ToolButton>
+
       {/* Undo/Redo */}
       <ToolButton
         label="Undo (Ctrl+Z)"

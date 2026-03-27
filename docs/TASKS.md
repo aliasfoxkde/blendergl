@@ -583,25 +583,25 @@
 ## Phase 16: Node Editor & Visual Scripting
 
 ### 16.1 Node Graph Framework
-- [ ] Node graph canvas component (pan, zoom, select)
-- [ ] Node rendering (title, inputs, outputs, body)
-- [ ] Connection rendering (bezier curves between ports)
-- [ ] Port data types: Float, Vector2, Vector3, Color, Texture, Mesh, Boolean, Any
-- [ ] Type-compatible connections (prevent mismatched connections)
-- [ ] Node selection (click, box select, marquee)
-- [ ] Node deletion (Delete key, backspace)
-- [ ] Connection creation (drag from output to input port)
-- [ ] Connection deletion (right-click on connection)
+- [x] Node graph canvas component (pan, zoom, select)
+- [x] Node rendering (title, inputs, outputs, body)
+- [x] Connection rendering (bezier curves between ports)
+- [x] Port data types: Float, Vector2, Vector3, Color, Texture, Mesh, Boolean, Any
+- [x] Type-compatible connections (prevent mismatched connections)
+- [x] Node selection (click, box select, marquee)
+- [x] Node deletion (Delete key, backspace)
+- [x] Connection creation (drag from output to input port)
+- [x] Connection deletion (right-click on connection)
 
 ### 16.2 Shader Node Editor
-- [ ] Shader node graph type
-- [ ] Node types: Principled BSDF, Emission, Glossy BSDF, Mix Shader
-- [ ] Input nodes: Texture Image, Color, Value, Normal, UV
-- [ ] Math nodes: Add, Subtract, Multiply, Divide, Power, Mix, Clamp
-- [ ] Vector nodes: Combine XYZ, Separate XYZ, Vector Math, Map Range
-- [ ] Color nodes: Mix Color, RGB to HSV, HSV to RGB, Color Ramp
-- [ ] Texture nodes: Checker, Brick, Noise, Voronoi, Gradient
-- [ ] Output node: Material Output (connects to Babylon ShaderMaterial)
+- [x] Shader node graph type
+- [x] Node types: Principled BSDF, Emission, Glossy BSDF, Mix Shader
+- [x] Input nodes: Texture Image, Color, Value, Normal, UV
+- [x] Math nodes: Add, Subtract, Multiply, Divide, Power, Mix, Clamp
+- [x] Vector nodes: Combine XYZ, Separate XYZ, Vector Math, Map Range
+- [x] Color nodes: Mix Color, RGB to HSV, HSV to RGB, Color Ramp
+- [x] Texture nodes: Checker, Brick, Noise, Voronoi, Gradient
+- [x] Output node: Material Output (connects to Babylon ShaderMaterial)
 - [ ] Real-time preview (shader updates as nodes change)
 - [ ] Shader preset library (metal, wood, marble, plastic, etc.)
 

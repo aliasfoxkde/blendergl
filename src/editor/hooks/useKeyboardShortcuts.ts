@@ -174,6 +174,12 @@ export function useKeyboardShortcuts() {
           e.preventDefault();
           useAiStore.getState().togglePanel();
           return;
+        case "n":
+          if (!e.ctrlKey && !e.metaKey && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent("toggle-node-editor"));
+          }
+          return;
         // Element mode shortcuts (edit mode only)
         case "1":
           if (selectionStore.editorMode === "edit") {

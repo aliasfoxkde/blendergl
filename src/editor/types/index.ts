@@ -244,3 +244,14 @@ export interface SculptSymmetry {
   y: boolean;
   z: boolean;
 }
+
+export type {
+  PortDataType,
+  PortDefinition,
+  NodeTypeDefinition,
+  GraphNode,
+  GraphConnection,
+  NodeGraphType,
+  GraphData,
+} from "./nodeEditor";
+export { PORT_COLORS, CATEGORY_COLORS } from "./nodeEditor";
