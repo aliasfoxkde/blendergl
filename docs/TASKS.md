@@ -1,6 +1,6 @@
 # BlenderGL - Task List
 
-**Version:** 3.0.0
+**Version:** 4.0.0
 **Last Updated:** 2026-03-27
 **Status:** Active
 
@@ -71,7 +71,7 @@
 - [x] Implement scene deserialization (JSON to entities)
 - [x] Save scene to IndexedDB
 - [x] Load scene from IndexedDB
-- [ ] Auto-save on changes (debounced)
+- [x] Auto-save on changes (debounced)
 - [ ] Write persistence tests
 - [x] Commit and push: Phase 2 complete
 
@@ -235,10 +235,10 @@
 - [x] Camera preset buttons in toolbar or status bar
 
 ### 9.3 Grid + Snap Configuration
-- [ ] Settings panel: grid size control
-- [ ] Settings panel: grid subdivisions control
-- [ ] Settings panel: snap increment control
-- [ ] Settings panel: angle snap control
+- [x] Settings panel: grid size control
+- [x] Settings panel: grid subdivisions control
+- [x] Settings panel: snap increment control
+- [x] Settings panel: angle snap control
 - [ ] Settings panel: scale snap control
 - [x] Wire snap settings to gizmo controller
 - [x] Snap toggle button in toolbar
@@ -262,11 +262,11 @@
 - [x] Show snap status
 
 ### 9.6 Right-Click Context Menu
-- [ ] Context menu component (positioned at cursor)
-- [ ] Object mode: Add, Duplicate, Delete, Parent, Hide, Show
-- [ ] Edit mode: Select All, Delete, Extrude, Inset
-- [ ] Close on click outside
-- [ ] Keyboard shortcut hints in menu items
+- [x] Context menu component (positioned at cursor)
+- [x] Object mode: Add, Duplicate, Delete, Parent, Hide, Show
+- [x] Edit mode: Select All, Delete, Extrude, Inset
+- [x] Close on click outside
+- [x] Keyboard shortcut hints in menu items
 
 ### 9.7 Auto-Save
 - [x] Debounced auto-save on entity/transform changes
@@ -356,6 +356,472 @@
 
 ---
 
+## Phase 12: 3D Printing & Slicing
+
+### 12.1 STL Export
+- [ ] Binary STL export (80-byte header, 50-byte triangles, little-endian)
+- [ ] ASCII STL export (human-readable format)
+- [ ] STL export button in File menu and toolbar
+- [ ] Export selected objects only option
+- [ ] Mesh triangulation check before export (ensure all faces are triangles)
+
+### 12.2 3MF Format Support
+- [ ] 3MF file structure (XML-based, OPC package format)
+- [ ] 3MF export (mesh + materials + print settings)
+- [ ] 3MF import (parse mesh from 3MF package)
+
+### 12.3 Mesh Validation & Repair
+- [ ] Manifold check (detect non-manifold edges, open boundaries)
+- [ ] Watertight validation (volume calculation, inside/outside test)
+- [ ] Hole filling (detect boundary loops, triangulate to close)
+- [ ] Normal repair (consistent winding order, face flip)
+- [ ] Degenerate face removal (zero-area faces, duplicate vertices)
+- [ ] Mesh analysis stats (volume, surface area, dimensions, vertex/face count)
+
+### 12.4 Boolean Operations (CSG)
+- [ ] Integrate manifold-3d WASM for boolean operations
+- [ ] Boolean union (combine two meshes)
+- [ ] Boolean difference (subtract one mesh from another)
+- [ ] Boolean intersection (keep overlapping volume)
+- [ ] Boolean modifier component (non-destructive, in entity components)
+- [ ] CSG preview (wireframe of result before committing)
+
+### 12.5 Print Preparation Panel
+- [ ] Print settings panel in PropertiesPanel (when no entity selected)
+- [ ] Printer profile selector (bed size, nozzle diameter)
+- [ ] Layer height input (0.1mm - 0.4mm)
+- [ ] Infill density slider (0% - 100%)
+- [ ] Infill pattern selector (grid, lines, triangles, gyroid, honeycomb)
+- [ ] Shell/wall thickness (number of perimeters)
+- [ ] Support generation toggle + overhang angle threshold
+- [ ] Adhesion type (brim, raft, skirt, none)
+- [ ] Print speed settings (outer wall, inner wall, infill, travel)
+- [ ] Temperature settings (extruder, heated bed)
+- [ ] Estimated print time calculation
+- [ ] Estimated material usage calculation
+
+### 12.6 G-code Generation
+- [ ] Basic slicer: slice mesh at layer heights (triangle-plane intersection)
+- [ ] Perimeter generation (outer and inner walls)
+- [ ] Inill pattern generation (selected pattern within perimeters)
+- [ ] Support generation (detect overhangs, generate support structures)
+- [ ] Retraction and travel moves
+- [ ] G-code output (standard Marlin/RepRap format)
+- [ ] G-code preview (layer-by-layer path visualization)
+- [ ] G-code download
+- [ ] Printer profile presets (Ender 3, Prusa MK4, Bambu Lab, etc.)
+
+### 12.7 Print Preview
+- [ ] Layer visualization slider (scroll through sliced layers)
+- [ ] Print time estimate display
+- [ ] Material usage display (weight in grams, length in meters)
+- [ ] Color-coded preview (perimeters, infill, supports in different colors)
+- [ ] Commit and push: Phase 12 complete
+
+---
+
+## Phase 13: Scripting Engine
+
+### 13.1 Scripting API Surface
+- [ ] Define `blendergl` global API object for user scripts
+- [ ] `blendergl.scene` — access entities, create/delete/modify
+- [ ] `blendergl.ops` — operator system (translate, rotate, scale, add primitive)
+- [ ] `blendergl.data` — access materials, settings, selection
+- [ ] `blendergl.utils` — math helpers (Vector3, Quaternion, Matrix)
+- [ ] API documentation strings (JSDoc for auto-complete)
+
+### 13.2 Monaco Editor Integration
+- [ ] Install `@monaco-editor/react`
+- [ ] Script editor panel component (new editor space)
+- [ ] JavaScript/TypeScript language support
+- [ ] Custom syntax highlighting theme (dark, matching editor)
+- [ ] Auto-complete for `blendergl` API
+- [ ] Error squiggles and inline diagnostics
+- [ ] Tab-based multi-file editing
+- [ ] Split view (script editor + 3D viewport)
+
+### 13.3 Script Execution Sandbox
+- [ ] Web Worker-based script execution (isolated from UI thread)
+- [ ] Restricted globals (no DOM access, limited window)
+- [ ] Message-passing between script and editor (postMessage API)
+- [ ] Script execution timeout (prevent infinite loops)
+- [ ] Error capture and display (syntax errors, runtime errors)
+- [ ] Script output console (log, warn, error panels)
+
+### 13.4 Script Types & Lifecycle
+- [ ] Startup scripts (run when editor loads)
+- [ ] Operator scripts (register custom operators)
+- [ ] Callback scripts (on selection change, on frame change, etc.)
+- [ ] Script enable/disable toggle per script
+- [ ] Script execution order control
+
+### 13.5 Script Library
+- [ ] Save scripts to IndexedDB
+- [ ] Script library browser (list/load/delete saved scripts)
+- [ ] Import/export scripts (.js files)
+- [ ] Built-in example scripts (create grid, random objects, procedural geometry)
+- [ ] Script templates (operator, callback, modifier)
+- [ ] Commit and push: Phase 13 complete
+
+---
+
+## Phase 14: Rigging & Animation
+
+### 14.1 Skeleton/Armature System
+- [ ] Armature component type (entity component with bone data)
+- [ ] Bone creation mode (new editor mode: Pose Mode)
+- [ ] Bone creation: click to place bone, click again to set end
+- [ ] Bone editing: select, move, rotate bones
+- [ ] Bone hierarchy: parent/child bone chains
+- [ ] Bone visualization (wireframe bones in viewport)
+- [ ] Armature store (Zustand): bones, active bone, pose mode
+
+### 14.2 Bone Constraints
+- [ ] IK constraint (inverse kinematics solver — CCD or FABRIK)
+- [ ] Look-at constraint (bone points at target)
+- [ ] Parent constraint (bone follows parent transform)
+- [ ] Track-to constraint (bone axis tracks target)
+- [ ] Limit constraint (rotation limits per axis)
+- [ ] Constraint stack (multiple constraints per bone, ordered evaluation)
+- [ ] Constraint influence slider (0-1 blend)
+
+### 14.3 Skinning
+- [ ] Weight paint mode (new editor mode)
+- [ ] Weight brush: paint vertex weights for active bone
+- [ ] Weight visualization (heat map: blue=0, red=1)
+- [ ] Auto-weight assignment (envelope-based, bone heat method)
+- [ ] Weight normalize (ensure vertex weights sum to 1.0)
+- [ ] Weight mirror (left-right symmetry)
+- [ ] Babylon.js skinned mesh: apply skeleton to mesh
+- [ ] Skinned mesh rendering (GPU skinning via Babylon.js)
+
+### 14.4 Keyframe Animation
+- [ ] Animation store (Zustand): animations, active animation, playback state
+- [ ] Key types: position, rotation, scale, custom properties
+- [ ] Key insertion (I key in pose mode)
+- [ ] Key deletion
+- [ ] Key interpolation (linear, bezier easing)
+- [ ] Animation clip management (create, rename, delete clips)
+- [ ] Animation blending (crossfade between clips)
+- [ ] NLA editor (Non-Linear Animation — blend multiple clips)
+
+### 14.5 Timeline & Playback
+- [ ] Timeline component (scrubable playback bar)
+- [ ] Playback controls: play, pause, stop, jump to start/end
+- [ ] Frame rate settings (24, 25, 30, 60 fps)
+- [ ] Frame step (forward/backward by frame)
+- [ ] Play mode vs Edit mode (simulation toggle)
+- [ ] Looping toggle (loop, ping-pong, once)
+
+### 14.6 Dope Sheet & Pose Library
+- [ ] Dope sheet editor (keyframe visualization per channel)
+- [ ] Key selection (click, box select, select all keys in range)
+- [ ] Key manipulation (move, scale, delete selected keys)
+- [ ] Pose library: save current pose as named pose
+- [ ] Pose library: restore/apply saved pose
+- [ ] Pose library: blend between poses (slider)
+- [ ] Animation export (glTF animation clips)
+- [ ] Commit and push: Phase 14 complete
+
+---
+
+## Phase 15: Sculpting
+
+### 15.1 Sculpt Mode Infrastructure
+- [ ] Sculpt mode (new editor mode, toggle from Object/Edit)
+- [ ] Sculpt mode store (Zustand): active brush, brush settings, symmetry
+- [ ] Sculpt mode UI (toolbar brush selector, settings panel)
+- [ ] Raycast-to-mesh for brush (screen-space brush circle)
+- [ ] Brush cursor visualization (circle on mesh surface)
+- [ ] Keyboard shortcut: Tab to enter/exit sculpt mode
+
+### 15.2 Brush Engine
+- [ ] Sculpt brush (push/pull vertices along normal)
+- [ ] Smooth brush (Laplacian smoothing of vertex positions)
+- [ ] Grab brush (translate vertices freely)
+- [ ] Inflate brush (push vertices outward from center)
+- [ ] Pinch brush (pull vertices toward brush center)
+- [ ] Flatten brush (project vertices to average plane)
+- [ ] Crease brush (sharpen edges along stroke)
+- [ ] Clay strips brush (clay-like buildup)
+- [ ] Brush settings: radius (1-500px), strength (0.01-1.0), falloff (smooth/sharp/spike)
+- [ ] Brush spacing control (distance between dab applications)
+- [ ] Pressure sensitivity (PointerEvent pressure for stylus support)
+
+### 15.3 Dynamic Topology
+- [ ] Dyntopo toggle (adaptive tessellation during sculpting)
+- [ ] Detail size slider (target edge length for subdivision)
+- [ ] Subdivision while sculpting (split long edges)
+- [ ] Collapse while sculpting (merge short edges)
+- [ ] Remesh brush (uniform mesh density)
+
+### 15.4 Multiresolution
+- [ ] Multiresolution modifier (subdivision levels 0-N)
+- [ ] Level selector (switch between detail levels)
+- [ ] Sculpt at any level (detail propagates up/down)
+- [ ] Subdivide to next level
+- [ ] Apply multiresolution (bake detail to base level)
+
+### 15.5 Sculpt Tools
+- [ ] Sculpt mask (protect areas from brush strokes)
+- [ ] Mask brush (paint mask on/off)
+- [ ] Invert mask
+- [ ] Clear mask
+- [ ] Symmetry (X, Y, Z axis mirror strokes)
+- [ ] Face sets (mark regions for isolated operations)
+- [ ] Hide/show face sets during sculpting
+
+### 15.6 Detail Transfer
+- [ ] Normal map baking (high-poly sculpt → low-poly mesh)
+- [ ] Displacement map baking
+- [ ] Ambient occlusion baking (cavity detection)
+- [ ] Texture resolution settings (512, 1024, 2048, 4096)
+- [ ] Bake preview (normal map applied to low-poly)
+- [ ] Commit and push: Phase 15 complete
+
+---
+
+## Phase 16: Node Editor & Visual Scripting
+
+### 16.1 Node Graph Framework
+- [ ] Node graph canvas component (pan, zoom, select)
+- [ ] Node rendering (title, inputs, outputs, body)
+- [ ] Connection rendering (bezier curves between ports)
+- [ ] Port data types: Float, Vector2, Vector3, Color, Texture, Mesh, Boolean, Any
+- [ ] Type-compatible connections (prevent mismatched connections)
+- [ ] Node selection (click, box select, marquee)
+- [ ] Node deletion (Delete key, backspace)
+- [ ] Connection creation (drag from output to input port)
+- [ ] Connection deletion (right-click on connection)
+
+### 16.2 Shader Node Editor
+- [ ] Shader node graph type
+- [ ] Node types: Principled BSDF, Emission, Glossy BSDF, Mix Shader
+- [ ] Input nodes: Texture Image, Color, Value, Normal, UV
+- [ ] Math nodes: Add, Subtract, Multiply, Divide, Power, Mix, Clamp
+- [ ] Vector nodes: Combine XYZ, Separate XYZ, Vector Math, Map Range
+- [ ] Color nodes: Mix Color, RGB to HSV, HSV to RGB, Color Ramp
+- [ ] Texture nodes: Checker, Brick, Noise, Voronoi, Gradient
+- [ ] Output node: Material Output (connects to Babylon ShaderMaterial)
+- [ ] Real-time preview (shader updates as nodes change)
+- [ ] Shader preset library (metal, wood, marble, plastic, etc.)
+
+### 16.3 Compositing Node Editor
+- [ ] Compositor node graph type
+- [ ] Input nodes: Render Layer, Image, Mask
+- [ ] Process nodes: Blur, Sharpen, Brightness/Contrast, Color Balance, Hue/Sat
+- [ ] Mix nodes: Alpha Over, Multiply, Screen, Add, Subtract
+- [ ] Filter nodes: Glare, Bloom, DoF, Fog
+- [ ] Output nodes: Viewer, Composite, File Output
+- [ ] Compositing preset library (cinematic, stylized, vintage)
+
+### 16.4 Geometry Node Editor
+- [ ] Geometry node graph type
+- [ ] Input nodes: Object Info, Collection Info, Mesh Primitive
+- [ ] Transform nodes: Transform, Set Position, Set Rotation, Set Scale
+- [ ] Mesh nodes: Subdivide, Extrude, Delete, Boolean, Merge
+- [ ] Generate nodes: Grid, Circle, Curve, Instance on Points
+- [ ] Math nodes: Float Math, Vector Math, Boolean
+- [ ] Output nodes: Group Output, Set Material
+- [ ] Spreadsheet viewer (inspect geometry data at each node)
+- [ ] Geometry presets (array, random scatter, curve-based)
+
+### 16.5 Game Logic Visual Scripting
+- [ ] Logic node graph type (like Unreal Blueprints)
+- [ ] Event nodes: On Start, On Update, On Collision, On Input
+- [ ] Action nodes: Move, Rotate, Apply Force, Set Variable, Play Animation
+- [ ] Flow control: Branch (if/else), For Loop, While Loop, Sequence, Delay
+- [ ] Variable nodes: Get/Set (entity-scoped and global)
+- [ ] Math nodes: Compare, Arithmetic, Trigonometry, Random
+- [ ] Entity nodes: Get Property, Set Property, Find By Name, Spawn
+- [ ] Debug nodes: Print, Watch, Breakpoint
+
+### 16.6 Node System Features
+- [ ] Node groups (collapse subgraph into reusable group)
+- [ ] Node group inputs/outputs (expose selected ports)
+- [ ] Node library (save/load node groups to IndexedDB)
+- [ ] Node search (Ctrl+Space to find and add nodes)
+- [ ] Node minimap (overview of large graphs)
+- [ ] Frame nodes (organize related nodes visually)
+- [ ] Copy/paste nodes (with connections)
+- [ ] Undo/redo for node operations
+- [ ] Commit and push: Phase 16 complete
+
+---
+
+## Phase 17: Game Logic & Physics
+
+### 17.1 Physics Engine Integration
+- [ ] Install Babylon.js physics plugin (Havok via WASM or Ammo.js)
+- [ ] Physics engine initialization (gravity, time step)
+- [ ] Rigid body component (mass, friction, restitution, linear/angular damping)
+- [ ] Collision shapes: box, sphere, cylinder, capsule, convex hull, mesh
+- [ ] Static vs dynamic body toggle
+- [ ] Physics material (bounciness, friction)
+- [ ] Physics debug visualization (wireframe colliders)
+
+### 17.2 Collision & Triggers
+- [ ] Collision event system (onCollisionEnter, onCollisionExit, onCollisionStay)
+- [ ] Trigger volumes (invisible colliders that detect overlap)
+- [ ] Physics layers / collision groups (which objects collide with which)
+- [ ] Raycast API (physics raycast for gameplay)
+- [ ] Sweep test (cast shape along path)
+- [ ] Overlap test (check if shape overlaps any colliders)
+
+### 17.3 Game Mode
+- [ ] Play mode toggle (edit mode → play mode, separate from edit)
+- [ ] Game loop (fixed time step update, variable render)
+- [ ] Pause/resume in play mode
+- [ ] Stop play mode (reset to pre-play state)
+- [ ] Play mode indicator (border color change, status bar)
+- [ ] Game settings panel (gravity vector, time step, max physics iterations)
+
+### 17.4 Game Scripting
+- [ ] Script component (attach script to entity)
+- [ ] Script lifecycle: onInit, onUpdate, onCollision, onDestroy
+- [ ] Entity API in scripts: getComponent, setProperty, getPosition, setPosition
+- [ ] Input API in scripts: isKeyDown, isKeyPressed, getMousePosition
+- [ ] Time API: deltaTime, timeSinceStart, fixedDeltaTime
+- [ ] Transform API: translate, rotate, lookAt, getForward, getRight, getUp
+
+### 17.5 Character Controller
+- [ ] Basic character controller (WASD movement, mouse look)
+- [ ] Jump mechanic (space bar, ground check via raycast)
+- [ ] Gravity application
+- [ ] Collision response (slide along walls, not get stuck)
+- [ ] Slope handling (walk up/down slopes)
+
+### 17.6 State Machine
+- [ ] State machine component (visual state graph for entity behavior)
+- [ ] States: Idle, Walk, Run, Jump, Fall, Attack, etc.
+- [ ] Transitions: conditions for state changes
+- [ ] State actions: onEnter, onUpdate, onExit callbacks
+- [ ] State machine visualization (node graph showing states and transitions)
+- [ ] Parameterized transitions (speed > threshold → Walk state)
+
+### 17.7 Game Export
+- [ ] Export as standalone HTML (embed scene + scripts in single file)
+- [ ] Export game settings (physics, controls, resolution)
+- [ ] Export scripts (inline into HTML)
+- [ ] Minimal runtime (stripped-down Babylon.js for game playback)
+- [ ] Commit and push: Phase 17 complete
+
+---
+
+## Phase 18: UV Mapping & Texturing
+
+### 18.1 UV Unwrapping
+- [ ] UV editor mode (2D canvas showing UV layout)
+- [ ] UV editor component (separate panel or tab alongside viewport)
+- [ ] Smart UV project (angle-based unwrapping)
+- [ ] Cube projection (6-sided projection)
+- [ ] Cylinder projection (wrap around cylinder)
+- [ ] Sphere projection (spherical mapping)
+- [ ] Camera projection (project from current view)
+- [ ] Seam marking tool (mark edges as UV seams)
+
+### 18.2 UV Editing
+- [ ] UV selection (vertex, edge, face selection in UV space)
+- [ ] UV move/rotate/scale (gizmo-like controls in 2D)
+- [ ] UV pinning (pin UV vertices during unwrap)
+- [ ] UV alignment (align to axis, distribute evenly)
+- [ ] UV weld (merge coincident UV vertices)
+- [ ] UV rip (split UV vertices at seams)
+- [ ] UV snap (snap to grid, snap to other vertices)
+- [ ] UV mirror (flip U or V axis)
+- [ ] UV checker texture preview
+
+### 18.3 UV Packing
+- [ ] Island detection (connected UV regions)
+- [ ] Island packing (arrange islands to minimize wasted space)
+- [ ] Island rotation (align islands to U/V axes)
+- [ ] Pack margin control (padding between islands)
+- [ ] Pack target size (1024, 2048, 4096)
+- [ ] Lock overlapping islands
+
+### 18.4 Texture Painting
+- [ ] Texture paint mode (paint directly on mesh in 3D viewport)
+- [ ] Paint brush (color, size, opacity, falloff)
+- [ ] Paint layers (base color, roughness, metallic, normal, emission)
+- [ ] Layer blending (add, subtract, multiply, overlay)
+- [ ] Paint tools: brush, fill, gradient, clone/stamp
+- [ ] Undo/redo for paint strokes
+- [ ] Stylus pressure support (size/opacity)
+- [ ] Texture projection (project 2D image onto mesh)
+
+### 18.5 Procedural Textures
+- [ ] Noise texture generator (Perlin, Simplex, Worley/Voronoi)
+- [ ] Pattern generators: checker, brick, wood grain, marble, fabric
+- [ ] Procedural texture preview in material editor
+- [ ] Texture size and tiling controls
+- [ ] Color ramp for texture mapping
+- [ ] Combine procedural textures (mix, multiply, blend)
+
+### 18.6 Texture Baking
+- [ ] Ambient occlusion baking (cavity and ambient shadow)
+- [ ] Curvature baking (convex/concave edge detection)
+- [ ] Thickness baking (wall thickness for 3D printing)
+- [ ] Normal map baking (from high-poly to low-poly)
+- [ ] Texture resolution settings (512-8192)
+- [ ] Bake samples control (ray count for quality)
+- [ ] Bake margin (bleed prevention at UV seams)
+- [ ] Commit and push: Phase 18 complete
+
+---
+
+## Phase 19: Advanced Rendering
+
+### 19.1 PBR Materials
+- [ ] PBRMaterial integration (albedo, normal, metallic, roughness, AO, emissive)
+- [ ] Material presets (metal, plastic, wood, stone, glass, fabric)
+- [ ] Clearcoat support (car paint, lacquered surfaces)
+- [ ] Sheen support (fabric, velvet)
+- [ ] Subsurface scattering approximation
+- [ ] Anisotropic reflections
+- [ ] IOR (index of refraction) for transparent materials
+
+### 19.2 Environment & Lighting
+- [ ] HDRI environment loading (.hdr/.exr)
+- [ ] Image-based lighting (IBL)
+- [ ] Environment rotation/offset controls
+- [ ] Environment intensity slider
+- [ ] Studio lighting presets (3-point, dramatic, neutral)
+- [ ] Area lights (rectangle, disc, sphere light types)
+- [ ] Light linking (control which lights affect which objects)
+
+### 19.3 Post-Processing
+- [ ] Screen-space ambient occlusion (SSAO/GTAO)
+- [ ] Screen-space reflections (SSR)
+- [ ] Bloom/glow effect (threshold, intensity, diffusion)
+- [ ] Depth of field (f-stop, focal distance, blade count)
+- [ ] Motion blur (shutter speed, blur amount)
+- [ ] Chromatic aberration
+- [ ] Vignette effect
+- [ ] Color grading (LUT, lift/gamma/gain, temperature)
+- [ ] Anti-aliasing (FXAA, MSAA, TAA)
+- [ ] Tone mapping (ACES, Reinhard, Filmic, Linear)
+
+### 19.4 Shadows
+- [ ] Shadow mapping (directional, point, spot light shadows)
+- [ ] PCF soft shadows
+- [ ] Cascaded shadow maps (CSM for large scenes)
+- [ ] Shadow resolution control
+- [ ] Shadow bias control (prevent shadow acne/peter-panning)
+- [ ] Contact shadows (fake shadows for small objects)
+- [ ] Shadow color tinting
+
+### 19.5 Render Settings & Output
+- [ ] Render settings panel (resolution, quality, samples)
+- [ ] Screenshot capture (PNG/JPEG)
+- [ ] Render to file (high-resolution export)
+- [ ] Render region (render only selected area)
+- [ ] Render layers (separate passes: diffuse, specular, depth, normal)
+- [ ] Path tracing preview (WebGPU when available)
+- [ ] Denoising (post-process render to reduce noise)
+- [ ] Commit and push: Phase 19 complete
+
+---
+
 ## Backlog (Lower Priority)
 
 These items are deferred from earlier phases or nice-to-haves:
@@ -379,6 +845,7 @@ These items are deferred from earlier phases or nice-to-haves:
 
 ## Progress Summary
 
-- **Total Phases:** 11
-- **Completed:** Phases 1-10, Phase 11 (nearly complete — 1 item deferred)
-- **Backlog:** 11 deferred items
+- **Total Phases:** 19
+- **Completed:** Phases 1-11
+- **Planned:** Phases 12-19
+- **Backlog:** 14 deferred items

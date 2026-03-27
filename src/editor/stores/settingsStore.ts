@@ -100,7 +100,7 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
     persistToLocalStorage("blendergl-ai-provider", provider);
     const defaultEndpoint = provider === "anthropic" ? "https://api.anthropic.com" : "https://api.openai.com";
     const defaultModel = provider === "anthropic" ? "claude-sonnet-4-20250514" : "gpt-4o";
-    persistToLocalStorage("blendergl-endpoint", defaultEndpoint);
+    persistToLocalStorage("blendergl-ai-endpoint", defaultEndpoint);
     persistToLocalStorage("blendergl-ai-model", defaultModel);
     set({ aiProvider: provider, aiEndpoint: defaultEndpoint, aiModel: defaultModel });
   },

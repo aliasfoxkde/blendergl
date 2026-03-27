@@ -1,8 +1,8 @@
 # BlenderGL - Progress Log
 
 **Last Updated:** 2026-03-27
-**Current Phase:** Phase 9 — Advanced Editor Features
-**Overall Progress:** 80%
+**Current Phase:** Phase 12 — 3D Printing & Slicing
+**Overall Progress:** 95%
 
 ---
 
@@ -18,8 +18,10 @@
 | Phase 6: Landing + PWA | Complete | 100% |
 | Phase 7: Cloudflare Deployment | Complete | 100% |
 | Phase 8: Mesh Editing | Complete | 100% |
-| Phase 9: Advanced Features | In Progress | 0% |
-| Phase 10: AI Augmentation | Pending | 0% |
+| Phase 9: Advanced Features | Complete | 95% |
+| Phase 10: AI Augmentation | Complete | 100% |
+| Phase 11: Feature Completion | Complete | 90% |
+| Phase 12: 3D Printing | Planning | 0% |
 
 ---
 
@@ -94,14 +96,57 @@
 - Added edit mode info display in PropertiesPanel
 - Hid transform gizmo in edit mode
 
-**API Fixes:**
-- `mesh.markVerticesDataAsUpdatable({position: true})` → call per kind as string
-- `mesh.totalVertices` → `mesh.getTotalVertices()` method
-- `mesh.getWorldMatrix().getInverse()` → `.invert()` method
-- `MeshBuilder.CreatePoints()` doesn't exist → used `CreateSphere` with small diameter
-- `LinesMesh` type needed for `.color` property access
-- `export let` → mutable ref object pattern `{ current: T | null }`
+### 2026-03-27 — Session 4: Phases 9-11 — Advanced Features, AI, Feature Completion
+
+**Phase 9 — Advanced Editor Features:**
+- Viewport shading modes (wireframe, solid, material) with Z key cycling
+- Camera presets (Numpad 1/3/7 for front/right/top, Ctrl for opposite)
+- Perspective/Ortho toggle (Numpad 5)
+- DuplicateCommand with undo/redo (Shift+D)
+- Parent/child linking (Ctrl+P, Alt+P)
+- Enhanced status bar (mode, element mode, selection count, shading, snap)
+- Auto-save with debounced persistence (useAutoSave hook)
+- Grid + snap settings panel in PropertiesPanel
+- Right-click context menu (object/edit mode items)
+- Box select (drag rectangle selection via screen projection)
+
+**Phase 10 — AI Augmentation:**
+- Extended settingsStore with AI config (provider, apiKey, endpoint, model)
+- Created fetch-based streaming client for Anthropic and OpenAI APIs
+- Created AI chat store (messages, streaming state, errors)
+- Built collapsible AI panel with chat UI
+- Implemented action block parsing (`[action: type param=value]`)
+- Built 4 AI tools: generate_object, set_material, analyze_scene, arrange_objects
+- AI settings UI in panel (provider, key, endpoint, model)
+- F3 keyboard shortcut to toggle AI panel
+- localStorage persistence for API config
+
+**Phase 11 — Feature Completion:**
+- glTF/GLB import via Babylon SceneLoader.ImportMeshAsync
+- File input button in toolbar for import
+- Asset browser component (list/load/delete saved scenes)
+- Context menu component (right-click, object/edit mode items)
+- Box select (drag rectangle, bounding box projection)
+- Grid/snap settings panel (size, subdivisions, snap, angle)
+- Subdivide faces, merge vertices, inset faces operations
+- Texture upload component in material panel
+- I key for inset, Ctrl+D for subdivide in edit mode
+
+**Bug Fixes:**
+- Fixed settingsStore localStorage key typo ("blendergl-endpoint" → "blendergl-ai-endpoint")
+- Fixed Vector3.Project API (requires BabylonViewport object, not separate args)
+- Fixed box select camera access (direct from scene, not via transform matrix chain)
+- Fixed Vite server binding (0.0.0.0 instead of specific IP)
+
+### 2026-03-27 — Session 5: Docs Audit + Phase 12 Planning
+
+**Actions:**
+- Audited all docs (TASKS.md, PLAN.md, PROGRESS.md) against actual code
+- Fixed TASKS.md checkboxes for auto-save, grid/snap panel, context menu
+- Updated PLAN.md Phase 9-11 status to COMPLETE
+- Rewrote PROGRESS.md with accurate session logs and progress percentages
+- Fixed settingsStore localStorage key bug
+- Planning Phase 12: 3D Printing & Slicing
 
 **Next Steps:**
-- Phase 9: Advanced editor features (shading modes, camera presets, duplicate, etc.)
-- Phase 10: AI augmentation
+- Phase 12: 3D Printing & Slicing (research, planning, implementation)

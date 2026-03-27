@@ -156,7 +156,7 @@ The Viewport component maintains a `Map<string, AbstractMesh>` that mirrors the 
 - Wireframe overlay rendering
 - Edit mode UI in toolbar and properties panel
 
-### Phase 9: Advanced Editor Features — IN PROGRESS
+### Phase 9: Advanced Editor Features — COMPLETE
 - Viewport shading modes: wireframe, solid, material (Z key cycle)
 - Camera presets (Numpad 1/3/7 for front/right/top, Ctrl for opposite)
 - Perspective/Ortho toggle (Numpad 5)
@@ -168,15 +168,172 @@ The Viewport component maintains a `Map<string, AbstractMesh>` that mirrors the 
 - Right-click context menus
 - Auto-save with debounced persistence
 
-### Phase 10: AI Augmentation — PLANNED
+### Phase 10: AI Augmentation — COMPLETE
 - Collapsible AI assistant panel in editor
-- Chat interface for natural language commands
-- Backend API integration (OpenAI/Anthropic compatible)
-- "Generate object" from text → procedural geometry
-- "Optimize mesh" → decimation, cleanup
-- "Analyze scene" → stats, suggestions
-- "Arrange objects" → auto-layout
-- "Create material" → AI-generated PBR materials
+- Chat interface with streaming responses
+- Anthropic and OpenAI API support (browser-direct, no backend)
+- "Generate object" tool — create primitives from text
+- "Set material" tool — apply properties to selected
+- "Analyze scene" tool — return stats
+- "Arrange objects" tool — grid layout
+- AI settings UI (provider, API key, endpoint, model)
+- localStorage persistence for API keys
+
+### Phase 11: Feature Completion — COMPLETE
+- glTF/GLB import via Babylon SceneLoader
+- Asset browser (saved scenes from IndexedDB)
+- Right-click context menu (object/edit mode items)
+- Box select (drag rectangle selection)
+- Grid/snap settings panel (size, subdivisions, snap, angle)
+- Advanced mesh operations (subdivide, merge, inset)
+- Texture upload component
+
+### Phase 12: 3D Printing & Slicing — PLANNED
+- STL export (binary + ASCII) from Babylon.js mesh geometry
+- 3MF export/import (manufacturing format)
+- Mesh manifold validation (watertight check, non-manifold edge detection)
+- Mesh repair (fill holes, fix normals, remove degenerate faces)
+- Boolean operations via CSG (union, difference, intersection)
+- Print preparation panel (mesh analysis: volume, dimensions, estimated print time)
+- Print settings: layer height, infill density/pattern, shell thickness, support generation
+- G-code generation (basic FDM paths: perimeter, infill, support)
+- Print preview (layer-by-layer visualization)
+- Printer profile management (bed size, nozzle diameter, supported materials)
+
+### Phase 13: Scripting Engine — PLANNED
+- Monaco Editor integration for in-browser code editing (JavaScript/TypeScript)
+- Scripting API surface: `blendergl.scene`, `blendergl.ops`, `blendergl.data`
+- Script sandbox execution (Web Worker isolation, restricted globals)
+- Script types: startup scripts, operator scripts, callback scripts
+- Script console with output/error display
+- Script editor panel (new editor space, tab alongside 3D viewport)
+- Hot-reload on script save
+- Script library browser (saved scripts in IndexedDB)
+- Pre-built API examples and templates
+- Auto-complete for scripting API
+
+### Phase 14: Rigging & Animation — PLANNED
+- Babylon.js Skeleton system integration (bones, bone hierarchy)
+- Bone creation/editing mode (armature component on entities)
+- Bone constraints: IK solver, look-at, parent, track-to
+- Weight painting mode (vertex-to-bone weight assignment)
+- Skinned mesh rendering (attach mesh to skeleton)
+- Keyframe animation system (timeline, key insertion/deletion)
+- Animation blending (crossfade between clips)
+- Dope sheet editor (keyframe timeline visualization)
+- Pose library (save/restore/apply named poses)
+- Animation playback controls (play, pause, scrub, loop)
+- Animation export (glTF animation clips)
+
+### Phase 15: Sculpting — PLANNED
+- Sculpt mode (new editor mode, like Object/Edit/Sculpt)
+- Dynamic subdivision (Catmull-Clark, adaptive tessellation)
+- Brush engine: Sculpt, Smooth, Grab, Inflate, Pinch, Flatten, Crease
+- Brush settings: size, strength, falloff curve, spacing
+- Multiresolution modifier (subdivision levels for detail)
+- Sculpt mask (protect areas from brush strokes)
+- Dyntopo (dynamic topology — remesh during sculpting)
+- Normal map baking (high-poly to low-poly detail transfer)
+- Symmetry (mirror strokes across axes)
+- Face sets (isolated sculpting regions)
+- Remeshing (maintain mesh quality after operations)
+
+### Phase 16: Node Editor & Visual Scripting — PLANNED
+- Node graph framework (react-flow or custom canvas-based)
+- Shader node editor (PBR material graph → Babylon ShaderMaterial)
+- Compositing node editor (post-processing pipeline)
+- Geometry node editor (procedural mesh generation/modification)
+- Visual scripting for game logic (like Unreal Blueprints)
+- Node types: value, math, vector, color, texture, mesh, boolean, transform
+- Node connections (typed ports, auto-conversion, validation)
+- Node groups (collapse subgraphs into reusable groups)
+- Node presets/library (saved node configurations)
+- Real-time preview (node graph changes reflected in viewport)
+
+### Phase 17: Game Logic & Physics — PLANNED
+- Babylon.js physics integration (Havok or Ammo.js via WASM)
+- Rigid body physics (collision shapes, mass, friction, restitution)
+- Play mode (separate simulation mode from edit mode)
+- Game object scripting (attach scripts to entities)
+- Collision events (onCollisionEnter/Exit/Stay)
+- Trigger volumes (invisible collision zones)
+- Character controller (basic movement, jumping, gravity)
+- State machine system (visual state graph for entity behavior)
+- Game settings (gravity, time step, physics layers)
+- Game export (standalone HTML with embedded scene + scripts)
+
+### Phase 18: UV Mapping & Texturing — PLANNED
+- UV unwrapping tools (smart project, cube project, cylinder project, sphere project)
+- UV editor (2D viewport showing UV layout)
+- Seam marking (edge selection in UV mode)
+- UV packing (minimize wasted texture space)
+- Texture painting (paint directly on mesh in viewport)
+- Layer-based texture painting (base color, normal, roughness, metallic layers)
+- Texture baking (ambient occlusion, curvature, thickness maps)
+- Procedural textures (noise, checker, brick, wood patterns via nodes)
+- Image texture import and management
+- Texture atlas generation (combine multiple textures into one)
+
+### Phase 19: Advanced Rendering — PLANNED
+- PBR materials (PBRMaterial in Babylon.js)
+- HDRI environment lighting (IBL)
+- Screen-space reflections (SSR)
+- Ambient occlusion (SSAO/GTAO)
+- Bloom and glow post-processing
+- Depth of field
+- Motion blur
+- Shadow mapping (PCF, VSM, cascaded)
+- Path tracing preview (WebGPU when available)
+- Render settings panel (resolution, samples, denoising)
+- Screenshot/render to image
+
+---
+
+## Expanded Architecture (Phases 12-19)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Editor Shell (React)                         │
+│  ┌──────────┐ ┌────────────┐ ┌──────────┐ ┌───────────────────────┐│
+│  │ Toolbar   │ │ 3D Viewport│ │ Node      │ │ Properties Panel     ││
+│  │          │ │ (Babylon.js)│ │ Editor    │ │                      ││
+│  ├──────────┤ │            │ │ (react-   │ │ Material • Physics    ││
+│  │ Scene    │ │            │ │  flow)    │ │ Print • Animation     ││
+│  │ Hierarchy│ │            │ │           │ │                       ││
+│  ├──────────┤ ├────────────┤ ├──────────┤ ├───────────────────────┤│
+│  │ Script   │ │ UV Editor  │ │ Timeline  │ │ AI Assistant          ││
+│  │ Editor   │ │ (2D Canvas)│ │ (Dope     │ │                       ││
+│  │ (Monaco) │ │            │ │  Sheet)   │ │                       ││
+│  └──────────┘ └────────────┘ └──────────┘ └───────────────────────┘│
+│  ┌─────────────────────────────────────────────────────────────────┐│
+│  │                    Status Bar                                   ││
+│  └─────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────▼───────────────────────────────────────┐
+│                     Editor State (Zustand)                           │
+│  Scene • Selection • History • Settings • Material • EditMode       │
+│  Sculpt • Animation • Physics • Script • Print • UV                 │
+└─────────────────────────────┬───────────────────────────────────────┘
+                              │
+┌─────────────────────────────▼───────────────────────────────────────┐
+│                     Engine Layer                                     │
+│  Geometry • Physics (Havok/Ammo) • Animation • Slicing              │
+│  Scripting VM • Node Evaluation • Sculpt Engine                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### New Tech Dependencies (Phases 12-19)
+
+| Library | Phase | Purpose |
+|---------|-------|---------|
+| `@monaco-editor/react` | 13 | In-browser code editor for scripting |
+| `manifold-3d` | 12 | Boolean operations + mesh validation (WASM) |
+| `reactflow` or custom | 16 | Node graph visualization |
+| `@babylonjs/havok` | 17 | Physics engine (WASM) |
+| Babylon.js Skeleton | 14 | Built-in bone/skinning system |
+| Babylon.js Animation | 14 | Built-in keyframe animation |
+| Babylon.js PBRMaterial | 19 | Physically-based rendering |
 
 ---
 
