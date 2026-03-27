@@ -19,6 +19,7 @@ import { formatAnalysis, estimatePrint, analyzeMesh, repairMesh, fillHoles } fro
 import { sliceMesh } from "@/editor/utils/gcode/slicer";
 import { generateGcode, downloadGcode } from "@/editor/utils/gcode/gcodeGenerator";
 import { sceneRef } from "@/editor/utils/sceneRef";
+import { useUvStore } from "@/editor/stores/uvStore";
 import type { Mesh } from "@babylonjs/core/Meshes/mesh.js";
 
 export function PropertiesPanel() {
@@ -316,6 +317,7 @@ export function PropertiesPanel() {
         <PropertyRow label="Texture">
           <TextureUpload entityId={entity.id} />
         </PropertyRow>
+        <ProceduralTextures entityId={entity.id} />
       </Section>
 
       {/* Mesh Info (3D Print) */}
@@ -812,6 +814,54 @@ function TextureUpload({ entityId }: { entityId: string }) {
           Remove
         </button>
       )}
+    </div>
+  );
+}
+
+const PROCEDURAL_TYPES = [
+  { key: "checker", label: "Checker", fn: () => useUvStore.getState().generateCheckerTexture(256, 8) },
+  { key: "noise", label: "Noise", fn: () => useUvStore.getState().generateNoiseTexture(256, 10) },
+  { key: "gradient", label: "Gradient", fn: () => useUvStore.getState().generateGradientTexture(256, "#000000", "#ffffff", "horizontal") },
+  { key: "grid", label: "Grid", fn: () => useUvStore.getState().generateGridTexture(256, 8, 1) },
+  { key: "ramp", label: "Ramp", fn: () => useUvStore.getState().generateColorRampTexture(256, [{ pos: 0, color: "#ff0000" }, { pos: 0.5, color: "#00ff00" }, { pos: 1, color: "#0000ff" }]) },
+] as const;
+
+function ProceduralTextures({ entityId }: { entityId: string }) {
+  const [preview, setPreview] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    // Generate previews on mount
+    const previews: Record<string, string> = {};
+    for (const pt of PROCEDURAL_TYPES) {
+      previews[pt.key] = pt.fn();
+    }
+    setPreview(previews);
+  }, []);
+
+  const apply = (key: string) => {
+    const dataUrl = preview[key];
+    if (!dataUrl) return;
+    useMaterialStore.getState().updateMaterial(entityId, { diffuseTexture: dataUrl });
+  };
+
+  return (
+    <div>
+      <div className="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Procedural Textures</div>
+      <div className="flex gap-1 flex-wrap">
+        {PROCEDURAL_TYPES.map((pt) => (
+          <button
+            key={pt.key}
+            className="flex flex-col items-center gap-0.5 p-1 bg-[#1a1a2e] border border-[#333] rounded hover:border-blue-500 transition w-14"
+            onClick={() => apply(pt.key)}
+            title={`Apply ${pt.label} texture`}
+          >
+            {preview[pt.key] && (
+              <img src={preview[pt.key]} alt={pt.label} className="w-10 h-10 rounded-sm border border-[#444]" style={{ imageRendering: "pixelated" }} />
+            )}
+            <span className="text-[8px] text-gray-500">{pt.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

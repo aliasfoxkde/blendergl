@@ -746,12 +746,12 @@
 - [x] Paint tools: brush, fill, gradient, clone/stamp
 - [x] Undo/redo for paint strokes
 - [x] Stylus pressure support (size/opacity)
-- [ ] Texture projection (project 2D image onto mesh)
+- [x] Texture projection (project 2D image onto mesh)
 
 ### 18.5 Procedural Textures
 - [x] Noise texture generator (Perlin, Simplex, Worley/Voronoi)
 - [x] Pattern generators: checker, brick, wood grain, marble, fabric
-- [ ] Procedural texture preview in material editor
+- [x] Procedural texture preview in material editor
 - [x] Texture size and tiling controls
 - [x] Color ramp for texture mapping
 - [x] Combine procedural textures (mix, multiply, blend)

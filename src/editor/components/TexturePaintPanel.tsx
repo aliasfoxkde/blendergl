@@ -3,8 +3,11 @@
  * Provides brush settings, layer management, tool selection, and undo/redo.
  */
 
+import { useCallback } from "react";
 import { useTexturePaintStore } from "@/editor/stores/texturePaintStore";
 import type { PaintLayerType, PaintBlendMode, PaintToolType } from "@/editor/stores/texturePaintStore";
+import { sceneRef } from "@/editor/utils/sceneRef";
+import { AbstractMesh } from "@babylonjs/core";
 
 const LAYER_TYPES: { type: PaintLayerType; label: string }[] = [
   { type: "base_color", label: "Base Color" },
@@ -19,6 +22,7 @@ const TOOLS: { tool: PaintToolType; label: string; shortcut: string }[] = [
   { tool: "fill", label: "Fill", shortcut: "F" },
   { tool: "gradient", label: "Gradient", shortcut: "G" },
   { tool: "clone", label: "Clone", shortcut: "C" },
+  { tool: "project", label: "Project", shortcut: "P" },
 ];
 
 const BLEND_MODES: { mode: PaintBlendMode; label: string }[] = [
@@ -63,6 +67,44 @@ export function TexturePaintPanel() {
   if (!active) return null;
 
   const activeLayer = activeLayerId ? layers[activeLayerId] : null;
+
+  // Texture projection handler
+  const handleProjectTexture = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      const scene = sceneRef.current;
+      if (!scene) return;
+
+      const store = useTexturePaintStore.getState();
+      const entityId = store.activeEntityId;
+      if (!entityId) return;
+
+      const mesh = scene.meshes.find(
+        (m) => m instanceof AbstractMesh && m.metadata?.entityId === entityId
+      ) as AbstractMesh | undefined;
+      if (!mesh || !mesh.geometry) return;
+
+      const vertexData = mesh.geometry.getVerticesData("position");
+      const normalData = mesh.geometry.getVerticesData("normal");
+      const indexData = mesh.geometry.getIndices();
+      if (!vertexData || !normalData || !indexData) return;
+
+      const camera = scene.activeCamera;
+      if (!camera) return;
+
+      // Build view-projection matrix
+      camera.getViewMatrix();
+      const vpMatrix = scene.getTransformMatrix().asArray();
+
+      store.projectTexture(base64, Array.from(vertexData), Array.from(normalData), Array.from(indexData), vpMatrix);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }, []);
 
   return (
     <div className="flex flex-col gap-2 text-[10px]">
@@ -201,6 +243,18 @@ export function TexturePaintPanel() {
               className="w-16 bg-[#1a1a2e] border border-[#333] rounded px-1 py-0.5 text-gray-300"
             />
           </div>
+        </div>
+      )}
+
+      {/* Project Texture (only when project tool active) */}
+      {tool === "project" && (
+        <div>
+          <div className="text-[9px] text-gray-500 uppercase tracking-wider mb-1">Texture Projection</div>
+          <p className="text-[9px] text-gray-500 mb-1">Project an image through the camera onto the mesh surface.</p>
+          <label className="flex-1 cursor-pointer bg-[#2a2a3a] border border-[#444] rounded px-2 py-1 text-[10px] text-gray-400 hover:text-gray-200 hover:border-blue-500 transition text-center block">
+            Load Image to Project
+            <input type="file" accept="image/*" onChange={handleProjectTexture} className="hidden" />
+          </label>
         </div>
       )}
 

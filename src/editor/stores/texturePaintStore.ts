@@ -20,7 +20,7 @@ export interface PaintLayer {
 
 export type PaintBlendMode = "normal" | "add" | "subtract" | "multiply" | "overlay";
 
-export type PaintToolType = "brush" | "fill" | "gradient" | "clone";
+export type PaintToolType = "brush" | "fill" | "gradient" | "clone" | "project";
 
 export interface PaintStroke {
   points: { x: number; y: number; pressure: number; color: string }[];
@@ -99,6 +99,13 @@ interface TexturePaintState {
   // Paint operations (called from viewport interaction)
   paintAt: (x: number, y: number, pressure: number) => void;
   fillLayer: (color: string) => void;
+  projectTexture: (
+    imageData: string,
+    positions: number[],
+    normals: number[],
+    indices: number[],
+    cameraMatrix: number[],
+  ) => void;
   getCompositeTexture: () => string | null;
 }
 
@@ -387,6 +394,96 @@ export const useTexturePaintStore = create<TexturePaintState>()(
 
       ctx.fillStyle = color;
       ctx.fillRect(0, 0, res, res);
+    },
+
+    projectTexture: (imageData, positions, _normals, indices, cameraMatrix) => {
+      const state = get();
+      if (!state.active || !state.activeLayerId) return;
+
+      const layer = state.layers[state.activeLayerId];
+      if (!layer || !layer.visible) return;
+
+      const res = state.resolution;
+      if (!layer.canvas) {
+        layer.canvas = document.createElement("canvas");
+        layer.canvas.width = res;
+        layer.canvas.height = res;
+      }
+
+      const ctx = layer.canvas.getContext("2d");
+      if (!ctx) return;
+
+      const vertexCount = positions.length / 3;
+
+      // Compute UVs for each vertex using camera projection
+      const uvs: { u: number; v: number }[] = [];
+      for (let i = 0; i < vertexCount; i++) {
+        const x = positions[i * 3];
+        const y = positions[i * 3 + 1];
+        const z = positions[i * 3 + 2];
+
+        const cx = cameraMatrix[0] * x + cameraMatrix[4] * y + cameraMatrix[8] * z + cameraMatrix[12];
+        const cy = cameraMatrix[1] * x + cameraMatrix[5] * y + cameraMatrix[9] * z + cameraMatrix[13];
+        const cw = cameraMatrix[3] * x + cameraMatrix[7] * y + cameraMatrix[11] * z + cameraMatrix[15];
+
+        if (Math.abs(cw) < 0.0001) {
+          uvs.push({ u: 0.5, v: 0.5 });
+          continue;
+        }
+
+        const ndcX = cx / cw;
+        const ndcY = cy / cw;
+        uvs.push({ u: (ndcX + 1) * 0.5, v: (ndcY + 1) * 0.5 });
+      }
+
+      // Load source image and rasterize each triangle
+      const img = new Image();
+      img.onload = () => {
+        const triCount = indices.length / 3;
+        for (let t = 0; t < triCount; t++) {
+          const i0 = indices[t * 3];
+          const i1 = indices[t * 3 + 1];
+          const i2 = indices[t * 3 + 2];
+
+          // Destination UVs on paint canvas
+          const dx0 = uvs[i0]?.u ?? 0; const dy0 = uvs[i0]?.v ?? 0;
+          const dx1 = uvs[i1]?.u ?? 0; const dy1 = uvs[i1]?.v ?? 0;
+          const dx2 = uvs[i2]?.u ?? 0; const dy2 = uvs[i2]?.v ?? 0;
+
+          // Skip degenerate triangles
+          const area = Math.abs((dx1 - dx0) * (dy2 - dy0) - (dx2 - dx0) * (dy1 - dy0));
+          if (area < 0.0001) continue;
+
+          // Source UVs from the image
+          const sx0 = uvs[i0]?.u ?? 0; const sy0 = uvs[i0]?.v ?? 0;
+          const sx1 = uvs[i1]?.u ?? 0; const sy1 = uvs[i1]?.v ?? 0;
+          const sx2 = uvs[i2]?.u ?? 0; const sy2 = uvs[i2]?.v ?? 0;
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(dx0 * res, dy0 * res);
+          ctx.lineTo(dx1 * res, dy1 * res);
+          ctx.lineTo(dx2 * res, dy2 * res);
+          ctx.closePath();
+          ctx.clip();
+
+          // Affine transform from source to destination
+          const denom = (sx1 - sx0) * (sy2 - sy0) - (sx2 - sx0) * (sy1 - sy0);
+          if (Math.abs(denom) < 0.0001) { ctx.restore(); continue; }
+
+          const a = ((dx1 - dx0) * (sy2 - sy0) - (dx2 - dx0) * (sy1 - sy0)) / denom * res;
+          const b = ((dx2 - dx0) * (sx1 - sx0) - (dx1 - dx0) * (sx2 - sx0)) / denom * res;
+          const c = ((sx1 - sx0) * (dy2 - dy0) - (sx2 - sx0) * (dy1 - dy0)) / denom * res;
+          const d = ((sx2 - sx0) * (dx1 - dx0) - (dx2 - dx0) * (sx1 - sx0)) / denom * res;
+
+          ctx.setTransform(a, c, b, d, dx0 * res - (a * sx0 + b * sy0) * res, dy0 * res - (c * sx0 + d * sy0) * res);
+          ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, res, res);
+
+          ctx.restore();
+        }
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      };
+      img.src = imageData;
     },
 
     getCompositeTexture: () => {
