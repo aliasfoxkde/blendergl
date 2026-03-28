@@ -346,3 +346,25 @@
 **Files Modified:**
 - `src/test-setup.ts` — Added `enableMapSet()` and `enablePatches()` for Immer
 - `docs/PROGRESS.md` — Phase 18 → 100%, Session 11 log
+
+### 2026-03-28 — Session 12: Utility Module Test Coverage
+
+**Actions:**
+- Created 7 new test files covering previously untested utility modules (69 new tests):
+  - `__tests__/unit/primitives.test.ts` — 5 tests (createPrimitiveEntity, PRIMITIVE_TYPES, name counter, overrides, unique IDs)
+  - `__tests__/unit/ikSolver.test.ts` — 13 tests (solveLookAt, solveTwoBoneIK, solveCCD, computeBoneWorldTransforms)
+  - `__tests__/unit/meshAnalysis.test.ts` — 12 tests (formatAnalysis, estimatePrint, fillHoles)
+  - `__tests__/unit/textureBaking.test.ts` — 12 tests (default settings, aoToRGBA, displacementToRGBA, curvatureToRGBA, thicknessToRGBA, applyBakeMargin)
+  - `__tests__/unit/undoRedoAdvanced.test.ts` — 11 tests (onChange callback, descriptions, edge cases, Add/Delete commands)
+  - `__tests__/unit/duplicate.test.ts` — 6 tests (duplicate entities, offset, selection, undo, skip missing, parent reset)
+  - `__tests__/unit/commands.test.ts` — 10 tests (DuplicateCommand, DeleteFacesCommand, ExtrudeFacesCommand)
+- All 376 tests pass, TypeScript clean, build succeeds
+
+**Files Created:**
+- `__tests__/unit/primitives.test.ts`
+- `__tests__/unit/ikSolver.test.ts`
+- `__tests__/unit/meshAnalysis.test.ts`
+- `__tests__/unit/textureBaking.test.ts`
+- `__tests__/unit/undoRedoAdvanced.test.ts`
+- `__tests__/unit/duplicate.test.ts`
+- `__tests__/unit/commands.test.ts`
