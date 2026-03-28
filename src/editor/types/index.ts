@@ -154,6 +154,19 @@ export function createDefaultMaterial(): MaterialData {
     emissiveIntensity: 0,
     opacity: 1.0,
     alphaMode: "opaque",
+    clearcoatEnabled: false,
+    clearcoatIntensity: 1,
+    clearcoatRoughness: 0.1,
+    sheenEnabled: false,
+    sheenIntensity: 1,
+    sheenColor: "#ffffff",
+    sssEnabled: false,
+    sssColor: "#ff3319",
+    sssRadius: 0.5,
+    sssIntensity: 1,
+    anisotropicEnabled: false,
+    anisotropy: 0.5,
+    ior: 1.5,
   };
 }
 

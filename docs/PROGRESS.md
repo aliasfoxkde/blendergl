@@ -1,8 +1,8 @@
 # BlenderGL - Progress Log
 
 **Last Updated:** 2026-03-27
-**Current Phase:** Phase 18 — Texture Painting & UV Editing
-**Overall Progress:** 97%
+**Current Phase:** Phase 19 — Advanced Rendering (Complete)
+**Overall Progress:** 100%
 
 ---
 
@@ -28,6 +28,7 @@
 | Phase 16: Node Editor | Complete | 100% |
 | Phase 17: Physics & Game | Complete | 100% |
 | Phase 18: Texture & UV | Complete | 95% |
+| Phase 19: Advanced Rendering | Complete | 100% |
 
 ---
 
@@ -227,3 +228,24 @@
 - `src/editor/stores/selectionStore.ts` — Added selection-change event dispatch
 - `src/editor/components/Viewport.tsx` — Removed 2 debug console.log calls
 - `docs/TASKS.md` — Checked off 6 items
+
+### 2026-03-27 — Session 8: PBR Material Integration (Phase 19)
+
+**Actions:**
+- Replaced `StandardMaterial` with `PBRMaterial` throughout Viewport.tsx
+- Updated `createPrimitiveMesh()` to create PBRMaterial instances
+- Rewrote material sync useEffect to map all PBR properties (clearcoat, sheen, SSS, anisotropic, IOR) to Babylon.js PBRMaterial API
+- Removed fake PBR approximation useEffect (specular power hacks for roughness/clearcoat)
+- Updated shading mode sync (wireframe/solid/material/xray) for PBRMaterial property names (unlit, albedoColor)
+- Updated selection highlight to use PBRMaterial cast
+- Added PBR defaults to `createDefaultMaterial()` (clearcoatEnabled, sheenEnabled, sssEnabled, anisotropicEnabled, ior)
+- Added collapsible "Advanced PBR" section to PropertiesPanel with controls for clearcoat, sheen, SSS, anisotropic, and IOR
+- Updated materialStore tests to verify PBR defaults
+
+**Files Modified:**
+- `src/editor/components/Viewport.tsx` — PBRMaterial throughout, new material sync, updated shading mode
+- `src/editor/types/index.ts` — PBR defaults in createDefaultMaterial()
+- `src/editor/components/PropertiesPanel.tsx` — Advanced PBR UI controls
+- `__tests__/unit/materialStore.test.ts` — PBR default assertions
+- `docs/TASKS.md` — Updated PBR task description
+- `docs/PROGRESS.md` — Phase 19 complete, 100% overall

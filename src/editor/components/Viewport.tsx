@@ -4,7 +4,7 @@ import {
   Scene,
   Color3,
   Vector3,
-  StandardMaterial,
+  PBRMaterial,
   MeshBuilder,
   AbstractMesh,
   Mesh,
@@ -513,7 +513,7 @@ export function Viewport({ onSceneReady }: ViewportProps) {
   useEffect(() => {
     const meshMap = meshMapRef.current;
     for (const [id, mesh] of meshMap) {
-      const material = mesh.material as StandardMaterial;
+      const material = mesh.material as PBRMaterial;
       if (!material) continue;
 
       if (selectedIds.includes(id)) {
@@ -528,89 +528,119 @@ export function Viewport({ onSceneReady }: ViewportProps) {
     }
   }, [selectedIds]);
 
-  // Sync materials to Babylon meshes
+  // Sync materials to Babylon meshes (PBR)
   useEffect(() => {
     const meshMap = meshMapRef.current;
     for (const [id, mesh] of meshMap) {
       const mat = materials[id];
-      const material = mesh.material as StandardMaterial;
+      const material = mesh.material as PBRMaterial;
       if (!material) continue;
 
       if (mat) {
-        material.diffuseColor = Color3.FromHexString(mat.albedo);
-        material.specularColor = new Color3(mat.metallic * 0.5, mat.metallic * 0.5, mat.metallic * 0.5);
-        material.specularPower = 64 - mat.roughness * 32;
-        material.emissiveColor = Color3.FromHexString(mat.emissive);
-        material.alpha = mat.opacity;
-        material.needDepthPrePass = mat.opacity < 1;
+        // Base PBR properties
+        material.albedoColor = Color3.FromHexString(mat.albedo);
+        material.metallic = mat.metallic;
+        material.roughness = mat.roughness;
 
-        // Sync diffuse texture
+        // Emissive
+        const emissiveBase = Color3.FromHexString(mat.emissive);
+        material.emissiveColor = emissiveBase.scale(mat.emissiveIntensity ?? 0);
+
+        // Transparency
+        material.alpha = mat.opacity;
+        material.transparencyMode = mat.opacity < 1
+          ? 2 // PBRMaterial.PBRMATERIALALPHABLEND
+          : 0; // PBRMaterial.PBRMATERIALALPHAOPAQUE
+
+        // Diffuse texture → albedo texture
         const babylonScene = sceneRef.current;
         if (mat.diffuseTexture && babylonScene) {
-          if (!material.diffuseTexture || (material.diffuseTexture as Texture).url !== mat.diffuseTexture) {
-            material.diffuseTexture = new Texture(mat.diffuseTexture, babylonScene);
+          if (!material.albedoTexture || (material.albedoTexture as Texture).url !== mat.diffuseTexture) {
+            material.albedoTexture = new Texture(mat.diffuseTexture, babylonScene);
           }
         } else {
-          material.diffuseTexture = null;
+          material.albedoTexture = null;
+        }
+
+        // Clearcoat
+        if (mat.clearcoatEnabled) {
+          material.clearCoat.isEnabled = true;
+          material.clearCoat.intensity = mat.clearcoatIntensity ?? 1;
+          material.clearCoat.roughness = mat.clearcoatRoughness ?? 0.1;
+        } else {
+          material.clearCoat.isEnabled = false;
+        }
+
+        // Sheen
+        if (mat.sheenEnabled) {
+          material.sheen.isEnabled = true;
+          material.sheen.intensity = mat.sheenIntensity ?? 1;
+          material.sheen.color = mat.sheenColor
+            ? Color3.FromHexString(mat.sheenColor)
+            : new Color3(1, 1, 1);
+        } else {
+          material.sheen.isEnabled = false;
+        }
+
+        // Subsurface scattering
+        if (mat.sssEnabled) {
+          material.subSurface.isTranslucencyEnabled = true;
+          material.subSurface.tintColor = mat.sssColor
+            ? Color3.FromHexString(mat.sssColor)
+            : new Color3(1, 0.2, 0.1);
+          material.subSurface.minimumThickness = 0;
+          material.subSurface.maximumThickness = (mat.sssRadius ?? 0.5) * 2;
+          material.subSurface.translucencyIntensity = mat.sssIntensity ?? 1;
+        } else {
+          material.subSurface.isTranslucencyEnabled = false;
+        }
+
+        // Anisotropy
+        if (mat.anisotropicEnabled) {
+          material.anisotropy.isEnabled = true;
+          material.anisotropy.intensity = mat.anisotropy ?? 0.5;
+        } else {
+          material.anisotropy.isEnabled = false;
+        }
+
+        // IOR
+        if (mat.ior && mat.ior !== 1.5) {
+          material.indexOfRefraction = mat.ior;
         }
       }
     }
   }, [materials]);
 
-  // Apply advanced PBR extensions from render settings
-  useEffect(() => {
-    const meshMap = meshMapRef.current;
-    for (const [id, mesh] of meshMap) {
-      const material = mesh.material as StandardMaterial;
-      if (!material) continue;
-
-      const mat = materials[id];
-      if (!mat) continue;
-
-      // Clearcoat — approximated via specular power boost
-      if (renderSettings.clearcoatEnabled && mat.clearcoatEnabled) {
-        material.specularPower = Math.max(material.specularPower ?? 32, 128);
-        material.specularColor = new Color3(0.8, 0.8, 0.8);
-      }
-
-      // IOR — affects specular reflection intensity
-      if (mat.ior && mat.ior !== 1.5) {
-        const iorFactor = (mat.ior - 1) / (1.5 - 1);
-        material.specularColor = material.specularColor.scale(Math.min(iorFactor, 2.0));
-      }
-    }
-  }, [materials, renderSettings.clearcoatEnabled, renderSettings.ior]);
-
   // Sync shading mode to all meshes
   useEffect(() => {
     const meshMap = meshMapRef.current;
     for (const [, mesh] of meshMap) {
-      const material = mesh.material as StandardMaterial;
+      const material = mesh.material as PBRMaterial;
       if (!material) continue;
 
       switch (shadingMode) {
         case "wireframe":
           material.wireframe = true;
-          material.disableLighting = false;
+          material.unlit = false;
           material.alpha = 1;
           break;
         case "solid":
           material.wireframe = false;
-          material.disableLighting = true;
-          material.diffuseColor = new Color3(0.7, 0.7, 0.7);
-          material.specularColor = Color3.Black();
+          material.unlit = true;
+          material.albedoColor = new Color3(0.7, 0.7, 0.7);
+          material.metallic = 0;
           material.emissiveColor = Color3.Black();
           material.alpha = 1;
           break;
         case "material":
         case "textured":
           material.wireframe = false;
-          material.disableLighting = false;
+          material.unlit = false;
           material.alpha = 1;
           break;
         case "xray":
           material.wireframe = false;
-          material.disableLighting = true;
+          material.unlit = true;
           material.alpha = 0.3;
           material.backFaceCulling = false;
           material.emissiveColor = new Color3(0.1, 0.2, 0.4);
@@ -880,9 +910,10 @@ function createPrimitiveMesh(
   geometryType: string,
   entityId: string
 ): AbstractMesh | undefined {
-  const material = new StandardMaterial(`mat_${entityId}`, scene);
-  material.diffuseColor = new Color3(0.6, 0.6, 0.6);
-  material.specularColor = new Color3(0.2, 0.2, 0.2);
+  const material = new PBRMaterial(`mat_${entityId}`, scene);
+  material.albedoColor = new Color3(0.6, 0.6, 0.6);
+  material.metallic = 0;
+  material.roughness = 0.5;
 
   let mesh: AbstractMesh;
 

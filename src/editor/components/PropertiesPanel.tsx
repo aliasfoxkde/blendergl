@@ -319,6 +319,170 @@ export function PropertiesPanel() {
           <TextureUpload entityId={entity.id} />
         </PropertyRow>
         <ProceduralTextures entityId={entity.id} />
+
+        {/* Advanced PBR */}
+        <div className="border-t border-[#444] pt-1.5 mt-1.5">
+          <details className="group">
+            <summary className="text-[10px] font-medium text-gray-500 cursor-pointer hover:text-gray-300 select-none">
+              Advanced PBR
+            </summary>
+            <div className="mt-1.5 space-y-1.5">
+              {/* Clearcoat */}
+              <div className="border-t border-[#333] pt-1.5">
+                <PropertyRow label="Clearcoat">
+                  <input
+                    type="checkbox"
+                    checked={material?.clearcoatEnabled ?? false}
+                    onChange={(e) => updateMaterial(entity.id, { clearcoatEnabled: e.target.checked })}
+                    className="accent-blue-500"
+                  />
+                </PropertyRow>
+                {(material?.clearcoatEnabled ?? false) && (
+                  <>
+                    <SliderRow
+                      label="Intensity"
+                      value={material?.clearcoatIntensity ?? 1}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      onChange={(v) => updateMaterial(entity.id, { clearcoatIntensity: v })}
+                    />
+                    <SliderRow
+                      label="Roughness"
+                      value={material?.clearcoatRoughness ?? 0.1}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      onChange={(v) => updateMaterial(entity.id, { clearcoatRoughness: v })}
+                    />
+                  </>
+                )}
+              </div>
+
+              {/* Sheen */}
+              <div className="border-t border-[#333] pt-1.5">
+                <PropertyRow label="Sheen">
+                  <input
+                    type="checkbox"
+                    checked={material?.sheenEnabled ?? false}
+                    onChange={(e) => updateMaterial(entity.id, { sheenEnabled: e.target.checked })}
+                    className="accent-blue-500"
+                  />
+                </PropertyRow>
+                {(material?.sheenEnabled ?? false) && (
+                  <>
+                    <SliderRow
+                      label="Intensity"
+                      value={material?.sheenIntensity ?? 1}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      onChange={(v) => updateMaterial(entity.id, { sheenIntensity: v })}
+                    />
+                    <PropertyRow label="Sheen Color">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={material?.sheenColor ?? "#ffffff"}
+                          onChange={(e) => updateMaterial(entity.id, { sheenColor: e.target.value })}
+                          className="w-5 h-5 rounded cursor-pointer border border-[#444] bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={material?.sheenColor ?? "#ffffff"}
+                          onChange={(e) => updateMaterial(entity.id, { sheenColor: e.target.value })}
+                          className="flex-1 bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none font-mono"
+                        />
+                      </div>
+                    </PropertyRow>
+                  </>
+                )}
+              </div>
+
+              {/* Subsurface Scattering */}
+              <div className="border-t border-[#333] pt-1.5">
+                <PropertyRow label="SSS">
+                  <input
+                    type="checkbox"
+                    checked={material?.sssEnabled ?? false}
+                    onChange={(e) => updateMaterial(entity.id, { sssEnabled: e.target.checked })}
+                    className="accent-blue-500"
+                  />
+                </PropertyRow>
+                {(material?.sssEnabled ?? false) && (
+                  <>
+                    <PropertyRow label="SSS Color">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={material?.sssColor ?? "#ff3319"}
+                          onChange={(e) => updateMaterial(entity.id, { sssColor: e.target.value })}
+                          className="w-5 h-5 rounded cursor-pointer border border-[#444] bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={material?.sssColor ?? "#ff3319"}
+                          onChange={(e) => updateMaterial(entity.id, { sssColor: e.target.value })}
+                          className="flex-1 bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none font-mono"
+                        />
+                      </div>
+                    </PropertyRow>
+                    <SliderRow
+                      label="Radius"
+                      value={material?.sssRadius ?? 0.5}
+                      min={0}
+                      max={5}
+                      step={0.1}
+                      onChange={(v) => updateMaterial(entity.id, { sssRadius: v })}
+                    />
+                    <SliderRow
+                      label="Intensity"
+                      value={material?.sssIntensity ?? 1}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      onChange={(v) => updateMaterial(entity.id, { sssIntensity: v })}
+                    />
+                  </>
+                )}
+              </div>
+
+              {/* Anisotropic */}
+              <div className="border-t border-[#333] pt-1.5">
+                <PropertyRow label="Anisotropic">
+                  <input
+                    type="checkbox"
+                    checked={material?.anisotropicEnabled ?? false}
+                    onChange={(e) => updateMaterial(entity.id, { anisotropicEnabled: e.target.checked })}
+                    className="accent-blue-500"
+                  />
+                </PropertyRow>
+                {(material?.anisotropicEnabled ?? false) && (
+                  <SliderRow
+                    label="Anisotropy"
+                    value={material?.anisotropy ?? 0.5}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    onChange={(v) => updateMaterial(entity.id, { anisotropy: v })}
+                  />
+                )}
+              </div>
+
+              {/* IOR */}
+              <div className="border-t border-[#333] pt-1.5">
+                <SliderRow
+                  label="IOR"
+                  value={material?.ior ?? 1.5}
+                  min={1}
+                  max={2.5}
+                  step={0.01}
+                  onChange={(v) => updateMaterial(entity.id, { ior: v })}
+                />
+              </div>
+            </div>
+          </details>
+        </div>
       </Section>
 
       {/* Mesh Info (3D Print) */}

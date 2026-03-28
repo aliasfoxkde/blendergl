@@ -274,7 +274,7 @@ The Viewport component maintains a `Map<string, AbstractMesh>` that mirrors the 
 - Image texture import and management
 - Texture atlas generation (combine multiple textures into one)
 
-### Phase 19: Advanced Rendering — PLANNED
+### Phase 19: Advanced Rendering — COMPLETE
 - PBR materials (PBRMaterial in Babylon.js)
 - HDRI environment lighting (IBL)
 - Screen-space reflections (SSR)

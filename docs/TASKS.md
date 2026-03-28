@@ -771,7 +771,7 @@
 ## Phase 19: Advanced Rendering
 
 ### 19.1 PBR Materials
-- [x] PBRMaterial integration (albedo, normal, metallic, roughness, AO, emissive)
+- [x] PBRMaterial integration (albedo, normal, metallic, roughness, AO, emissive) — switched from StandardMaterial to PBRMaterial with full clearcoat/sheen/SSS/anisotropic/IOR support
 - [x] Material presets (metal, plastic, wood, stone, glass, fabric)
 - [x] Clearcoat support (car paint, lacquered surfaces)
 - [x] Sheen support (fabric, velvet)

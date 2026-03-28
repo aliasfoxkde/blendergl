@@ -36,6 +36,12 @@ describe("Material Store", () => {
     expect(mat!.emissiveIntensity).toBe(0);
     expect(mat!.opacity).toBe(1.0);
     expect(mat!.alphaMode).toBe("opaque");
+    // PBR defaults
+    expect(mat!.clearcoatEnabled).toBe(false);
+    expect(mat!.sheenEnabled).toBe(false);
+    expect(mat!.sssEnabled).toBe(false);
+    expect(mat!.anisotropicEnabled).toBe(false);
+    expect(mat!.ior).toBe(1.5);
   });
 
   it("updates albedo color (hex string)", () => {
