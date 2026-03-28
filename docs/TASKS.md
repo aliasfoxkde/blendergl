@@ -435,9 +435,9 @@
 - [x] Script editor panel component (collapsible bottom panel in viewport)
 - [x] JavaScript/TypeScript language support
 - [x] Dark theme matching editor
-- [ ] Auto-complete for `blendergl` API (deferred — requires custom Monaco type definitions)
-- [ ] Error squiggles and inline diagnostics (deferred)
-- [ ] Tab-based multi-file editing (deferred)
+- [x] Auto-complete for `blendergl` API
+- [x] Error squiggles and inline diagnostics
+- [x] Tab-based multi-file editing
 - [x] Split view (script editor overlays bottom of viewport)
 
 ### 13.3 Script Execution Sandbox

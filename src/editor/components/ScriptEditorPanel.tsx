@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import Editor from "@monaco-editor/react";
+import Editor, { type OnMount } from "@monaco-editor/react";
+import type * as Monaco from "monaco-editor";
 import { executeScript, EXAMPLE_SCRIPTS } from "@/editor/utils/scripting/executor";
 import {
   listScripts,
@@ -10,6 +11,8 @@ import {
   importScripts,
   getStartupScripts,
 } from "@/editor/utils/scripting/persistence";
+import { registerBlenderGLCompletions } from "@/editor/utils/scripting/monacoCompletions";
+import { validateScript } from "@/editor/utils/scripting/monacoDiagnostics";
 import type { ScriptResult, ScriptExample } from "@/editor/utils/scripting/executor";
 import type { SavedScript } from "@/editor/utils/scripting/persistence";
 
@@ -18,10 +21,25 @@ interface ConsoleEntry {
   text: string;
 }
 
+interface OpenFile {
+  id: string;
+  name: string;
+  code: string;
+  modified: boolean;
+}
+
+let _fileCounter = 0;
+function nextFileId(): string {
+  _fileCounter++;
+  return `file_${_fileCounter}`;
+}
+
 export function ScriptEditorPanel() {
   const [isOpen, setIsOpen] = useState(false);
-  const [code, setCode] = useState(EXAMPLE_SCRIPTS[0].code);
-  const [scriptName, setScriptName] = useState("Untitled Script");
+  const [openFiles, setOpenFiles] = useState<OpenFile[]>([
+    { id: nextFileId(), name: "Untitled Script", code: EXAMPLE_SCRIPTS[0].code, modified: false },
+  ]);
+  const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [scriptType, setScriptType] = useState<"startup" | "operator">("operator");
   const [savedScripts, setSavedScripts] = useState<SavedScript[]>([]);
   const [currentScriptId, setCurrentScriptId] = useState<string | null>(null);
@@ -31,6 +49,21 @@ export function ScriptEditorPanel() {
   const [activeTab, setActiveTab] = useState<"editor" | "console" | "library">("editor");
   const consoleEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<typeof Monaco | null>(null);
+  const disposableRef = useRef<Monaco.IDisposable | null>(null);
+  const validationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Current file helpers
+  const activeFile = openFiles.find((f) => f.id === activeFileId) ?? openFiles[0];
+  const code = activeFile?.code ?? "";
+
+  // Set initial active file
+  useEffect(() => {
+    if (activeFileId === null && openFiles.length > 0) {
+      setActiveFileId(openFiles[0].id);
+    }
+  }, []);
 
   // Load saved scripts on mount and when panel opens
   useEffect(() => {
@@ -60,7 +93,7 @@ export function ScriptEditorPanel() {
     window.addEventListener("script-console-clear", handleClear);
     return () => {
       window.removeEventListener("script-console", handleConsole);
-      window.removeEventListener("script-console", handleClear);
+      window.removeEventListener("script-console-clear", handleClear);
     };
   }, []);
 
@@ -68,6 +101,51 @@ export function ScriptEditorPanel() {
   useEffect(() => {
     consoleEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [consoleEntries]);
+
+  // Cleanup Monaco disposable on unmount
+  useEffect(() => {
+    return () => {
+      disposableRef.current?.dispose();
+    };
+  }, []);
+
+  // Update file code when editor changes
+  const handleEditorChange = useCallback((value: string | undefined) => {
+    if (!activeFileId) return;
+    const newCode = value ?? "";
+    setOpenFiles((prev) =>
+      prev.map((f) => (f.id === activeFileId ? { ...f, code: newCode, modified: true } : f))
+    );
+
+    // Debounced diagnostics
+    if (validationTimerRef.current) clearTimeout(validationTimerRef.current);
+    validationTimerRef.current = setTimeout(() => {
+      const editor = editorRef.current;
+      const model = editor?.getModel();
+      const monaco = monacoRef.current;
+      if (!model || !monaco) return;
+      const diagnostics = validateScript(newCode);
+      monaco.editor.setModelMarkers(model, "blendergl", diagnostics.map((d) => ({
+        severity: d.severity === "error"
+          ? monaco.MarkerSeverity.Error
+          : d.severity === "warning"
+            ? monaco.MarkerSeverity.Warning
+            : monaco.MarkerSeverity.Info,
+        message: d.message,
+        startLineNumber: d.startLineNumber,
+        startColumn: d.startColumn,
+        endLineNumber: d.endLineNumber,
+        endColumn: d.endColumn,
+      })));
+    }, 500);
+  }, [activeFileId]);
+
+  // Monaco mount — register completions
+  const handleEditorMount: OnMount = useCallback((editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+    disposableRef.current = registerBlenderGLCompletions(monaco);
+  }, []);
 
   const refreshScripts = useCallback(() => {
     listScripts().then(setSavedScripts);
@@ -81,8 +159,6 @@ export function ScriptEditorPanel() {
     try {
       const result = await executeScript(code, scriptType);
       setLastResult(result);
-
-      // Switch to console tab to show results
       setActiveTab("console");
     } finally {
       setIsRunning(false);
@@ -90,46 +166,103 @@ export function ScriptEditorPanel() {
   }, [code, scriptType]);
 
   const handleSave = useCallback(async () => {
+    if (!activeFile) return;
+
     let script: SavedScript;
     if (currentScriptId) {
       const existing = savedScripts.find((s) => s.id === currentScriptId);
       if (existing) {
-        script = { ...existing, name: scriptName, code, type: scriptType, updatedAt: new Date().toISOString() };
+        script = { ...existing, name: activeFile.name, code, type: scriptType, updatedAt: new Date().toISOString() };
       } else {
-        script = createNewScript(scriptName, code, scriptType);
+        script = createNewScript(activeFile.name, code, scriptType);
         setCurrentScriptId(script.id);
       }
     } else {
-      script = createNewScript(scriptName, code, scriptType);
+      script = createNewScript(activeFile.name, code, scriptType);
       setCurrentScriptId(script.id);
     }
     await saveScript(script);
+    setOpenFiles((prev) =>
+      prev.map((f) => (f.id === activeFileId ? { ...f, modified: false } : f))
+    );
     refreshScripts();
-  }, [currentScriptId, scriptName, code, scriptType, savedScripts, refreshScripts]);
+  }, [activeFile, currentScriptId, code, scriptType, savedScripts, refreshScripts]);
 
   const handleLoadScript = useCallback((script: SavedScript) => {
-    setCode(script.code);
-    setScriptName(script.name);
-    setScriptType(script.type);
+    // Check if already open
+    const existing = openFiles.find((f) => f.name === script.name && !f.modified);
+    if (existing) {
+      setActiveFileId(existing.id);
+      setCurrentScriptId(script.id);
+      setActiveTab("editor");
+      return;
+    }
+
+    const newFile: OpenFile = {
+      id: nextFileId(),
+      name: script.name,
+      code: script.code,
+      modified: false,
+    };
+    setOpenFiles((prev) => [...prev, newFile]);
+    setActiveFileId(newFile.id);
     setCurrentScriptId(script.id);
+    setScriptType(script.type);
     setActiveTab("editor");
-  }, []);
+  }, [openFiles]);
 
   const handleDeleteScript = useCallback(async (id: string) => {
     await deleteScript(id);
     if (currentScriptId === id) {
       setCurrentScriptId(null);
-      setScriptName("Untitled Script");
     }
     refreshScripts();
   }, [currentScriptId, refreshScripts]);
 
-  const handleNewScript = useCallback(() => {
+  const handleNewFile = useCallback(() => {
+    const newFile: OpenFile = {
+      id: nextFileId(),
+      name: `Untitled Script ${openFiles.length + 1}`,
+      code: "// New script\n",
+      modified: false,
+    };
+    setOpenFiles((prev) => [...prev, newFile]);
+    setActiveFileId(newFile.id);
     setCurrentScriptId(null);
-    setScriptName("Untitled Script");
-    setCode("// New script\n");
     setActiveTab("editor");
-  }, []);
+  }, [openFiles]);
+
+  const handleSwitchFile = useCallback((fileId: string) => {
+    setActiveFileId(fileId);
+    const file = openFiles.find((f) => f.id === fileId);
+    if (file) {
+      setCurrentScriptId(null); // New unsaved file
+    }
+  }, [openFiles]);
+
+  const handleCloseFile = useCallback(
+    (fileId: string) => {
+      const file = openFiles.find((f) => f.id === fileId);
+      if (!file) return;
+
+      if (file.modified) {
+        const confirmed = confirm(`"${file.name}" has unsaved changes. Close anyway?`);
+        if (!confirmed) return;
+      }
+
+      if (openFiles.length <= 1) {
+        // Don't close the last tab
+        return;
+      }
+
+      const newFiles = openFiles.filter((f) => f.id !== fileId);
+      setOpenFiles(newFiles);
+      if (activeFileId === fileId) {
+        setActiveFileId(newFiles[newFiles.length - 1].id);
+      }
+    },
+    [openFiles, activeFileId],
+  );
 
   const handleExportAll = useCallback(async () => {
     const scripts = await listScripts();
@@ -154,16 +287,25 @@ export function ScriptEditorPanel() {
     } catch (err) {
       console.error("Failed to import scripts:", err);
     }
-    // Reset input
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [refreshScripts]);
 
   const handleLoadExample = useCallback((example: ScriptExample) => {
-    setCode(example.code);
-    setScriptName(example.name);
+    const existing = openFiles.find((f) => f.name === example.name && !f.modified);
+    if (existing) {
+      setActiveFileId(existing.id);
+      return;
+    }
+    const newFile: OpenFile = {
+      id: nextFileId(),
+      name: example.name,
+      code: example.code,
+      modified: false,
+    };
+    setOpenFiles((prev) => [...prev, newFile]);
+    setActiveFileId(newFile.id);
     setCurrentScriptId(null);
-    setActiveTab("editor");
-  }, []);
+  }, [openFiles]);
 
   const handleClearConsole = useCallback(() => {
     setConsoleEntries([]);
@@ -204,7 +346,7 @@ export function ScriptEditorPanel() {
         title="Open Script Editor"
       >
         <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M4 1.75C4 1.336 4.336 1 4.75 1h6.5c.414 0 .75.336.75.75v3.5c0 .414-.336.75-.75.75h-1.5v1.5h1.5c.414 0 .75.336.75.75v3.5c0 .414-.336.75-.75.75h-6.5c-.414 0-.75-.336-.75-.75V8.25c0-.414.336-.75.75-.75h1.5V6H4.75C4.336 6 4 5.664 4 5.25v-3.5zM6 6h4v1H6V6zm0 3h4v2.5H6V9z" />
+          <path d="M4 1.75C4 1.336 4.336 1 4.75 1h6.5c.414 0 .75.336.75.75v3.5c0 .414-.336.75-.75.75h-1.5v1.5h1.5c.414 0 .75.336.75.75v3.5c0 .414-.336.75-.75.75h-6.5c-.414 0-.75-.336-.75-.75v-3.5zM6 6h4v1H6zm0 3h4v2.5H6V9z" />
         </svg>
         Script Editor
       </button>
@@ -217,12 +359,12 @@ export function ScriptEditorPanel() {
       style={{ height: "320px" }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-1 bg-[#2a2a2a] border-b border-[#444] shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-1 bg-[#2a2a2a] border-b border-[#444] shrink-0">
+        <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto">
           {/* Close button */}
           <button
             onClick={() => setIsOpen(false)}
-            className="text-gray-400 hover:text-gray-200 transition"
+            className="text-gray-400 hover:text-gray-200 transition shrink-0 px-1.5 py-1"
             title="Close"
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2">
@@ -230,15 +372,48 @@ export function ScriptEditorPanel() {
             </svg>
           </button>
 
-          {/* Script name */}
-          <input
-            type="text"
-            value={scriptName}
-            onChange={(e) => setScriptName(e.target.value)}
-            className="bg-transparent text-xs text-gray-200 w-32 focus:outline-none focus:bg-[#333] rounded px-1"
-            title="Script name"
-          />
+          {/* File tabs */}
+          {openFiles.map((file) => (
+            <button
+              key={file.id}
+              onClick={() => handleSwitchFile(file.id)}
+              className={`flex items-center gap-1 px-2 py-1 text-xs transition shrink-0 border-b-2 ${
+                file.id === activeFileId
+                  ? "text-white border-blue-500 bg-[#333]"
+                  : "text-gray-400 border-transparent hover:text-gray-200 hover:bg-[#2a2a2a]"
+              }`}
+              title={file.name}
+            >
+              {file.modified && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />}
+              <span className="truncate max-w-[100px]">{file.name}</span>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCloseFile(file.id);
+                }}
+                className="text-gray-500 hover:text-red-400 ml-0.5 shrink-0"
+                title="Close tab"
+              >
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 1l6 6M7 1l-6 6" />
+                </svg>
+              </span>
+            </button>
+          ))}
 
+          {/* New file button */}
+          <button
+            onClick={handleNewFile}
+            className="text-gray-400 hover:text-gray-200 transition shrink-0 px-1.5 py-1"
+            title="New file"
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 1v8M1 5h8" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
           {/* Type selector */}
           <select
             value={scriptType}
@@ -250,7 +425,7 @@ export function ScriptEditorPanel() {
             <option value="startup">Startup</option>
           </select>
 
-          {/* Tabs */}
+          {/* Tab buttons */}
           <button
             onClick={() => setActiveTab("editor")}
             className={`text-xs px-2 py-0.5 rounded transition ${
@@ -293,7 +468,7 @@ export function ScriptEditorPanel() {
             value=""
             onChange={(e) => {
               if (e.target.value === "__new__") {
-                handleNewScript();
+                handleNewFile();
               } else if (e.target.value === "__run_startup__") {
                 handleRunStartupScripts();
               } else if (e.target.value.startsWith("__example__")) {
@@ -306,11 +481,11 @@ export function ScriptEditorPanel() {
               }
               e.target.value = "";
             }}
-            title="Load saved script"
+            title="Load script"
           >
-            <option value="" disabled>Load Script...</option>
+            <option value="" disabled>Load...</option>
             {savedScripts.length > 0 && (
-              <optgroup label="Saved Scripts">
+              <optgroup label="Saved">
                 {savedScripts.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name} ({s.type})
@@ -319,8 +494,8 @@ export function ScriptEditorPanel() {
               </optgroup>
             )}
             <optgroup label="Actions">
-              <option value="__new__">+ New Script</option>
-              <option value="__run_startup__">Run Startup Scripts</option>
+              <option value="__new__">+ New</option>
+              <option value="__run_startup__">Run Startup</option>
             </optgroup>
             <optgroup label="Examples">
               {EXAMPLE_SCRIPTS.map((ex) => (
@@ -332,7 +507,7 @@ export function ScriptEditorPanel() {
           </select>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Save button */}
           <button
             onClick={handleSave}
@@ -386,7 +561,8 @@ export function ScriptEditorPanel() {
             height="100%"
             defaultLanguage="javascript"
             value={code}
-            onChange={(value) => setCode(value ?? "")}
+            onChange={handleEditorChange}
+            onMount={handleEditorMount}
             theme="vs-dark"
             options={{
               minimap: { enabled: false },
@@ -447,7 +623,7 @@ export function ScriptEditorPanel() {
               </span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={handleNewScript}
+                  onClick={handleNewFile}
                   className="text-xs text-blue-400 hover:text-blue-300 transition"
                 >
                   + New
@@ -488,7 +664,7 @@ export function ScriptEditorPanel() {
                     <ScriptListItem
                       key={script.id}
                       script={script}
-                      isActive={script.id === currentScriptId}
+                      isActive={false}
                       onLoad={handleLoadScript}
                       onDelete={handleDeleteScript}
                     />
@@ -508,7 +684,7 @@ export function ScriptEditorPanel() {
                     <ScriptListItem
                       key={script.id}
                       script={script}
-                      isActive={script.id === currentScriptId}
+                      isActive={false}
                       onLoad={handleLoadScript}
                       onDelete={handleDeleteScript}
                     />
