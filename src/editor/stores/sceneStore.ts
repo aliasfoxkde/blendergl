@@ -81,18 +81,25 @@ export const useSceneStore = create<SceneState>()(
           );
         }
 
-        // Recursively remove children
-        const removeRecursive = (eid: string) => {
+        // Iteratively remove entity and all descendants (avoids stack overflow on deep hierarchies)
+        const toRemove: string[] = [];
+        const stack = [id];
+        const visited = new Set<string>();
+        while (stack.length > 0) {
+          const eid = stack.pop()!;
+          if (visited.has(eid)) continue;
+          visited.add(eid);
           const e = state.entities[eid];
-          if (!e) return;
+          if (!e) continue;
+          toRemove.push(eid);
           for (const childId of e.childrenIds) {
-            removeRecursive(childId);
+            stack.push(childId);
           }
+        }
+        for (const eid of toRemove) {
           delete state.entities[eid];
           delete state.scene.entities[eid];
-        };
-
-        removeRecursive(id);
+        }
         state.scene.updatedAt = new Date().toISOString();
       }),
 

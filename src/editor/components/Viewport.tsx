@@ -433,6 +433,7 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       window.removeEventListener("camera-toggle-ortho", handleToggleOrtho);
       window.removeEventListener("import-gltf", handleImportGltf);
       window.removeEventListener("export-stl", handleExportStl);
+      window.removeEventListener("export-3mf", handleExport3mf);
       window.removeEventListener("export-gcode", handleExportGcode);
       window.removeEventListener("boolean-op", handleBooleanOp);
       scene.onPointerObservable.clear();
@@ -604,9 +605,7 @@ export function Viewport({ onSceneReady }: ViewportProps) {
         }
 
         // IOR
-        if (mat.ior && mat.ior !== 1.5) {
-          material.indexOfRefraction = mat.ior;
-        }
+        material.indexOfRefraction = mat.ior ?? 1.5;
       }
     }
   }, [materials]);
@@ -618,25 +617,23 @@ export function Viewport({ onSceneReady }: ViewportProps) {
       const material = mesh.material as PBRMaterial;
       if (!material) continue;
 
+      // Reset xray-specific properties for all modes
+      material.backFaceCulling = true;
+      mesh.renderOutline = false;
+
       switch (shadingMode) {
         case "wireframe":
           material.wireframe = true;
           material.unlit = false;
-          material.alpha = 1;
           break;
         case "solid":
           material.wireframe = false;
           material.unlit = true;
-          material.albedoColor = new Color3(0.7, 0.7, 0.7);
-          material.metallic = 0;
-          material.emissiveColor = Color3.Black();
-          material.alpha = 1;
           break;
         case "material":
         case "textured":
           material.wireframe = false;
           material.unlit = false;
-          material.alpha = 1;
           break;
         case "xray":
           material.wireframe = false;
@@ -649,13 +646,8 @@ export function Viewport({ onSceneReady }: ViewportProps) {
           mesh.outlineWidth = 0.02;
           break;
       }
-      // Reset xray-specific properties when not in xray mode
-      if (shadingMode !== "xray") {
-        material.backFaceCulling = true;
-        mesh.renderOutline = false;
-      }
     }
-  }, [shadingMode, materials]);
+  }, [shadingMode]);
 
   // Sync snap settings to gizmo controller
   useEffect(() => {

@@ -118,7 +118,7 @@ export const useAnimationStore = create<AnimationState>()(
 
     setCurrentFrame: (frame) =>
       set((state) => {
-        state.currentFrame = frame;
+        state.currentFrame = Math.max(0, frame);
       }),
 
     toggleLoop: () =>
@@ -186,14 +186,15 @@ export const useAnimationStore = create<AnimationState>()(
     },
 
     getOrAddTrack: (clipId, boneId, property) => {
-      const clip = get().clips[clipId];
-      if (!clip) throw new Error(`Clip ${clipId} not found`);
-      let track = clip.tracks.find((t) => t.boneId === boneId && t.property === property);
-      if (!track) {
-        track = { id: crypto.randomUUID(), boneId, property, keys: [] };
-        clip.tracks.push(track);
-      }
-      return track;
+      const existing = get().clips[clipId]?.tracks.find((t) => t.boneId === boneId && t.property === property);
+      if (existing) return existing;
+      if (!get().clips[clipId]) throw new Error(`Clip ${clipId} not found`);
+      const trackId = crypto.randomUUID();
+      set((state) => {
+        state.clips[clipId].tracks.push({ id: trackId, boneId, property, keys: [] });
+      });
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return get().clips[clipId]!.tracks.find((t) => t.id === trackId)!;
     },
 
     getClipFrameRange: (clipId) => {
@@ -291,7 +292,9 @@ function evaluateTrackAtKeys(track: AnimationTrack, frame: number): number {
   // Find surrounding keys
   for (let i = 0; i < keys.length - 1; i++) {
     if (frame >= keys[i].frame && frame <= keys[i + 1].frame) {
-      const t = (frame - keys[i].frame) / (keys[i + 1].frame - keys[i].frame);
+      const dt = keys[i + 1].frame - keys[i].frame;
+      if (dt === 0) continue;
+      const t = (frame - keys[i].frame) / dt;
 
       if (keys[i].interpolation === "step" || keys[i + 1].interpolation === "step") {
         return keys[i].value;

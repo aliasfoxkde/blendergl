@@ -460,7 +460,7 @@
 - [x] Import/export scripts (.json files)
 - [x] Built-in example scripts (hello world, grid, spheres, staircase, analyze, scale)
 - [x] Script templates (operator, callback, modifier) (deferred)
-- [ ] Commit and push: Phase 13 complete
+- [x] Commit and push: Phase 13 complete
 
 ---
 

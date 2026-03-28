@@ -74,7 +74,7 @@ export function sliceMesh(
             x: va.x + t * (vb.x - va.x),
             y: va.y + t * (vb.y - va.y),
           });
-        } else if (Math.abs(va.z - z) < 1e-10) {
+        } else if (Math.abs(va.z - z) < 1e-10 && intersections.length < 2) {
           intersections.push({ x: va.x, y: va.y });
         }
       }

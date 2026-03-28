@@ -275,3 +275,39 @@
 - `src/editor/components/ScriptEditorPanel.tsx` — Tabs, completions, diagnostics
 - `docs/TASKS.md` — Checked off 3 items
 - `docs/PROGRESS.md` — Phase 13 100%, session log
+
+### 2026-03-27 — Session 10: Bug Audit & Fixes
+
+**Actions:**
+- Audited all React components, Zustand stores, and utility modules for bugs
+- Fixed 10 bugs across Viewport, animationStore, sceneStore, nodeGraphStore, slicer, and gcodeGenerator
+
+**Bugs Fixed:**
+1. **CRITICAL — Missing `export-3mf` event listener cleanup** (Viewport.tsx:435)
+   - Memory leak: `handleExport3mf` listener was never removed on unmount
+2. **MEDIUM — IOR not reset when reverting to default** (Viewport.tsx:607)
+   - Condition `mat.ior !== 1.5` prevented resetting IOR back to 1.5
+3. **MEDIUM — Shading mode clobbers material properties** (Viewport.tsx:614-657)
+   - Solid mode overwrote `albedoColor`/`metallic`/`emissiveColor`; switching back didn't restore originals
+4. **MEDIUM — `getOrAddTrack` mutates state outside `set()`** (animationStore.ts:188-197)
+   - `clip.tracks.push()` bypassed immer's draft mechanism
+5. **MEDIUM — Division by zero in animation interpolation** (animationStore.ts:294)
+   - Two keys with the same frame caused NaN from division by zero
+6. **MEDIUM — Slicer coplanar triangle handling** (slicer.ts:77)
+   - Vertex-on-plane intersections could produce >2 points, causing segments to be silently dropped
+7. **LOW — Division by zero in gcode generator** (gcodeGenerator.ts:150,360)
+   - `filamentDiameter=0` or `printSpeed=0` caused NaN in eStepsPerMM and printTime
+8. **MEDIUM — Recursive entity removal could stack overflow** (sceneStore.ts:85-95)
+   - Deep entity hierarchies caused stack overflow; converted to iterative approach with stack array
+9. **MEDIUM — `pasteNodes` called `set()` multiple times in loop** (nodeGraphStore.ts:320-351)
+   - Multiple `set()` calls for each pasted node/connection; batched into single `set()` call
+10. **MEDIUM — `setCurrentFrame` allowed negative frames** (animationStore.ts:119-122)
+   - Negative frame values accepted without validation; added `Math.max(0, frame)` guard
+
+**Files Modified:**
+- `src/editor/components/Viewport.tsx` — Fixes 1, 2, 3
+- `src/editor/stores/animationStore.ts` — Fixes 4, 5, 10
+- `src/editor/utils/gcode/slicer.ts` — Fix 6
+- `src/editor/utils/gcode/gcodeGenerator.ts` — Fix 7
+- `src/editor/stores/sceneStore.ts` — Fix 8 (recursive → iterative removal)
+- `src/editor/stores/nodeGraphStore.ts` — Fix 9 (batched pasteNodes)

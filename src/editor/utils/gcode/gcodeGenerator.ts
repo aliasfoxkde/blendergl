@@ -147,8 +147,10 @@ export function generateGcode(
   let currentZ = 0;
   let ePos = 0;
 
-  const eStepsPerMM = (settings.nozzleDiameter * settings.nozzleDiameter * Math.PI / 4) /
-    (settings.filamentDiameter * settings.filamentDiameter * Math.PI / 4);
+  const filamentArea = settings.filamentDiameter * settings.filamentDiameter * Math.PI / 4;
+  const eStepsPerMM = filamentArea > 0
+    ? (settings.nozzleDiameter * settings.nozzleDiameter * Math.PI / 4) / filamentArea
+    : 1;
 
   const layerInfos: GcodeLayerInfo[] = [];
 
@@ -357,7 +359,7 @@ export function generateGcode(
   lines.push("M400 ; Wait for moves to finish");
 
   // Rough time estimate
-  const printTime = totalDistance / settings.printSpeed;
+  const printTime = settings.printSpeed > 0 ? totalDistance / settings.printSpeed : 0;
 
   return {
     gcode: lines.join("\n"),

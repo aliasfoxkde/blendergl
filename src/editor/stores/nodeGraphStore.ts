@@ -316,18 +316,18 @@ export const useNodeGraphStore = create<NodeGraphState>()(
       const pasteOffset = offset ?? { x: 30, y: 30 };
       const idMap = new Map<string, string>(); // old id → new id
       const newIds: string[] = [];
+      const newNodes: Record<string, typeof state.clipboard.nodes[string]> = {};
+      const newConnections: Record<string, typeof state.clipboard.connections[string]> = {};
 
       for (const [oldId, node] of Object.entries(state.clipboard.nodes)) {
         const newId = crypto.randomUUID();
         idMap.set(oldId, newId);
-        set((s) => {
-          s.nodes[newId] = {
-            id: newId,
-            type: node.type,
-            position: { x: node.position.x + pasteOffset.x, y: node.position.y + pasteOffset.y },
-            values: JSON.parse(JSON.stringify(node.values)),
-          };
-        });
+        newNodes[newId] = {
+          id: newId,
+          type: node.type,
+          position: { x: node.position.x + pasteOffset.x, y: node.position.y + pasteOffset.y },
+          values: JSON.parse(JSON.stringify(node.values)),
+        };
         newIds.push(newId);
       }
 
@@ -336,19 +336,23 @@ export const useNodeGraphStore = create<NodeGraphState>()(
         const newTgtId = idMap.get(conn.targetNodeId);
         if (newSrcId && newTgtId) {
           const connId = crypto.randomUUID();
-          set((s) => {
-            s.connections[connId] = {
-              id: connId,
-              sourceNodeId: newSrcId,
-              sourcePortId: conn.sourcePortId,
-              targetNodeId: newTgtId,
-              targetPortId: conn.targetPortId,
-            };
-          });
+          newConnections[connId] = {
+            id: connId,
+            sourceNodeId: newSrcId,
+            sourcePortId: conn.sourcePortId,
+            targetNodeId: newTgtId,
+            targetPortId: conn.targetPortId,
+          };
         }
       }
 
-      set((s) => { s.selectedNodeIds = newIds; s.selectedConnectionIds = []; });
+      // Batch all changes in a single set call
+      set((s) => {
+        Object.assign(s.nodes, newNodes);
+        Object.assign(s.connections, newConnections);
+        s.selectedNodeIds = newIds;
+        s.selectedConnectionIds = [];
+      });
     },
 
     duplicateSelected: () => {
