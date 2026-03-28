@@ -212,7 +212,7 @@ The Viewport component maintains a `Map<string, AbstractMesh>` that mirrors the 
 - Pre-built API examples and templates
 - Auto-complete for scripting API
 
-### Phase 14: Rigging & Animation — PLANNED
+### Phase 14: Rigging & Animation — COMPLETE
 - Babylon.js Skeleton system integration (bones, bone hierarchy)
 - Bone creation/editing mode (armature component on entities)
 - Bone constraints: IK solver, look-at, parent, track-to
@@ -225,7 +225,7 @@ The Viewport component maintains a `Map<string, AbstractMesh>` that mirrors the 
 - Animation playback controls (play, pause, scrub, loop)
 - Animation export (glTF animation clips)
 
-### Phase 15: Sculpting — PLANNED
+### Phase 15: Sculpting — COMPLETE
 - Sculpt mode (new editor mode, like Object/Edit/Sculpt)
 - Dynamic subdivision (Catmull-Clark, adaptive tessellation)
 - Brush engine: Sculpt, Smooth, Grab, Inflate, Pinch, Flatten, Crease
@@ -250,7 +250,7 @@ The Viewport component maintains a `Map<string, AbstractMesh>` that mirrors the 
 - Node presets/library (saved node configurations)
 - Real-time preview (node graph changes reflected in viewport)
 
-### Phase 17: Game Logic & Physics — PLANNED
+### Phase 17: Game Logic & Physics — COMPLETE
 - Babylon.js physics integration (Havok or Ammo.js via WASM)
 - Rigid body physics (collision shapes, mass, friction, restitution)
 - Play mode (separate simulation mode from edit mode)
