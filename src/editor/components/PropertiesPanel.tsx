@@ -17,7 +17,8 @@ import { TexturePaintPanel } from "@/editor/components/TexturePaintPanel";
 import { exportAnimationToJSON } from "@/editor/utils/animationExport";
 import { formatAnalysis, estimatePrint, analyzeMesh, repairMesh, fillHoles } from "@/editor/utils/meshAnalysis";
 import { sliceMesh } from "@/editor/utils/gcode/slicer";
-import { generateGcode, downloadGcode } from "@/editor/utils/gcode/gcodeGenerator";
+import { generateGcode, generateSupportRegions, downloadGcode } from "@/editor/utils/gcode/gcodeGenerator";
+import { PrintPreviewPanel } from "@/editor/components/PrintPreviewPanel";
 import { sceneRef } from "@/editor/utils/sceneRef";
 import { useUvStore } from "@/editor/stores/uvStore";
 import type { Mesh } from "@babylonjs/core/Meshes/mesh.js";
@@ -322,6 +323,8 @@ export function PropertiesPanel() {
 
       {/* Mesh Info (3D Print) */}
       <MeshInfoSection entityId={entity.id} />
+      <BooleanModifierSection entityId={entity.id} />
+      <PrintPreviewPanel />
 
       {/* Armature */}
       <ArmatureSection entityId={entity.id} />
@@ -866,6 +869,81 @@ function ProceduralTextures({ entityId }: { entityId: string }) {
   );
 }
 
+function BooleanModifierSection({ entityId }: { entityId: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const entity = useSceneStore((s) => s.entities[entityId]);
+  const updateEntityComponents = useSceneStore((s) => s.updateEntityComponents);
+  const entities = useSceneStore((s) => s.entities);
+
+  const mod = entity?.components?.boolean_modifier as import("@/editor/types").BooleanModifierData | undefined;
+  const operation = mod?.operation ?? "difference";
+  const targetId = mod?.targetEntityId ?? null;
+  const enabled = mod?.enabled ?? false;
+
+  const setModifier = (updates: Partial<import("@/editor/types").BooleanModifierData>) => {
+    if (!entity) return;
+    const current = (entity.components?.boolean_modifier as import("@/editor/types").BooleanModifierData | undefined) ?? {
+      type: "boolean_modifier" as const,
+      operation: "difference",
+      targetEntityId: null,
+      enabled: false,
+    };
+    updateEntityComponents(entity.id, { boolean_modifier: { ...current, ...updates } });
+  };
+
+  // Get mesh entities that could be targets (exclude self)
+  const meshEntities = Object.values(entities).filter(
+    (e) => e.id !== entityId && e.components?.mesh
+  );
+
+  return (
+    <div className="border-b border-[#333]">
+      <button
+        className="w-full px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#282828] flex items-center justify-between"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>Boolean Modifier</span>
+        <span className="text-[10px] text-gray-500">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div className="px-3 py-2 space-y-1.5">
+          <PropertyRow label="Enabled">
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={(e) => setModifier({ enabled: e.target.checked })}
+              className="accent-blue-500"
+            />
+          </PropertyRow>
+          <PropertyRow label="Operation">
+            <select
+              value={operation}
+              onChange={(e) => setModifier({ operation: e.target.value as "union" | "difference" | "intersection" })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+            >
+              <option value="union">Union</option>
+              <option value="difference">Difference</option>
+              <option value="intersection">Intersection</option>
+            </select>
+          </PropertyRow>
+          <PropertyRow label="Target">
+            <select
+              value={targetId ?? ""}
+              onChange={(e) => setModifier({ targetEntityId: e.target.value || null })}
+              className="w-full bg-[#1a1a1a] border border-[#444] rounded px-2 py-0.5 text-xs text-gray-200 focus:border-blue-500 focus:outline-none"
+            >
+              <option value="">None</option>
+              {meshEntities.map((e) => (
+                <option key={e.id} value={e.id}>{e.name}</option>
+              ))}
+            </select>
+          </PropertyRow>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MeshInfoSection({ entityId }: { entityId: string }) {
   const [info, setInfo] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -952,7 +1030,10 @@ function MeshInfoSection({ entityId }: { entityId: string }) {
           printSettings.layerHeight
         );
 
-        const result = generateGcode(layers, printSettings, analysis.boundingBox);
+        const supportRegions = printSettings.supportEnabled
+          ? generateSupportRegions(layers, analysis.boundingBox, printSettings.supportOverhangAngle)
+          : undefined;
+        const result = generateGcode(layers, printSettings, analysis.boundingBox, supportRegions);
         downloadGcode(result.gcode, `${entityId}.gcode`);
         setRepairLog(`Sliced: ${layers.length} layers, ${(result.totalTime / 60).toFixed(1)}min est.`);
       } catch (err) {

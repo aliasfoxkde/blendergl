@@ -1,8 +1,8 @@
 # BlenderGL - Progress Log
 
 **Last Updated:** 2026-03-27
-**Current Phase:** Phase 12 — 3D Printing & Slicing
-**Overall Progress:** 95%
+**Current Phase:** Phase 18 — Texture Painting & UV Editing
+**Overall Progress:** 97%
 
 ---
 
@@ -18,10 +18,16 @@
 | Phase 6: Landing + PWA | Complete | 100% |
 | Phase 7: Cloudflare Deployment | Complete | 100% |
 | Phase 8: Mesh Editing | Complete | 100% |
-| Phase 9: Advanced Features | Complete | 95% |
+| Phase 9: Advanced Features | Complete | 100% |
 | Phase 10: AI Augmentation | Complete | 100% |
-| Phase 11: Feature Completion | Complete | 90% |
-| Phase 12: 3D Printing | Planning | 0% |
+| Phase 11: Feature Completion | Complete | 100% |
+| Phase 12: 3D Printing | Complete | 100% |
+| Phase 13: Scripting Engine | Complete | 90% |
+| Phase 14: Rigging & Animation | Complete | 100% |
+| Phase 15: Sculpting | Complete | 100% |
+| Phase 16: Node Editor | Complete | 100% |
+| Phase 17: Physics & Game | Complete | 100% |
+| Phase 18: Texture & UV | Complete | 95% |
 
 ---
 
@@ -150,3 +156,40 @@
 
 **Next Steps:**
 - Phase 12: 3D Printing & Slicing (research, planning, implementation)
+
+### 2026-03-27 — Session 6: Remaining Tasks Completion
+
+**Actions:**
+- Wrote 11 IndexedDB persistence tests (save/load, upsert, list sorted, delete, loadLatestScene, entities, settings)
+- Installed fake-indexeddb for test environment IndexedDB polyfill
+- Added `updateEntityComponents` to sceneStore for modifier/component updates
+- Created BooleanModifierSection in PropertiesPanel (operation selector, target mesh picker, enabled toggle)
+- Added BooleanModifierData type to types/index.ts (operation, targetEntityId, enabled)
+- Created `previewBooleanOperation` in csgOperations.ts (wireframe overlay preview of CSG result)
+- Rewrote gcodeGenerator.ts with proper retraction (retract before travel, prime after) and Z-hop
+- Added `generateSupportRegions` — detects overhangs by comparing contour points between adjacent layers
+- Added per-layer info tracking (GcodeLayerInfo with filament, distance, type)
+- Added retractionDistance, retractionSpeed, supportDensity, supportZDistance to PrintSettings
+- Created PrintPreviewPanel component (layer slider, stats grid, canvas visualization, color legend, download)
+- Wired PrintPreviewPanel into PropertiesPanel after MeshInfoSection
+- Updated MeshInfoSection slice/export to use support generation
+- Created SpreadsheetViewer component (node data inspector with paginated table, fan-in/out stats)
+- Integrated SpreadsheetViewer into NodeEditorPanel with toggle button
+- Fixed BABYLON namespace usage in PrintPreviewPanel (switched to proper @babylonjs/core imports)
+- Fixed TypeScript errors (unused imports, type cast for DataEntry)
+- All 90 tests pass, TypeScript clean, build succeeds
+
+**Files Created:**
+- `__tests__/unit/persistence.test.ts` — 11 persistence tests
+- `src/editor/components/PrintPreviewPanel.tsx` — Print preview panel
+- `src/editor/components/SpreadsheetViewer.tsx` — Node data spreadsheet viewer
+
+**Files Modified:**
+- `src/editor/types/index.ts` — Added BooleanModifierData type
+- `src/editor/stores/sceneStore.ts` — Added updateEntityComponents action
+- `src/editor/stores/settingsStore.ts` — Added retraction/support print settings
+- `src/editor/components/PropertiesPanel.tsx` — Added BooleanModifierSection, PrintPreviewPanel, support gen
+- `src/editor/components/nodeEditor/NodeEditorPanel.tsx` — Added SpreadsheetViewer toggle
+- `src/editor/utils/csgOperations.ts` — Added previewBooleanOperation
+- `src/editor/utils/gcode/gcodeGenerator.ts` — Rewrote with retraction, travel, support, layer info
+- `docs/TASKS.md` — Checked off 13 completed items

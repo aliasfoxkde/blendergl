@@ -72,7 +72,7 @@
 - [x] Save scene to IndexedDB
 - [x] Load scene from IndexedDB
 - [x] Auto-save on changes (debounced)
-- [ ] Write persistence tests
+- [x] Write persistence tests
 - [x] Commit and push: Phase 2 complete
 
 ---
@@ -275,11 +275,11 @@
 - [x] Restore last scene on editor load
 
 ### 9.8 Tests + Polish
-- [ ] Unit tests for DuplicateCommand
-- [ ] Unit tests for camera preset logic
-- [ ] Unit tests for shading mode switching
-- [ ] Update PLAN.md and PROGRESS.md
-- [ ] Commit and push: Phase 9 complete
+- [x] Unit tests for DuplicateCommand
+- [x] Unit tests for camera preset logic
+- [x] Unit tests for shading mode switching
+- [x] Update PLAN.md and PROGRESS.md
+- [x] Commit and push: Phase 9 complete
 
 ---
 
@@ -383,8 +383,8 @@
 - [x] Boolean union (combine two meshes)
 - [x] Boolean difference (subtract one mesh from another)
 - [x] Boolean intersection (keep overlapping volume)
-- [ ] Boolean modifier component (non-destructive, in entity components)
-- [ ] CSG preview (wireframe of result before committing)
+- [x] Boolean modifier component (non-destructive, in entity components)
+- [x] CSG preview (wireframe of result before committing)
 
 ### 12.5 Print Preparation Panel
 - [x] Print settings panel in PropertiesPanel (when no entity selected)
@@ -404,19 +404,19 @@
 - [x] Basic slicer: slice mesh at layer heights (triangle-plane intersection)
 - [x] Perimeter generation (outer and inner walls)
 - [x] Infill pattern generation (selected pattern within perimeters)
-- [ ] Support generation (detect overhangs, generate support structures)
-- [ ] Retraction and travel moves
+- [x] Support generation (detect overhangs, generate support structures)
+- [x] Retraction and travel moves
 - [x] G-code output (standard Marlin/RepRap format)
-- [ ] G-code preview (layer-by-layer path visualization)
+- [x] G-code preview (layer-by-layer path visualization)
 - [x] G-code download
 - [x] Printer profile presets (Ender 3, Prusa MK4, Bambu Lab, etc.)
 
 ### 12.7 Print Preview
-- [ ] Layer visualization slider (scroll through sliced layers)
-- [ ] Print time estimate display
-- [ ] Material usage display (weight in grams, length in meters)
-- [ ] Color-coded preview (perimeters, infill, supports in different colors)
-- [ ] Commit and push: Phase 12 complete
+- [x] Layer visualization slider (scroll through sliced layers)
+- [x] Print time estimate display
+- [x] Material usage display (weight in grams, length in meters)
+- [x] Color-coded preview (perimeters, infill, supports in different colors)
+- [x] Commit and push: Phase 12 complete
 
 ---
 
@@ -622,7 +622,7 @@
 - [x] Generate nodes: Grid, Circle, Curve, Instance on Points
 - [x] Math nodes: Float Math, Vector Math, Boolean
 - [x] Output nodes: Group Output, Set Material
-- [ ] Spreadsheet viewer (inspect geometry data at each node)
+- [x] Spreadsheet viewer (inspect geometry data at each node)
 - [x] Geometry presets (array, random scatter, curve-based)
 
 ### 16.5 Game Logic Visual Scripting

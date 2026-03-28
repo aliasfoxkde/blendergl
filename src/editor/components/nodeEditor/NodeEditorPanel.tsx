@@ -17,11 +17,13 @@ import { SHADER_PRESETS } from "@/editor/utils/nodeEditor/shaderPresets";
 import { COMPOSITING_PRESETS, GEOMETRY_PRESETS, LOGIC_PRESETS, type NodePreset } from "@/editor/utils/nodeEditor/nodePresets";
 import { saveNodeGroup, loadNodeGroups, deleteNodeGroup, type NodeGroupData } from "@/editor/utils/nodeEditor/nodeLibrary";
 import type { NodeGraphType } from "@/editor/types/nodeEditor";
+import { SpreadsheetViewer } from "../SpreadsheetViewer";
 
 export function NodeEditorPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const [panelSize, setPanelSize] = useState({ width: 600, height: 400 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showSpreadsheet, setShowSpreadsheet] = useState(false);
 
   const entityId = useSelectionStore((s) => s.selectedIds[0] ?? null);
   const clear = useNodeGraphStore((s) => s.clear);
@@ -306,6 +308,13 @@ export function NodeEditorPanel() {
             Clear
           </button>
           <button
+            className={`text-xs ${showSpreadsheet ? "text-blue-400" : "text-gray-500 hover:text-gray-300"}`}
+            onClick={() => setShowSpreadsheet((s) => !s)}
+            title="Toggle spreadsheet viewer"
+          >
+            Sheet
+          </button>
+          <button
             className="text-gray-500 hover:text-gray-300 text-xs"
             onClick={() => setIsOpen(false)}
           >
@@ -314,9 +323,16 @@ export function NodeEditorPanel() {
         </div>
       </div>
 
-      {/* Canvas */}
-      <div className="flex-1 min-h-0">
-        <NodeGraphCanvas width={panelSize.width} height={panelSize.height - 36} />
+      {/* Canvas + optional Spreadsheet */}
+      <div className="flex-1 min-h-0 flex">
+        <div className="flex-1 min-w-0">
+          <NodeGraphCanvas width={showSpreadsheet ? panelSize.width - 220 : panelSize.width} height={panelSize.height - 36} />
+        </div>
+        {showSpreadsheet && (
+          <div className="w-52 border-l border-[#444] bg-[#1a1a1a] overflow-y-auto">
+            <SpreadsheetViewer />
+          </div>
+        )}
       </div>
 
       {/* Save to Library Dialog */}

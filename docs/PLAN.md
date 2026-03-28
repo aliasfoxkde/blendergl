@@ -188,7 +188,7 @@ The Viewport component maintains a `Map<string, AbstractMesh>` that mirrors the 
 - Advanced mesh operations (subdivide, merge, inset)
 - Texture upload component
 
-### Phase 12: 3D Printing & Slicing — PLANNED
+### Phase 12: 3D Printing & Slicing — COMPLETE
 - STL export (binary + ASCII) from Babylon.js mesh geometry
 - 3MF export/import (manufacturing format)
 - Mesh manifold validation (watertight check, non-manifold edge detection)
@@ -200,7 +200,7 @@ The Viewport component maintains a `Map<string, AbstractMesh>` that mirrors the 
 - Print preview (layer-by-layer visualization)
 - Printer profile management (bed size, nozzle diameter, supported materials)
 
-### Phase 13: Scripting Engine — PLANNED
+### Phase 13: Scripting Engine — COMPLETE
 - Monaco Editor integration for in-browser code editing (JavaScript/TypeScript)
 - Scripting API surface: `blendergl.scene`, `blendergl.ops`, `blendergl.data`
 - Script sandbox execution (Web Worker isolation, restricted globals)
@@ -238,7 +238,7 @@ The Viewport component maintains a `Map<string, AbstractMesh>` that mirrors the 
 - Face sets (isolated sculpting regions)
 - Remeshing (maintain mesh quality after operations)
 
-### Phase 16: Node Editor & Visual Scripting — PLANNED
+### Phase 16: Node Editor & Visual Scripting — COMPLETE
 - Node graph framework (react-flow or custom canvas-based)
 - Shader node editor (PBR material graph → Babylon ShaderMaterial)
 - Compositing node editor (post-processing pipeline)
@@ -262,7 +262,7 @@ The Viewport component maintains a `Map<string, AbstractMesh>` that mirrors the 
 - Game settings (gravity, time step, physics layers)
 - Game export (standalone HTML with embedded scene + scripts)
 
-### Phase 18: UV Mapping & Texturing — PLANNED
+### Phase 18: UV Mapping & Texturing — COMPLETE
 - UV unwrapping tools (smart project, cube project, cylinder project, sphere project)
 - UV editor (2D viewport showing UV layout)
 - Seam marking (edge selection in UV mode)

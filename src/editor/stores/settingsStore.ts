@@ -19,6 +19,10 @@ export interface PrintSettings {
   bedTemp: number;
   nozzleDiameter: number;
   filamentDiameter: number;
+  retractionDistance: number;
+  retractionSpeed: number;
+  supportDensity: number;
+  supportZDistance: number;
 }
 
 const defaultPrintSettings: PrintSettings = {
@@ -39,6 +43,10 @@ const defaultPrintSettings: PrintSettings = {
   bedTemp: 60,
   nozzleDiameter: 0.4,
   filamentDiameter: 1.75,
+  retractionDistance: 0.8,
+  retractionSpeed: 40,
+  supportDensity: 15,
+  supportZDistance: 0.2,
 };
 
 export interface PrinterProfile {

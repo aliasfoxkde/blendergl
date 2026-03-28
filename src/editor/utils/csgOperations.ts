@@ -120,3 +120,27 @@ function manifoldMeshToBabylon(meshData: any, scene: Scene): BabylonMeshType {
 
   return mesh;
 }
+
+/**
+ * Preview a boolean operation result as a wireframe overlay mesh.
+ * Returns the preview mesh (caller must dispose it when done).
+ */
+export async function previewBooleanOperation(
+  meshA: BabylonMeshType,
+  meshB: BabylonMeshType,
+  op: BooleanOp,
+  scene: Scene
+): Promise<BabylonMeshType | null> {
+  const result = await booleanOperation(meshA, meshB, op, scene);
+  if (!result) return null;
+
+  // Convert to wireframe preview
+  const mat = new StandardMaterial(`mat_csg_preview_${Date.now()}`, scene);
+  mat.wireframe = true;
+  mat.diffuseColor = new Color3(0.2, 0.6, 1.0);
+  mat.emissiveColor = new Color3(0.1, 0.3, 0.5);
+  mat.alpha = 0.6;
+  result.material = mat;
+
+  return result;
+}

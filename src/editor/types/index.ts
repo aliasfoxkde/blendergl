@@ -17,7 +17,14 @@ export interface Transform {
   scale: Vec3;
 }
 
-export type ComponentType = "mesh" | "material" | "light" | "camera";
+export type ComponentType = "mesh" | "material" | "light" | "camera" | "boolean_modifier";
+
+export interface BooleanModifierData {
+  type: "boolean_modifier";
+  operation: "union" | "difference" | "intersection";
+  targetEntityId: string | null;
+  enabled: boolean;
+}
 
 export interface Entity {
   id: string;

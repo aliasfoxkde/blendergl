@@ -19,6 +19,7 @@ interface SceneState {
   updateEntityName: (id: string, name: string) => void;
   updateEntityVisibility: (id: string, visible: boolean) => void;
   updateEntityLock: (id: string, locked: boolean) => void;
+  updateEntityComponents: (id: string, components: Record<string, unknown>) => void;
   setParent: (childId: string, parentId: string | null) => void;
   updateSettings: (settings: Partial<SceneSettings>) => void;
   clearScene: () => void;
@@ -126,6 +127,13 @@ export const useSceneStore = create<SceneState>()(
         const entity = state.entities[id];
         if (!entity) return;
         entity.locked = locked;
+      }),
+
+    updateEntityComponents: (id, components) =>
+      set((state) => {
+        const entity = state.entities[id];
+        if (!entity) return;
+        entity.components = { ...entity.components, ...components };
       }),
 
     setParent: (childId, parentId) =>
