@@ -242,7 +242,6 @@ export function Viewport({ onSceneReady }: ViewportProps) {
         // Add the result mesh to the map
         meshMapRef.current.set(result.metadata.entityId, result);
         // The entity store would need to be updated too — for now just add the mesh
-        console.log(`Boolean ${op} completed: ${result.getTotalVertices()} vertices`);
       }
     };
     window.addEventListener("boolean-op", handleBooleanOp);
@@ -408,7 +407,7 @@ export function Viewport({ onSceneReady }: ViewportProps) {
           if (sculptController) {
             const undoData = sculptController.endStroke();
             if (undoData) {
-              console.log(`Sculpt stroke complete: ${undoData.oldPositions.length} vertices`);
+              // Sculpt stroke applied
             }
             setIsSculpting(false);
           }

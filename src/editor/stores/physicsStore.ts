@@ -20,7 +20,11 @@ interface PhysicsState {
   playMode: PlayModeState;
   playTime: number; // seconds since play started
 
+  // Debug visualization
+  showDebugWireframes: boolean;
+
   // Actions
+  setShowDebugWireframes: (enabled: boolean) => void;
   setBody: (entityId: string, data: Partial<PhysicsBodyData>) => void;
   removeBody: (entityId: string) => void;
   enableBody: (entityId: string) => void;
@@ -54,6 +58,12 @@ export const usePhysicsStore = create<PhysicsState>()(
     gameSettings: createDefaultGameSettings(),
     playMode: "stopped",
     playTime: 0,
+    showDebugWireframes: false,
+
+    setShowDebugWireframes: (enabled) =>
+      set((state) => {
+        state.showDebugWireframes = enabled;
+      }),
 
     setBody: (entityId, data) =>
       set((state) => {

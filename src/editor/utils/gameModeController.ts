@@ -172,6 +172,17 @@ class GameModeController {
     // Tick play time in store
     usePhysicsStore.getState().tickPlay(dt);
 
+    // Render debug wireframes if enabled
+    const { showDebugWireframes } = usePhysicsStore.getState();
+    if (showDebugWireframes && !physicsEngine.isDebugEnabled()) {
+      physicsEngine.setDebugEnabled(true);
+    } else if (!showDebugWireframes && physicsEngine.isDebugEnabled()) {
+      physicsEngine.setDebugEnabled(false);
+    }
+    if (showDebugWireframes) {
+      physicsEngine.renderDebugVisuals();
+    }
+
     this.animFrameId = requestAnimationFrame(this.gameLoop);
   };
 

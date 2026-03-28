@@ -246,4 +246,90 @@ if (selected.length === 0) {
   console.log("Scaled", selected.length, "entities");
 }`,
   },
+  {
+    name: "Callback: Selection Change",
+    description: "Template for a selection change callback",
+    code: `// Callback: Selection Change
+// Runs whenever the selection changes in the editor.
+// Attach this script to an entity's game scripts.
+
+function onSelectionChange(selectedIds) {
+  console.log("Selection changed:", selectedIds.length, "entities");
+
+  for (const id of selectedIds) {
+    const entity = blendergl.scene.getEntity(id);
+    if (entity) {
+      console.log("  Selected:", entity.name);
+    }
+  }
+}
+
+// Register the callback
+blendergl.events.on("selectionChange", onSelectionChange);
+console.log("Registered selection change callback");`,
+  },
+  {
+    name: "Callback: Frame Update",
+    description: "Template for a per-frame update callback",
+    code: `// Callback: Frame Update
+// Runs every frame during play mode.
+
+let frameCount = 0;
+
+function onFrameUpdate(dt) {
+  frameCount++;
+
+  // Log every 60 frames to avoid spam
+  if (frameCount % 60 === 0) {
+    const fps = (1 / dt).toFixed(1);
+    console.log("Frame", frameCount, "| FPS:", fps, "| dt:", (dt * 1000).toFixed(1) + "ms");
+  }
+}
+
+// Register the callback
+blendergl.events.on("frameUpdate", onFrameUpdate);
+console.log("Registered frame update callback");`,
+  },
+  {
+    name: "Modifier: Randomize Colors",
+    description: "Apply random colors to all entities",
+    code: `// Modifier: Randomize Colors
+// Applies random diffuse colors to all entities in the scene.
+
+const entities = blendergl.scene.getEntities();
+let count = 0;
+
+for (const entity of entities) {
+  const r = Math.random();
+  const g = Math.random();
+  const b = Math.random();
+
+  blendergl.ops.setMaterial(entity.id, {
+    albedo: { r, g, b },
+  });
+  count++;
+}
+
+console.log("Applied random colors to", count, "entities");`,
+  },
+  {
+    name: "Modifier: Reset Transforms",
+    description: "Reset all entity transforms to origin",
+    code: `// Modifier: Reset Transforms
+// Resets position, rotation, and scale for all entities.
+
+const entities = blendergl.scene.getEntities();
+let count = 0;
+
+for (const entity of entities) {
+  blendergl.ops.setTransform(entity.id, {
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 },
+  });
+  count++;
+}
+
+console.log("Reset transforms for", count, "entities");`,
+  },
 ];

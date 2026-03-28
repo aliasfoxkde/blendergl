@@ -104,3 +104,12 @@ export const useSelectionStore = create<SelectionState>()(
       }),
   }))
 );
+
+// Dispatch selection change events for callback scripts
+let _prevSelectedIds: string[] = [];
+useSelectionStore.subscribe((state) => {
+  if (state.selectedIds !== _prevSelectedIds) {
+    _prevSelectedIds = state.selectedIds;
+    window.dispatchEvent(new CustomEvent("selection-change", { detail: { selectedIds: state.selectedIds } }));
+  }
+});

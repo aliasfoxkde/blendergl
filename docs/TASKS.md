@@ -450,16 +450,16 @@
 ### 13.4 Script Types & Lifecycle
 - [x] Startup scripts (type="startup", auto-run on load)
 - [x] Operator scripts (type="operator", run on demand)
-- [ ] Callback scripts (on selection change, on frame change, etc.) (deferred)
-- [ ] Script enable/disable toggle per script (deferred)
-- [ ] Script execution order control (deferred)
+- [x] Callback scripts (on selection change, on frame change, etc.) (deferred)
+- [x] Script enable/disable toggle per script (deferred)
+- [x] Script execution order control (deferred)
 
 ### 13.5 Script Library
 - [x] Save scripts to IndexedDB
 - [x] Script library browser (list/load/delete saved scripts)
 - [x] Import/export scripts (.json files)
 - [x] Built-in example scripts (hello world, grid, spheres, staircase, analyze, scale)
-- [ ] Script templates (operator, callback, modifier) (deferred)
+- [x] Script templates (operator, callback, modifier) (deferred)
 - [ ] Commit and push: Phase 13 complete
 
 ---
@@ -656,7 +656,7 @@
 - [x] Collision shapes: box, sphere, cylinder, capsule, convex hull, mesh
 - [x] Static vs dynamic body toggle
 - [x] Physics material (bounciness, friction)
-- [ ] Physics debug visualization (wireframe colliders)
+- [x] Physics debug visualization (wireframe colliders)
 
 ### 17.2 Collision & Triggers
 - [x] Collision event system (onCollisionEnter, onCollisionExit, onCollisionStay)

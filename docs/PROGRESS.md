@@ -193,3 +193,37 @@
 - `src/editor/utils/csgOperations.ts` — Added previewBooleanOperation
 - `src/editor/utils/gcode/gcodeGenerator.ts` — Rewrote with retraction, travel, support, layer info
 - `docs/TASKS.md` — Checked off 13 completed items
+
+### 2026-03-27 — Session 7: Final Cleanup & Quality Pass
+
+**Actions:**
+- Added physics debug wireframe visualization (wired existing engine code into store + UI)
+  - `physicsStore.ts` — Added `showDebugWireframes` state + `setShowDebugWireframes` action
+  - `gameModeController.ts` — Wired `physicsEngine.setDebugEnabled()` and `renderDebugVisuals()` into game loop
+  - `PropertiesPanel.tsx` — Added "Debug Wireframes" checkbox in PhysicsSection
+- Confirmed script enable/disable toggle already exists (checkbox per script in GameScriptSection)
+- Added 3 new script templates to EXAMPLE_SCRIPTS (callback: selection change, callback: frame update, modifier: randomize colors, modifier: reset transforms)
+- Added callback script event dispatch (selection-change CustomEvent from selectionStore)
+- Removed 2 debug console.log calls from Viewport.tsx
+- Added 4 new test files (63 new tests):
+  - `__tests__/unit/gcode.test.ts` — 20 tests (slicer, G-code generator, support regions)
+  - `__tests__/unit/nodeGraph.test.ts` — 15 tests (node CRUD, connections, clipboard, frames)
+  - `__tests__/unit/physicsStore.test.ts` — 12 tests (bodies, scripts, state machines, play mode, debug wireframes)
+  - `__tests__/unit/materialStore.test.ts` — 16 tests (CRUD, PBR properties, defaults)
+- Checked off 6 remaining actionable TASKS.md items
+- All 153 tests pass, TypeScript clean, build succeeds
+
+**Files Created:**
+- `__tests__/unit/gcode.test.ts` — Slicer + G-code generator + support region tests
+- `__tests__/unit/nodeGraph.test.ts` — Node graph store tests
+- `__tests__/unit/physicsStore.test.ts` — Physics store tests
+- `__tests__/unit/materialStore.test.ts` — Material store tests
+
+**Files Modified:**
+- `src/editor/stores/physicsStore.ts` — Added `showDebugWireframes` state
+- `src/editor/utils/gameModeController.ts` — Wired debug wireframes into game loop
+- `src/editor/components/PropertiesPanel.tsx` — Added debug wireframes toggle
+- `src/editor/utils/scripting/executor.ts` — Added 4 new script templates
+- `src/editor/stores/selectionStore.ts` — Added selection-change event dispatch
+- `src/editor/components/Viewport.tsx` — Removed 2 debug console.log calls
+- `docs/TASKS.md` — Checked off 6 items

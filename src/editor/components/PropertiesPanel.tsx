@@ -429,6 +429,8 @@ function PhysicsSection({ entityId }: { entityId: string }) {
   const setBody = usePhysicsStore((s) => s.setBody);
   const enableBody = usePhysicsStore((s) => s.enableBody);
   const disableBody = usePhysicsStore((s) => s.disableBody);
+  const showDebugWireframes = usePhysicsStore((s) => s.showDebugWireframes);
+  const setShowDebugWireframes = usePhysicsStore((s) => s.setShowDebugWireframes);
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -509,6 +511,14 @@ function PhysicsSection({ entityId }: { entityId: string }) {
               max={32}
               onChange={(e) => setBody(entityId, { collisionMask: parseInt(e.target.value) || 1 })}
               className="w-full bg-[#1a1a1a] border border-[#444] rounded px-1.5 py-0.5 text-[10px] text-gray-300 focus:border-blue-500 focus:outline-none"
+            />
+          </PropertyRow>
+          <PropertyRow label="Debug Wireframes">
+            <input
+              type="checkbox"
+              checked={showDebugWireframes}
+              onChange={(e) => setShowDebugWireframes(e.target.checked)}
+              className="accent-blue-500"
             />
           </PropertyRow>
         </div>
