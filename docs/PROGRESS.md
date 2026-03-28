@@ -27,7 +27,7 @@
 | Phase 15: Sculpting | Complete | 100% |
 | Phase 16: Node Editor | Complete | 100% |
 | Phase 17: Physics & Game | Complete | 100% |
-| Phase 18: Texture & UV | Complete | 95% |
+| Phase 18: Texture & UV | Complete | 100% |
 | Phase 19: Advanced Rendering | Complete | 100% |
 
 ---
@@ -311,3 +311,38 @@
 - `src/editor/utils/gcode/gcodeGenerator.ts` — Fix 7
 - `src/editor/stores/sceneStore.ts` — Fix 8 (recursive → iterative removal)
 - `src/editor/stores/nodeGraphStore.ts` — Fix 9 (batched pasteNodes)
+
+### 2026-03-28 — Session 11: Test Coverage Expansion
+
+**Actions:**
+- Added `enableMapSet()` and `enablePatches()` to `src/test-setup.ts` for Immer Set/Map support
+- Fixed PROGRESS.md: Phase 18 Texture & UV updated from 95% to 100%
+- All 19 phases now at 100%
+- Created 10 new test files covering previously untested stores (147 new tests):
+  - `__tests__/unit/editModeStore.test.ts` — 16 tests (enter/exit, element modes, vertex/edge/face selection, toggle, selectAll)
+  - `__tests__/unit/selectionStore.test.ts` — 12 tests (select/deselect, additive, active entity, modes, hover)
+  - `__tests__/unit/armatureStore.test.ts` — 11 tests (CRUD, bone hierarchy, re-parenting on remove)
+  - `__tests__/unit/constraintStore.test.ts` — 10 tests (CRUD, influence clamping, getBoneConstraints, evaluateConstraints with look_at/limit/parent/IK)
+  - `__tests__/unit/collectionStore.test.ts` — 18 tests (CRUD, entity management, visibility/lock/color, queries, reorder)
+  - `__tests__/unit/sculptModeStore.test.ts` — 21 tests (mode, brush settings, symmetry, dyntopo, multires, mask, face sets)
+  - `__tests__/unit/poseModeStore.test.ts` — 14 tests (mode, bone selection, pose library save/delete/apply/blend)
+  - `__tests__/unit/renderSettingsStore.test.ts` — 9 tests (defaults, update, reset, panel, MATERIAL_PRESETS)
+  - `__tests__/unit/weightPaintStore.test.ts` — 18 tests (mode, brush settings, paintWeight, blurWeights, autoWeight, getVertexWeight)
+  - `__tests__/unit/settingsStore.test.ts` — 18 tests (display, snap, auto-save, theme, camera, AI, print settings, PRINTER_PROFILES)
+- All 307 tests pass, TypeScript clean, build succeeds
+
+**Files Created:**
+- `__tests__/unit/editModeStore.test.ts`
+- `__tests__/unit/selectionStore.test.ts`
+- `__tests__/unit/armatureStore.test.ts`
+- `__tests__/unit/constraintStore.test.ts`
+- `__tests__/unit/collectionStore.test.ts`
+- `__tests__/unit/sculptModeStore.test.ts`
+- `__tests__/unit/poseModeStore.test.ts`
+- `__tests__/unit/renderSettingsStore.test.ts`
+- `__tests__/unit/weightPaintStore.test.ts`
+- `__tests__/unit/settingsStore.test.ts`
+
+**Files Modified:**
+- `src/test-setup.ts` — Added `enableMapSet()` and `enablePatches()` for Immer
+- `docs/PROGRESS.md` — Phase 18 → 100%, Session 11 log
